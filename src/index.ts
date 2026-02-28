@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import url from 'node:url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { startHealthServer } from './health.js';
 import { createServer } from './server.js';
@@ -50,7 +51,7 @@ export async function main(): Promise<void> {
   try {
     apiKey = resolveApiKey(args.apiKey);
   } catch (error) {
-    logger.error((error as Error).message);
+    logger.error(error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
 
@@ -67,9 +68,7 @@ export async function main(): Promise<void> {
   }
 }
 
-const isDirectRun =
-  process.argv[1] &&
-  (process.argv[1].endsWith('/index.js') || process.argv[1].endsWith('/index.ts'));
+const isDirectRun = process.argv[1] && import.meta.url === url.pathToFileURL(process.argv[1]).href;
 
 if (isDirectRun) {
   main().catch((error: unknown) => {

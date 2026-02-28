@@ -14,6 +14,8 @@ COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
 
+USER node
+
 ENV HEALTH_PORT=8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

@@ -4,6 +4,32 @@ import type { OmopHubClient } from '../client/api.js';
 import type { Vocabulary } from '../client/types.js';
 import { vocabularyCache } from '../utils/cache.js';
 
+const PAGE_SIZE = 100;
+
+async function fetchAllVocabularies(
+  client: OmopHubClient,
+  toolName: string,
+): Promise<Vocabulary[]> {
+  const all: Vocabulary[] = [];
+  let page = 1;
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  while (true) {
+    const raw = await client.request<{ vocabularies: Vocabulary[] }>(
+      '/vocabularies',
+      { include_stats: true, page_size: PAGE_SIZE, page },
+      toolName,
+    );
+    const batch = raw.data.vocabularies;
+    all.push(...batch);
+
+    if (batch.length < PAGE_SIZE || !raw.meta?.pagination?.has_next) break;
+    page++;
+  }
+
+  return all;
+}
+
 export function registerResources(server: McpServer, client: OmopHubClient): void {
   // Static resource: vocabulary catalog
   server.resource('vocabulary-list', 'omophub://vocabularies', async (uri) => {
@@ -11,13 +37,8 @@ export function registerResources(server: McpServer, client: OmopHubClient): voi
     let cached = vocabularyCache.get(cacheKey) as { data: Vocabulary[] } | undefined;
 
     if (!cached) {
-      const raw = await client.request<{ vocabularies: Vocabulary[] }>(
-        '/vocabularies',
-        { include_stats: true, page_size: 100 },
-        'resource:vocabulary-list',
-      );
-      // API wraps array in { vocabularies: [...] } — unwrap for consistent cache format
-      cached = { ...raw, data: raw.data.vocabularies };
+      const vocabs = await fetchAllVocabularies(client, 'resource:vocabulary-list');
+      cached = { data: vocabs };
       vocabularyCache.set(cacheKey, cached);
     }
 
@@ -52,13 +73,8 @@ export function registerResources(server: McpServer, client: OmopHubClient): voi
     let cached = vocabularyCache.get(cacheKey) as { data: Vocabulary[] } | undefined;
 
     if (!cached) {
-      const raw = await client.request<{ vocabularies: Vocabulary[] }>(
-        '/vocabularies',
-        { include_stats: true, page_size: 100 },
-        'resource:vocabulary-details',
-      );
-      // API wraps array in { vocabularies: [...] } — unwrap for consistent cache format
-      cached = { ...raw, data: raw.data.vocabularies };
+      const vocabs = await fetchAllVocabularies(client, 'resource:vocabulary-details');
+      cached = { data: vocabs };
       vocabularyCache.set(cacheKey, cached);
     }
 

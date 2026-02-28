@@ -10,7 +10,12 @@ export function registerSearchTools(server: McpServer, client: OmopHubClient): v
     'search_concepts',
     "Search for medical concepts across OHDSI standardized vocabularies by name, synonym, or clinical term. Returns matching concepts with IDs, names, vocabulary, domain, and standard status. Use this when you need to find the OMOP concept ID for a medical term. Examples: 'type 2 diabetes', 'metformin 500mg', 'systolic blood pressure', 'HbA1c'.",
     {
-      query: z.string().max(500).describe('The medical term or concept name to search for'),
+      query: z
+        .string()
+        .trim()
+        .min(1)
+        .max(500)
+        .describe('The medical term or concept name to search for'),
       vocabulary_ids: z
         .string()
         .max(200)

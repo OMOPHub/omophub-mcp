@@ -29,6 +29,10 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
 export function startHealthServer(port: number): ReturnType<typeof createServer> {
   const server = createServer(handleRequest);
 
+  server.on('error', (err) => {
+    logger.error('Health server error', { error: String(err), port });
+  });
+
   server.listen(port, () => {
     logger.info(`Health endpoint listening on http://localhost:${String(port)}/health`);
   });

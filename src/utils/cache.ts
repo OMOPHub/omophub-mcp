@@ -46,6 +46,7 @@ export class LRUCache<T> {
     });
   }
 
+  // Note: delegates to get(), which promotes the entry in LRU order
   has(key: string): boolean {
     return this.get(key) !== undefined;
   }

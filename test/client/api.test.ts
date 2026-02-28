@@ -171,19 +171,21 @@ describe('OmopHubClient', () => {
     const original = process.env.OMOPHUB_ANALYTICS_OPTOUT;
     process.env.OMOPHUB_ANALYTICS_OPTOUT = 'true';
 
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ success: true, data: {} }),
-    });
+    try {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: {} }),
+      });
 
-    const client = new OmopHubClient('oh_key', 'https://api.test.com/v1');
-    await client.request('/concepts/1', undefined, 'get_concept');
+      const client = new OmopHubClient('oh_key', 'https://api.test.com/v1');
+      await client.request('/concepts/1', undefined, 'get_concept');
 
-    const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
-    const headers = options.headers as Record<string, string>;
-    expect(headers['X-MCP-Client']).toBeUndefined();
-    expect(headers['X-MCP-Tool']).toBeUndefined();
-
-    process.env.OMOPHUB_ANALYTICS_OPTOUT = original;
+      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+      const headers = options.headers as Record<string, string>;
+      expect(headers['X-MCP-Client']).toBeUndefined();
+      expect(headers['X-MCP-Tool']).toBeUndefined();
+    } finally {
+      process.env.OMOPHUB_ANALYTICS_OPTOUT = original;
+    }
   });
 });

@@ -5,6 +5,20 @@ import type { ApiResponse } from './types.js';
 
 const MAX_RETRIES = 2;
 
+/** Parse Retry-After header (seconds or HTTP-date), returning wait time in ms. */
+function parseRetryAfter(header: string, fallbackMs: number): number {
+  const seconds = parseInt(header, 10);
+  if (!Number.isNaN(seconds) && seconds >= 0) return seconds * 1000;
+
+  const date = Date.parse(header);
+  if (!Number.isNaN(date)) {
+    const delayMs = date - Date.now();
+    return delayMs > 0 ? delayMs : fallbackMs;
+  }
+
+  return fallbackMs;
+}
+
 export class OmopHubClient {
   private readonly baseUrl: string;
   private readonly apiKey: string;
@@ -69,7 +83,8 @@ export class OmopHubClient {
 
         if (response.status === 429 && attempt < MAX_RETRIES) {
           const retryAfter = response.headers.get('Retry-After');
-          const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : 1000 * (attempt + 1);
+          const fallbackMs = 1000 * (attempt + 1);
+          const waitMs = retryAfter ? parseRetryAfter(retryAfter, fallbackMs) : fallbackMs;
           logger.warn(`Rate limited, retrying in ${waitMs}ms`, {
             tool_name: toolName,
             api_path: path,
@@ -129,7 +144,7 @@ export class OmopHubClient {
       }
     }
 
-    let lastError: Error | null = null;
+    const lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       const start = Date.now();
@@ -151,7 +166,8 @@ export class OmopHubClient {
 
         if (response.status === 429 && attempt < MAX_RETRIES) {
           const retryAfter = response.headers.get('Retry-After');
-          const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : 1000 * (attempt + 1);
+          const fallbackMs = 1000 * (attempt + 1);
+          const waitMs = retryAfter ? parseRetryAfter(retryAfter, fallbackMs) : fallbackMs;
           logger.warn(`Rate limited, retrying in ${waitMs}ms`, {
             tool_name: toolName,
             api_path: path,
@@ -178,15 +194,8 @@ export class OmopHubClient {
         return (await response.json()) as ApiResponse<T>;
       } catch (error) {
         if (error instanceof OmopHubApiError) throw error;
-        lastError = error instanceof Error ? error : new Error(String(error));
-
-        if (attempt < MAX_RETRIES) {
-          logger.warn(`POST request failed, retrying (attempt ${attempt + 1})`, {
-            tool_name: toolName,
-            api_path: path,
-          });
-          await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
-        }
+        // Do not retry POST on network errors — could cause duplicate mutations
+        throw error instanceof Error ? error : new Error(String(error));
       }
     }
 

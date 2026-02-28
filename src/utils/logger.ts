@@ -17,7 +17,8 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   error: 3,
 };
 
-const currentLevel: LogLevel = (process.env.OMOPHUB_LOG_LEVEL as LogLevel) || 'info';
+const envLevel = process.env.OMOPHUB_LOG_LEVEL;
+const currentLevel: LogLevel = envLevel && envLevel in LOG_LEVELS ? (envLevel as LogLevel) : 'info';
 
 function log(entry: LogEntry): void {
   if (LOG_LEVELS[entry.level] < LOG_LEVELS[currentLevel]) return;

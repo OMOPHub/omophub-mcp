@@ -39,7 +39,7 @@ describe('registerResources', () => {
 
       expect(client.request).toHaveBeenCalledWith(
         '/vocabularies',
-        { include_stats: true, page_size: 100 },
+        { include_stats: true, page_size: 100, page: 1 },
         'resource:vocabulary-list',
       );
       expect(result.contents).toHaveLength(1);

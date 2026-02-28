@@ -16,7 +16,7 @@ describe('search_concepts', () => {
     vi.unstubAllGlobals();
   });
 
-  it('maps vocabulary_ids to vocabularies API param', async () => {
+  it('constructs URL with vocabularies query param', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => searchResponse,
