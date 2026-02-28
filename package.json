@@ -29,6 +29,8 @@
   },
   "keywords": [
     "mcp",
+    "mcp-server",
+    "model-context-protocol",
     "omop",
     "ohdsi",
     "medical-vocabularies",
@@ -37,9 +39,11 @@
     "rxnorm",
     "loinc",
     "healthcare",
-    "clinical-terminology",
+    "clinical-data",
     "ai-agent",
-    "model-context-protocol"
+    "vocabulary-mapping",
+    "concept-mapping",
+    "athena"
   ],
   "author": "OMOPHub",
   "license": "MIT",
