@@ -1,0 +1,60 @@
+test/client/api.test.ts
+  7d6c8c696c6afb94 174,187,189
+src/utils/cache.ts
+  7d6c8c696c6afb94 49
+src/resources/index.ts
+  7d6c8c696c6afb94 7-32,40-41,76-77
+Dockerfile
+  7d6c8c696c6afb94 17-18
+src/tools/search.ts
+  7d6c8c696c6afb94 15-17
+src/utils/logger.ts
+  7d6c8c696c6afb94 20-21
+test/tools/search.test.ts
+  7d6c8c696c6afb94 19
+src/client/api.ts
+  7d6c8c696c6afb94 8-21,86-87,147,169-170,197-198
+.github/workflows/ci.yml
+  7d6c8c696c6afb94 14
+src/health.ts
+  7d6c8c696c6afb94 32-35
+test/resources/index.test.ts
+  7d6c8c696c6afb94 42
+.gitignore
+  7d6c8c696c6afb94 3
+src/index.ts
+  7d6c8c696c6afb94 3,54,71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.6",
+  "base_commit_sha": "1284acdbb755c51c090907e228b3dbe1a9b8ad20",
+  "prompts": {
+    "7d6c8c696c6afb94": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ddbbae81-186c-4f54-b9b4-1ffbac83f7ef",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 91,
+      "total_deletions": 124,
+      "accepted_lines": 73,
+      "overriden_lines": 0
+    },
+    "c7474223f0b7c6ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "27509d6d-1471-4fec-aa3d-57c144616837",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    }
+  }
+}
