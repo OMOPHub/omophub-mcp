@@ -1,17 +1,11 @@
-<p align="center">
-  <a href="https://omophub.com">
-    <img src="https://omophub.com/logo.svg" alt="OMOPHub" width="120" />
-  </a>
-</p>
-
 <h1 align="center">OMOPHub MCP Server</h1>
 
-<p align="center">
+<p>
   <strong>Medical vocabularies for AI agents.</strong><br/>
   Search, map, and navigate 5M+ OMOP concepts: SNOMED CT, ICD-10, RxNorm, LOINC, and more. Directly from Claude, Cursor, VS Code, or any MCP-compatible client.
 </p>
 
-<p align="center">
+<p>
   <a href="https://www.npmjs.com/package/omophub-mcp"><img src="https://img.shields.io/npm/v/omophub-mcp?style=flat-square&color=cb3837&label=npm" alt="npm version" /></a>
   <a href="https://www.npmjs.com/package/omophub-mcp"><img src="https://img.shields.io/npm/dm/omophub-mcp?style=flat-square&color=blue" alt="npm downloads" /></a>
   <a href="https://github.com/OMOPHub/omophub-mcp/blob/main/LICENSE"><img src="https://img.shields.io/github/license/OMOPHub/omophub-mcp?style=flat-square" alt="License" /></a>
@@ -19,7 +13,7 @@
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-green?style=flat-square" alt="MCP Compatible" /></a>
 </p>
 
-<p align="center">
+<p>
   <a href="#quick-start">Quick Start</a> ·
   <a href="#available-tools">Tools</a> ·
   <a href="#example-prompts">Examples</a> ·
