@@ -1,0 +1,21 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.6",
+  "base_commit_sha": "34b0e7cdf982ebec26793bc6c884a89e0ea44899",
+  "prompts": {
+    "c7474223f0b7c6ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "27509d6d-1471-4fec-aa3d-57c144616837",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    }
+  }
+}
