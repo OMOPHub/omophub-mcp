@@ -1,4 +1,4 @@
-<h1 align="center">OMOPHub MCP Server</h1>
+<h1>OMOPHub MCP Server</h1>
 
 <p>
   <strong>Medical vocabularies for AI agents.</strong><br/>
