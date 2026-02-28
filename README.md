@@ -1,6 +1,6 @@
 # OMOPHub MCP Server
 
-MCP server for [OHDSI OMOP](https://www.ohdsi.org/) standardized medical vocabularies. Search, look up, map, and navigate 500M+ medical concepts (SNOMED CT, ICD-10, RxNorm, LOINC, and more) directly from AI agents.
+MCP server for [OHDSI OMOP](https://www.ohdsi.org/) standardized medical vocabularies. Search, look up, map, and navigate 5M+ medical concepts (SNOMED CT, ICD-10, RxNorm, LOINC, and more) directly from AI agents.
 
 ## Quick Start
 
