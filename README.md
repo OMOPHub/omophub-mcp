@@ -1,16 +1,69 @@
-# OMOPHub MCP Server
+<p align="center">
+  <a href="https://omophub.com">
+    <img src="https://omophub.com/logo.svg" alt="OMOPHub" width="120" />
+  </a>
+</p>
 
-MCP server for [OHDSI OMOP](https://www.ohdsi.org/) standardized medical vocabularies. Search, look up, map, and navigate 5M+ medical concepts (SNOMED CT, ICD-10, RxNorm, LOINC, and more) directly from AI agents.
+<h1 align="center">OMOPHub MCP Server</h1>
+
+<p align="center">
+  <strong>Medical vocabularies for AI agents.</strong><br/>
+  Search, map, and navigate 5M+ OMOP concepts: SNOMED CT, ICD-10, RxNorm, LOINC, and more. Directly from Claude, Cursor, VS Code, or any MCP-compatible client.
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/omophub-mcp"><img src="https://img.shields.io/npm/v/omophub-mcp?style=flat-square&color=cb3837&label=npm" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/omophub-mcp"><img src="https://img.shields.io/npm/dm/omophub-mcp?style=flat-square&color=blue" alt="npm downloads" /></a>
+  <a href="https://github.com/OMOPHub/omophub-mcp/blob/main/LICENSE"><img src="https://img.shields.io/github/license/OMOPHub/omophub-mcp?style=flat-square" alt="License" /></a>
+  <a href="https://github.com/OMOPHub/omophub-mcp"><img src="https://img.shields.io/badge/TypeScript-5.x-3178c6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" /></a>
+  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-green?style=flat-square" alt="MCP Compatible" /></a>
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#available-tools">Tools</a> ·
+  <a href="#example-prompts">Examples</a> ·
+  <a href="https://docs.omophub.com">Docs</a> ·
+  <a href="https://omophub.com">Website</a>
+</p>
+
+---
+
+## Why OMOPHub MCP?
+
+Working with medical vocabularies today means downloading multi-gigabyte CSV files, loading them into a local database, and writing SQL to find what you need. Every time.
+
+**OMOPHub MCP Server gives your AI assistant instant access to the entire OHDSI ATHENA vocabulary**. No database setup, no CSV wrangling, no context switching. Just ask.
+
+```
+You: "Map ICD-10 code E11.9 to SNOMED"
+
+Claude: Found it - E11.9 (Type 2 diabetes mellitus without complications)
+        maps to SNOMED concept 201826 (Type 2 diabetes mellitus)
+        via standard 'Maps to' relationship.
+```
+
+**Use cases:**
+- **Concept lookup** - Find OMOP concept IDs for clinical terms in seconds
+- **Cross-vocabulary mapping** - Map between ICD-10, SNOMED, RxNorm, LOINC, and 100+ vocabularies
+- **Hierarchy navigation** - Explore ancestors and descendants for phenotype definitions
+- **Concept set building** - Let your AI agent assemble complete concept sets for cohort definitions
+- **Code validation** - Verify medical codes and check their standard mappings
+
+---
 
 ## Quick Start
 
 ### 1. Get an API Key
 
-Sign up at [omophub.com](https://omophub.com) and create an API key in your [dashboard](https://omophub.com/dashboard/api-keys).
+Sign up at [omophub.com](https://omophub.com) → create an API key in your [dashboard](https://omophub.com/dashboard/api-keys).
 
-### 2. Configure Your AI Client
+### 2. Add to Your AI Client
 
-**Claude Desktop** (`claude_desktop_config.json`):
+<details open>
+<summary><strong>Claude Desktop</strong></summary>
+
+Add to `claude_desktop_config.json`:
 
 ```json
 {
@@ -26,14 +79,22 @@ Sign up at [omophub.com](https://omophub.com) and create an API key in your [das
 }
 ```
 
-**Claude Code:**
+</details>
+
+<details>
+<summary><strong>Claude Code</strong></summary>
 
 ```bash
 claude mcp add omophub -- npx -y omophub-mcp
 # Then set OMOPHUB_API_KEY in your environment
 ```
 
-**Cursor** (`.cursor/mcp.json`):
+</details>
+
+<details>
+<summary><strong>Cursor</strong></summary>
+
+Add to `.cursor/mcp.json`:
 
 ```json
 {
@@ -49,7 +110,12 @@ claude mcp add omophub -- npx -y omophub-mcp
 }
 ```
 
-**VS Code** (`.vscode/mcp.json`):
+</details>
+
+<details>
+<summary><strong>VS Code</strong></summary>
+
+Add to `.vscode/mcp.json`:
 
 ```json
 {
@@ -65,15 +131,18 @@ claude mcp add omophub -- npx -y omophub-mcp
 }
 ```
 
-**Docker:**
+</details>
+
+<details>
+<summary><strong>Docker</strong></summary>
 
 ```bash
 docker run -i -e OMOPHUB_API_KEY=oh_your_key_here -p 8080:8080 omophub/omophub-mcp
 ```
 
-### 3. Start Using It
+</details>
 
-Ask your AI assistant:
+### 3. Start Asking
 
 > "What's the OMOP concept ID for type 2 diabetes?"
 
@@ -81,69 +150,74 @@ Ask your AI assistant:
 
 > "Show me all descendants of Diabetes mellitus in SNOMED"
 
+---
+
 ## Available Tools
 
-| Tool | Description |
-|------|-------------|
+| Tool | What it does |
+| :--- | :--- |
 | `search_concepts` | Search for medical concepts by name or clinical term across all vocabularies |
-| `get_concept` | Get detailed info about a specific OMOP concept by concept_id |
-| `get_concept_by_code` | Look up a concept using a vocabulary-specific code (e.g., ICD-10 "E11.9") |
+| `get_concept` | Get detailed info about a specific OMOP concept by `concept_id` |
+| `get_concept_by_code` | Look up a concept using a vocabulary-specific code (e.g., ICD-10 `E11.9`) |
 | `map_concept` | Map a concept to equivalent concepts in other vocabularies |
-| `get_hierarchy` | Navigate concept hierarchy — ancestors, descendants, or both |
+| `get_hierarchy` | Navigate concept hierarchy - ancestors, descendants, or both |
 | `list_vocabularies` | List available medical vocabularies with statistics |
+
+### Resources
+
+| URI | Description |
+| :--- | :--- |
+| `omophub://vocabularies` | Full vocabulary catalog with statistics |
+| `omophub://vocabularies/{vocabulary_id}` | Details for a specific vocabulary |
+
+### Prompts
+
+| Prompt | Description |
+| :--- | :--- |
+| `phenotype-concept-set` | Guided workflow to build a concept set for a clinical phenotype |
+| `code-lookup` | Look up and validate a medical code with mappings and hierarchy |
+
+---
 
 ## Example Prompts
 
-### Find a Concept
-
+**Find a concept →** `search_concepts`
 > "Search for metformin in RxNorm"
 
-Uses `search_concepts` with `vocabulary_ids: "RxNorm"` to find metformin concepts.
+**Cross-vocabulary mapping →** `map_concept`
+> "I have SNOMED concept 201826 - what's the ICD-10 code?"
 
-### Cross-Vocabulary Mapping
-
-> "I have SNOMED concept 201826 — what's the ICD-10 code?"
-
-Uses `map_concept` with `target_vocabularies: "ICD10CM"` to find the mapping.
-
-### Build a Concept Set
-
+**Build a concept set →** `search_concepts` → `get_hierarchy` → `map_concept`
 > "Help me build a concept set for Type 2 diabetes including all descendants"
 
-Uses `search_concepts` → `get_hierarchy` (direction: down) → `map_concept` to build a complete phenotype definition.
+**Validate a code →** `get_concept_by_code` → `map_concept`
+> "Is ICD-10 code E11.9 valid? What does it map to in SNOMED?"
 
-### Validate a Code
+---
 
-> "Is ICD-10 code E11.9 a valid code? What does it map to in SNOMED?"
+## Configuration
 
-Uses `get_concept_by_code` → `map_concept` to validate and find mappings.
-
-## Environment Variables
+### Environment Variables
 
 | Variable | Required | Description |
-|----------|----------|-------------|
-| `OMOPHUB_API_KEY` | Yes | Your OMOPHub API key |
-| `OMOPHUB_BASE_URL` | No | Custom API base URL (default: `https://api.omophub.com/v1`) |
-| `OMOPHUB_LOG_LEVEL` | No | Log level: `debug`, `info`, `warn`, `error` (default: `info`) |
-| `OMOPHUB_ANALYTICS_OPTOUT` | No | Set to `true` to disable analytics headers |
-| `HEALTH_PORT` | No | Port for HTTP health endpoint (default: disabled; set to enable) |
+| :--- | :---: | :--- |
+| `OMOPHUB_API_KEY` | ✅ | Your OMOPHub API key |
+| `OMOPHUB_BASE_URL` | | Custom API base URL (default: `https://api.omophub.com/v1`) |
+| `OMOPHUB_LOG_LEVEL` | | `debug` · `info` · `warn` · `error` (default: `info`) |
+| `OMOPHUB_ANALYTICS_OPTOUT` | | Set to `true` to disable analytics headers |
+| `HEALTH_PORT` | | Port for HTTP health endpoint (default: disabled) |
 
-## CLI Arguments
+### CLI Arguments
 
 ```bash
 npx omophub-mcp --api-key=oh_your_key --base-url=https://custom.api.com/v1 --health-port=8080
 ```
 
-## Health Endpoint
-
-When running in Docker or Kubernetes, enable the health endpoint for liveness/readiness probes:
+### Health Endpoint (Docker / Kubernetes)
 
 ```bash
-# Via environment variable
+# Enable health checks
 HEALTH_PORT=8080 OMOPHUB_API_KEY=oh_your_key npx omophub-mcp
-
-# Via CLI argument
-npx omophub-mcp --health-port=8080
 
 # Test it
 curl http://localhost:8080/health
@@ -152,15 +226,7 @@ curl http://localhost:8080/health
 
 The Docker image enables the health endpoint on port 8080 by default.
 
-## MCP Resources
-
-- `omophub://vocabularies` — Full vocabulary catalog with statistics
-- `omophub://vocabularies/{vocabulary_id}` — Details for a specific vocabulary
-
-## MCP Prompts
-
-- **phenotype-concept-set** — Guided workflow to build a concept set for a clinical phenotype
-- **code-lookup** — Look up and validate a medical code with mappings and hierarchy
+---
 
 ## Development
 
@@ -178,26 +244,28 @@ Run locally:
 OMOPHUB_API_KEY=oh_your_key npx tsx src/index.ts
 ```
 
+---
+
 ## Troubleshooting
 
-### "API key required" Error
+| Error | Solution |
+| :--- | :--- |
+| `API key required` | Set `OMOPHUB_API_KEY` in your environment or MCP config |
+| `Authentication failed` | API key may be invalid or expired - [generate a new one](https://omophub.com/dashboard/api-keys) |
+| `Rate limit exceeded` | Automatic retries are built in. For higher limits, [upgrade your plan](https://omophub.com/dashboard/billing) |
+| Tools not appearing | Restart your AI client, verify `npx omophub-mcp` runs without errors, check config path |
 
-Make sure `OMOPHUB_API_KEY` is set in your environment or MCP server config.
+---
 
-### "Authentication failed" Error
+## Links
 
-Your API key may be invalid or expired. Generate a new one at [omophub.com/dashboard/api-keys](https://omophub.com/dashboard/api-keys).
+- [Documentation](https://docs.omophub.com)
+- [Get an API Key](https://omophub.com/dashboard/api-keys)
+- [Python SDK](https://github.com/OMOPHub/omophub-python)
+- [Community & Support](https://github.com/OMOPHub/omophub-mcp/issues)
 
-### "Rate limit exceeded" Error
-
-The server automatically retries rate-limited requests. If you consistently hit limits, upgrade your plan at [omophub.com/dashboard/billing](https://omophub.com/dashboard/billing).
-
-### Tools Not Appearing
-
-1. Restart your AI client after configuration changes
-2. Check that `npx omophub-mcp` runs without errors
-3. Verify the config file path is correct for your client
+---
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+MIT - see [LICENSE](LICENSE)
