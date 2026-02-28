@@ -1,0 +1,36 @@
+test/client/api.test.ts
+  7d6c8c696c6afb94 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.6",
+  "base_commit_sha": "8c57fd6a2d36ce093c803e1c7c4e930244a04078",
+  "prompts": {
+    "7d6c8c696c6afb94": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ddbbae81-186c-4f54-b9b4-1ffbac83f7ef",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "c7474223f0b7c6ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "27509d6d-1471-4fec-aa3d-57c144616837",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    }
+  }
+}
