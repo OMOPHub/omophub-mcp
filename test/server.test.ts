@@ -22,6 +22,7 @@ vi.mock('../src/prompts/index.js', () => ({
   registerPrompts: vi.fn(),
 }));
 
+import { OmopHubClient } from '../src/client/api.js';
 import { registerPrompts } from '../src/prompts/index.js';
 import { registerResources } from '../src/resources/index.js';
 import { createServer } from '../src/server.js';
@@ -62,10 +63,7 @@ describe('createServer', () => {
   it('passes baseUrl to OmopHubClient', () => {
     createServer('test-api-key', 'https://custom.api.com/v1');
 
-    // The registration functions receive the client with the custom URL
-    expect(registerSearchTools).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({}),
-    );
+    // The registration functions receive an OmopHubClient instance
+    expect(registerSearchTools).toHaveBeenCalledWith(expect.anything(), expect.any(OmopHubClient));
   });
 });

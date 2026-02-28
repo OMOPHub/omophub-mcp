@@ -160,9 +160,12 @@ describe('main', () => {
   });
 
   it('exits with code 1 when API key is missing', async () => {
-    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    const exitError = new Error('process.exit called');
+    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw exitError;
+    });
 
-    await main();
+    await expect(main()).rejects.toThrow(exitError);
 
     expect(mockExit).toHaveBeenCalledWith(1);
     expect(logger.error).toHaveBeenCalled();

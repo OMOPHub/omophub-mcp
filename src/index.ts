@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { realpathSync } from 'node:fs';
 import url from 'node:url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { startHealthServer } from './health.js';
@@ -68,7 +69,16 @@ export async function main(): Promise<void> {
   }
 }
 
-const isDirectRun = process.argv[1] && import.meta.url === url.pathToFileURL(process.argv[1]).href;
+function isRunDirectly(): boolean {
+  if (!process.argv[1]) return false;
+  try {
+    return import.meta.url === url.pathToFileURL(realpathSync(process.argv[1])).href;
+  } catch {
+    return false;
+  }
+}
+
+const isDirectRun = isRunDirectly();
 
 if (isDirectRun) {
   main().catch((error: unknown) => {

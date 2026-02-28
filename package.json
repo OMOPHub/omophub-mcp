@@ -24,7 +24,7 @@
     "lint:fix": "biome check --write src/ test/",
     "typecheck": "tsc --noEmit",
     "format": "biome format --write src/ test/",
-    "format:check": "biome check src/ test/",
+    "format:check": "biome format --check src/ test/",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

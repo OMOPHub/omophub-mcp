@@ -1,5 +1,5 @@
 export function resolveApiKey(cliKey?: string): string {
-  const key = process.env.OMOPHUB_API_KEY || cliKey;
+  const key = cliKey || process.env.OMOPHUB_API_KEY;
 
   if (!key) {
     throw new Error(

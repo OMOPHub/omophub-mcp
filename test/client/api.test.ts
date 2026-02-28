@@ -109,7 +109,7 @@ describe('OmopHubClient', () => {
         status: 429,
         statusText: 'Too Many Requests',
         text: async () => '{"message":"Rate limited"}',
-        headers: new Headers({ 'Retry-After': '1' }),
+        headers: new Headers({ 'Retry-After': '0' }),
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -168,24 +168,19 @@ describe('OmopHubClient', () => {
   });
 
   it('respects analytics opt-out', async () => {
-    const original = process.env.OMOPHUB_ANALYTICS_OPTOUT;
-    process.env.OMOPHUB_ANALYTICS_OPTOUT = 'true';
+    vi.stubEnv('OMOPHUB_ANALYTICS_OPTOUT', 'true');
 
-    try {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ success: true, data: {} }),
-      });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: {} }),
+    });
 
-      const client = new OmopHubClient('oh_key', 'https://api.test.com/v1');
-      await client.request('/concepts/1', undefined, 'get_concept');
+    const client = new OmopHubClient('oh_key', 'https://api.test.com/v1');
+    await client.request('/concepts/1', undefined, 'get_concept');
 
-      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
-      const headers = options.headers as Record<string, string>;
-      expect(headers['X-MCP-Client']).toBeUndefined();
-      expect(headers['X-MCP-Tool']).toBeUndefined();
-    } finally {
-      process.env.OMOPHUB_ANALYTICS_OPTOUT = original;
-    }
+    const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const headers = options.headers as Record<string, string>;
+    expect(headers['X-MCP-Client']).toBeUndefined();
+    expect(headers['X-MCP-Tool']).toBeUndefined();
   });
 });

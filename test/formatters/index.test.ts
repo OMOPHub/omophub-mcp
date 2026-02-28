@@ -10,6 +10,9 @@ import {
 import { formatErrorForMcp, OmopHubApiError } from '../../src/utils/errors.js';
 import conceptResponse from '../fixtures/concept-response.json';
 import hierarchyFixture from '../fixtures/hierarchy-response.json';
+import mappingsResponse from '../fixtures/mappings-response.json';
+import searchResponse from '../fixtures/search-response.json';
+import vocabulariesFixture from '../fixtures/vocabularies-response.json';
 
 // Formatter expects normalized shape with nested `concept` object
 const hierarchyResponse = {
@@ -30,9 +33,6 @@ const hierarchyResponse = {
     total_descendants: hierarchyFixture.data.total_descendants,
   },
 };
-import mappingsResponse from '../fixtures/mappings-response.json';
-import searchResponse from '../fixtures/search-response.json';
-import vocabulariesFixture from '../fixtures/vocabularies-response.json';
 
 // Formatter expects unwrapped data (Vocabulary[]), not the API's { vocabularies: [...] } wrapper
 const vocabulariesResponse = {

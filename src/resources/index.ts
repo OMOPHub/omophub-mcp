@@ -5,6 +5,7 @@ import type { Vocabulary } from '../client/types.js';
 import { vocabularyCache } from '../utils/cache.js';
 
 const PAGE_SIZE = 100;
+const CACHE_KEY = 'vocabularies:all';
 
 async function fetchAllVocabularies(
   client: OmopHubClient,
@@ -30,23 +31,26 @@ async function fetchAllVocabularies(
   return all;
 }
 
+async function getCachedVocabularies(
+  client: OmopHubClient,
+  toolName: string,
+): Promise<Vocabulary[]> {
+  const cached = vocabularyCache.get(CACHE_KEY) as { data: Vocabulary[] } | undefined;
+  if (cached) return cached.data;
+
+  const vocabs = await fetchAllVocabularies(client, toolName);
+  vocabularyCache.set(CACHE_KEY, { data: vocabs });
+  return vocabs;
+}
+
 export function registerResources(server: McpServer, client: OmopHubClient): void {
   // Static resource: vocabulary catalog
   server.resource('vocabulary-list', 'omophub://vocabularies', async (uri) => {
-    const cacheKey = 'vocabularies:all';
-    let cached = vocabularyCache.get(cacheKey) as { data: Vocabulary[] } | undefined;
-
-    if (!cached) {
-      const vocabs = await fetchAllVocabularies(client, 'resource:vocabulary-list');
-      cached = { data: vocabs };
-      vocabularyCache.set(cacheKey, cached);
-    }
-
-    const vocabs = cached.data;
+    const vocabs = await getCachedVocabularies(client, 'resource:vocabulary-list');
     const text = vocabs
       .map(
         (v) =>
-          `${v.vocabulary_id}: ${v.vocabulary_name}${v.concept_count ? ` (${v.concept_count.toLocaleString()} concepts)` : ''}`,
+          `${v.vocabulary_id}: ${v.vocabulary_name}${v.concept_count != null ? ` (${v.concept_count.toLocaleString()} concepts)` : ''}`,
       )
       .join('\n');
 
@@ -68,19 +72,9 @@ export function registerResources(server: McpServer, client: OmopHubClient): voi
 
   server.resource('vocabulary-details', vocabularyTemplate, async (uri, variables) => {
     const vocabularyId = String(variables.vocabulary_id);
+    const vocabs = await getCachedVocabularies(client, 'resource:vocabulary-details');
 
-    const cacheKey = 'vocabularies:all';
-    let cached = vocabularyCache.get(cacheKey) as { data: Vocabulary[] } | undefined;
-
-    if (!cached) {
-      const vocabs = await fetchAllVocabularies(client, 'resource:vocabulary-details');
-      cached = { data: vocabs };
-      vocabularyCache.set(cacheKey, cached);
-    }
-
-    const vocab = cached.data.find(
-      (v) => v.vocabulary_id.toLowerCase() === vocabularyId.toLowerCase(),
-    );
+    const vocab = vocabs.find((v) => v.vocabulary_id.toLowerCase() === vocabularyId.toLowerCase());
 
     if (!vocab) {
       return {
@@ -99,8 +93,10 @@ export function registerResources(server: McpServer, client: OmopHubClient): voi
       `Name: ${vocab.vocabulary_name}`,
       vocab.vocabulary_version ? `Version: ${vocab.vocabulary_version}` : null,
       vocab.vocabulary_reference ? `Reference: ${vocab.vocabulary_reference}` : null,
-      vocab.concept_count ? `Total Concepts: ${vocab.concept_count.toLocaleString()}` : null,
-      vocab.standard_concept_count
+      vocab.concept_count != null
+        ? `Total Concepts: ${vocab.concept_count.toLocaleString()}`
+        : null,
+      vocab.standard_concept_count != null
         ? `Standard Concepts: ${vocab.standard_concept_count.toLocaleString()}`
         : null,
     ].filter(Boolean);

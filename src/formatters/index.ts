@@ -33,7 +33,7 @@ export function formatConceptList(
   if (results.length === 0) {
     return {
       text: `No concepts found for "${query}". Try broader search terms or different vocabulary filters.`,
-      json: JSON.stringify({ results: [], total: 0, query }),
+      json: JSON.stringify({ results: [], total, page, total_pages: totalPages, query }),
     };
   }
 
@@ -133,7 +133,7 @@ export function formatMappings(
       source_concept_id: conceptId,
       source_concept_name: source?.concept_name,
       mapped: true,
-      total_mappings: mappings.length,
+      total_mappings: data.total_mappings ?? mappings.length,
       mappings: mappings.map((m: Mapping) => ({
         concept_id: m.concept_id,
         concept_name: m.concept_name,
@@ -161,7 +161,7 @@ export function formatHierarchy(
     if (!nodes || nodes.length === 0) return `\n**${label}:** None`;
     const lines = nodes.map(
       (n, i) =>
-        `${i + 1}. ${'  '.repeat(n.level ?? 0)}${n.concept_name} (ID: ${n.concept_id}, ${n.vocabulary_id})`,
+        `${i + 1}. ${'  '.repeat(Math.max(0, n.level ?? 0))}${n.concept_name} (ID: ${n.concept_id}, ${n.vocabulary_id})`,
     );
     return `\n**${label}** (${nodes.length}):\n${lines.join('\n')}`;
   };
@@ -229,7 +229,7 @@ export function formatVocabularyList(
 
   const lines = vocabs.map(
     (v, i) =>
-      `${i + 1}. **${v.vocabulary_id}** — ${v.vocabulary_name}${v.concept_count ? ` (${v.concept_count.toLocaleString()} concepts)` : ''}${v.vocabulary_version ? ` [v${v.vocabulary_version}]` : ''}`,
+      `${i + 1}. **${v.vocabulary_id}** — ${v.vocabulary_name}${v.concept_count != null ? ` (${v.concept_count.toLocaleString()} concepts)` : ''}${v.vocabulary_version ? ` [v${v.vocabulary_version}]` : ''}`,
   );
 
   const header = search

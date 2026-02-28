@@ -66,8 +66,8 @@ export function registerHierarchyTools(server: McpServer, client: OmopHubClient)
         const endpoint = endpointMap[direction ?? 'both'];
         const params: Record<string, string | number | boolean | undefined> = {};
 
-        if (max_levels) params.max_levels = max_levels;
-        if (max_results) params.page_size = max_results;
+        if (max_levels !== undefined) params.max_levels = max_levels;
+        if (max_results !== undefined) params.page_size = max_results;
         if (vocabulary_ids) params.vocabulary_ids = vocabulary_ids;
 
         const rawResponse = await client.request<RawHierarchyResponse>(
@@ -78,10 +78,8 @@ export function registerHierarchyTools(server: McpServer, client: OmopHubClient)
 
         // API returns flat concept fields — normalize into { concept: {...} } for formatter
         const raw = rawResponse.data;
-        const totalAncestors =
-          raw.total_ancestors ?? raw.hierarchy_summary?.total_ancestors;
-        const totalDescendants =
-          raw.total_descendants ?? raw.hierarchy_summary?.total_descendants;
+        const totalAncestors = raw.total_ancestors ?? raw.hierarchy_summary?.total_ancestors;
+        const totalDescendants = raw.total_descendants ?? raw.hierarchy_summary?.total_descendants;
 
         const response: ApiResponse<HierarchyResponse> = {
           ...rawResponse,

@@ -11,7 +11,11 @@ export function registerVocabularyTools(server: McpServer, client: OmopHubClient
     'list_vocabularies',
     'List all available medical vocabularies in the OMOP standardized vocabulary system with concept counts and metadata. Use this to understand what terminology systems are available (SNOMED CT, ICD-10-CM, RxNorm, LOINC, etc.) and their scope.',
     {
-      search: z.string().max(200).optional().describe('Optional search term to filter vocabularies by name'),
+      search: z
+        .string()
+        .max(200)
+        .optional()
+        .describe('Optional search term to filter vocabularies by name'),
     },
     async ({ search }) => {
       try {

@@ -25,9 +25,9 @@ describe('resolveApiKey', () => {
     expect(resolveApiKey('oh_cli_key')).toBe('oh_cli_key');
   });
 
-  it('env var takes precedence over CLI key', () => {
+  it('CLI key takes precedence over env var', () => {
     process.env.OMOPHUB_API_KEY = 'oh_env_key';
-    expect(resolveApiKey('oh_cli_key')).toBe('oh_env_key');
+    expect(resolveApiKey('oh_cli_key')).toBe('oh_cli_key');
   });
 
   it('throws with helpful message when both are missing', () => {

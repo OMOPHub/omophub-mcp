@@ -68,7 +68,7 @@ claude mcp add omophub -- npx -y omophub-mcp
 **Docker:**
 
 ```bash
-docker run -e OMOPHUB_API_KEY=oh_your_key_here -p 8080:8080 omophub/omophub-mcp
+docker run -i -e OMOPHUB_API_KEY=oh_your_key_here -p 8080:8080 omophub/omophub-mcp
 ```
 
 ### 3. Start Using It
