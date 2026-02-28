@@ -12,6 +12,7 @@ describe('OmopHubClient', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it('sends correct auth and user-agent headers', async () => {
