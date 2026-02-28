@@ -1,0 +1,40 @@
+{
+  "success": true,
+  "data": {
+    "source_concept": {
+      "concept_id": 201826,
+      "concept_name": "Type 2 diabetes mellitus",
+      "domain_id": "Condition",
+      "vocabulary_id": "SNOMED",
+      "concept_class_id": "Clinical Finding",
+      "standard_concept": "S",
+      "concept_code": "44054006"
+    },
+    "mappings": [
+      {
+        "concept_id": 45576876,
+        "concept_name": "Type 2 diabetes mellitus without complications",
+        "vocabulary_id": "ICD10CM",
+        "concept_code": "E11.9",
+        "domain_id": "Condition",
+        "standard_concept": null,
+        "concept_class_id": "4-char billing code",
+        "relationship_id": "Mapped from"
+      },
+      {
+        "concept_id": 45591072,
+        "concept_name": "Type 2 diabetes mellitus",
+        "vocabulary_id": "ICD10",
+        "concept_code": "E11",
+        "domain_id": "Condition",
+        "standard_concept": null,
+        "concept_class_id": "ICD10 code",
+        "relationship_id": "Mapped from"
+      }
+    ],
+    "total_mappings": 2
+  },
+  "meta": {
+    "execution_time_ms": 28
+  }
+}

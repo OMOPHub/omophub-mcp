@@ -1,0 +1,57 @@
+{
+  "success": true,
+  "data": {
+    "concept_id": 201826,
+    "concept_name": "Type 2 diabetes mellitus",
+    "vocabulary_id": "SNOMED",
+    "ancestors": [
+      {
+        "concept_id": 201820,
+        "concept_name": "Diabetes mellitus",
+        "domain_id": "Condition",
+        "vocabulary_id": "SNOMED",
+        "concept_class_id": "Clinical Finding",
+        "standard_concept": "S",
+        "concept_code": "73211009",
+        "level": 1
+      },
+      {
+        "concept_id": 4196413,
+        "concept_name": "Disorder of glucose metabolism",
+        "domain_id": "Condition",
+        "vocabulary_id": "SNOMED",
+        "concept_class_id": "Clinical Finding",
+        "standard_concept": "S",
+        "concept_code": "126877002",
+        "level": 2
+      }
+    ],
+    "descendants": [
+      {
+        "concept_id": 4193704,
+        "concept_name": "Type 2 diabetes mellitus without complication",
+        "domain_id": "Condition",
+        "vocabulary_id": "SNOMED",
+        "concept_class_id": "Clinical Finding",
+        "standard_concept": "S",
+        "concept_code": "313436004",
+        "level": 1
+      },
+      {
+        "concept_id": 443238,
+        "concept_name": "Diabetic retinopathy due to type 2 diabetes mellitus",
+        "domain_id": "Condition",
+        "vocabulary_id": "SNOMED",
+        "concept_class_id": "Clinical Finding",
+        "standard_concept": "S",
+        "concept_code": "422034002",
+        "level": 1
+      }
+    ],
+    "total_ancestors": 2,
+    "total_descendants": 2
+  },
+  "meta": {
+    "execution_time_ms": 67
+  }
+}

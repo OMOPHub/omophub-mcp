@@ -1,0 +1,50 @@
+{
+  "success": true,
+  "data": {
+    "vocabularies": [
+      {
+        "vocabulary_id": "SNOMED",
+        "vocabulary_name": "Systematic Nomenclature of Medicine - Clinical Terms",
+        "vocabulary_reference": "https://www.snomed.org/",
+        "vocabulary_version": "20240301",
+        "concept_count": 894567,
+        "standard_concept_count": 345678
+      },
+      {
+        "vocabulary_id": "ICD10CM",
+        "vocabulary_name": "International Classification of Diseases, Tenth Revision, Clinical Modification",
+        "vocabulary_reference": "https://www.cdc.gov/nchs/icd/icd10cm.htm",
+        "vocabulary_version": "2024",
+        "concept_count": 94567,
+        "standard_concept_count": 0
+      },
+      {
+        "vocabulary_id": "RxNorm",
+        "vocabulary_name": "RxNorm",
+        "vocabulary_reference": "https://www.nlm.nih.gov/research/umls/rxnorm/",
+        "vocabulary_version": "20240301",
+        "concept_count": 456789,
+        "standard_concept_count": 123456
+      },
+      {
+        "vocabulary_id": "LOINC",
+        "vocabulary_name": "Logical Observation Identifiers Names and Codes",
+        "vocabulary_reference": "https://loinc.org/",
+        "vocabulary_version": "2.77",
+        "concept_count": 98765,
+        "standard_concept_count": 87654
+      }
+    ]
+  },
+  "meta": {
+    "pagination": {
+      "page": 1,
+      "page_size": 100,
+      "total_items": 4,
+      "total_pages": 1,
+      "has_next": false,
+      "has_previous": false
+    },
+    "execution_time_ms": 15
+  }
+}
