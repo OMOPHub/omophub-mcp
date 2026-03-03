@@ -57,7 +57,7 @@ Sign up at [omophub.com](https://omophub.com) → create an API key in your [das
 <details open>
 <summary><strong>Claude Desktop</strong></summary>
 
-Add to `claude_desktop_config.json`:
+Open Claude Desktop settings > "Developer" tab > "Edit Config". Add to `claude_desktop_config.json`:
 
 ```json
 {
@@ -88,7 +88,7 @@ claude mcp add omophub -- npx -y omophub-mcp
 <details>
 <summary><strong>Cursor</strong></summary>
 
-Add to `.cursor/mcp.json`:
+Open the command palette and choose "Cursor Settings" > "MCP" > "Add new global MCP server". Add to `.cursor/mcp.json`:
 
 ```json
 {
