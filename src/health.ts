@@ -4,7 +4,7 @@ import { VERSION } from './version.js';
 
 const startTime = Date.now();
 
-function handleRequest(req: IncomingMessage, res: ServerResponse): void {
+export function handleHealthRequest(req: IncomingMessage, res: ServerResponse): boolean {
   if (req.method === 'GET' && req.url === '/health') {
     const body = JSON.stringify({
       status: 'ok',
@@ -19,8 +19,14 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
       'Cache-Control': 'no-store',
     });
     res.end(body);
-    return;
+    return true;
   }
+
+  return false;
+}
+
+function handleRequest(req: IncomingMessage, res: ServerResponse): void {
+  if (handleHealthRequest(req, res)) return;
 
   res.writeHead(404, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ error: 'Not found' }));
