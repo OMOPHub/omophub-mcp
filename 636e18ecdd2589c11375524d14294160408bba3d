@@ -1,0 +1,50 @@
+src/index.ts
+  6c7d5e9fc1dfaa8f 8,12-15,20-21,26-28,41-44,46-50,71-93,108-115,118,122
+src/transports/http.ts
+  6c7d5e9fc1dfaa8f 1-2,4-23,25-76
+src/health.ts
+  6c7d5e9fc1dfaa8f 7,22,25-29
+README.md
+  6c7d5e9fc1dfaa8f 131-146,151-155,223-225,230,232-237,242-243,245-248,250,252-253,257
+test/transports/http.test.ts
+  6c7d5e9fc1dfaa8f 1-100
+package.json
+  6c7d5e9fc1dfaa8f 20
+test/index.test.ts
+  6c7d5e9fc1dfaa8f 18-21,32,34,53-72,82-83,88-89,92,104-105,160-226,228-236,242-243,250-251,267-275,279,286-315,349,351
+Dockerfile
+  6c7d5e9fc1dfaa8f 19-20,22,25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "636e18ecdd2589c11375524d14294160408bba3d",
+  "prompts": {
+    "6c7d5e9fc1dfaa8f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f903ee15-3f9f-4939-8d49-967b47dcca4c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 469,
+      "total_deletions": 25,
+      "accepted_lines": 454,
+      "overriden_lines": 1
+    },
+    "c7474223f0b7c6ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "27509d6d-1471-4fec-aa3d-57c144616837",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    }
+  }
+}
