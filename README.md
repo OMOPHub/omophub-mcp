@@ -128,10 +128,31 @@ Add to `.vscode/mcp.json`:
 </details>
 
 <details>
+<summary><strong>Streamable HTTP (Remote / Hosted)</strong></summary>
+
+Run the MCP server as an HTTP service that clients connect to via URL:
+
+```bash
+# Start HTTP server on port 3100
+npx -y omophub-mcp --transport=http --port=3100 --api-key=oh_your_key_here
+
+# MCP endpoint: http://localhost:3100/mcp
+# Health check:  http://localhost:3100/health
+```
+
+Connect MCP clients to the `/mcp` endpoint. Useful for centralized deployments where multiple AI agents share one server instance.
+
+</details>
+
+<details>
 <summary><strong>Docker</strong></summary>
 
 ```bash
-docker run -i -e OMOPHUB_API_KEY=oh_your_key_here -p 8080:8080 omophub/omophub-mcp
+# HTTP mode (default in Docker) — serves MCP on port 3100
+docker run -e OMOPHUB_API_KEY=oh_your_key_here -p 3100:3100 omophub/omophub-mcp
+
+# Stdio mode (for piping)
+docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transport=stdio
 ```
 
 </details>
@@ -199,26 +220,41 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here -p 8080:8080 omophub/omophub-m
 | `OMOPHUB_BASE_URL` | | Custom API base URL (default: `https://api.omophub.com/v1`) |
 | `OMOPHUB_LOG_LEVEL` | | `debug` · `info` · `warn` · `error` (default: `info`) |
 | `OMOPHUB_ANALYTICS_OPTOUT` | | Set to `true` to disable analytics headers |
-| `HEALTH_PORT` | | Port for HTTP health endpoint (default: disabled) |
+| `MCP_TRANSPORT` | | `stdio` (default) or `http` |
+| `MCP_PORT` | | HTTP server port (default: `3100`, only used with `http` transport) |
+| `HEALTH_PORT` | | Port for standalone health endpoint in stdio mode (default: disabled) |
 
 ### CLI Arguments
 
 ```bash
-npx omophub-mcp --api-key=oh_your_key --base-url=https://custom.api.com/v1 --health-port=8080
+# Stdio mode (default)
+npx omophub-mcp --api-key=oh_your_key --base-url=https://custom.api.com/v1
+
+# HTTP mode
+npx omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
+
+# Stdio mode with standalone health endpoint
+npx omophub-mcp --api-key=oh_your_key --health-port=8080
 ```
 
 ### Health Endpoint (Docker / Kubernetes)
 
-```bash
-# Enable health checks
-HEALTH_PORT=8080 OMOPHUB_API_KEY=oh_your_key npx omophub-mcp
+In **HTTP mode**, the health endpoint is available at `/health` on the same port as the MCP endpoint:
 
-# Test it
-curl http://localhost:8080/health
+```bash
+npx omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
+curl http://localhost:3100/health
 # → {"status":"ok","version":"1.0.0","uptime_seconds":42}
 ```
 
-The Docker image enables the health endpoint on port 8080 by default.
+In **stdio mode**, use `--health-port` for a standalone health endpoint:
+
+```bash
+HEALTH_PORT=8080 OMOPHUB_API_KEY=oh_your_key npx omophub-mcp
+curl http://localhost:8080/health
+```
+
+The Docker image defaults to HTTP mode on port 3100 with health checks built in.
 
 ---
 
