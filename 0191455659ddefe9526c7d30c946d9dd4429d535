@@ -1,0 +1,42 @@
+Dockerfile
+  c27a70e027afe04d 1,24-27
+  7875ae36679c7e19 8-10,12,15,17,29
+docker-build.sh
+  7875ae36679c7e19 6,8-15,17-22,25,28
+  c27a70e027afe04d 1-2,4-5,7,16,23-24,26-27
+.dockerignore
+  c27a70e027afe04d 1-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "0191455659ddefe9526c7d30c946d9dd4429d535",
+  "prompts": {
+    "7875ae36679c7e19": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4affeb84-9df5-4db8-b24b-21e1e5902459",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 24,
+      "total_deletions": 18,
+      "accepted_lines": 24,
+      "overriden_lines": 0
+    },
+    "c27a70e027afe04d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "388ebd80-3389-4999-b5ee-58d1478ad99f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 39,
+      "total_deletions": 10,
+      "accepted_lines": 25,
+      "overriden_lines": 0
+    }
+  }
+}
