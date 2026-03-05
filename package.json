@@ -4,6 +4,7 @@
   "description": "MCP server for OHDSI OMOP standardized medical vocabularies — search, lookup, map, and navigate concepts via AI agents",
   "type": "module",
   "main": "dist/index.js",
+  "module": "./src/smithery.ts",
   "bin": {
     "omophub-mcp": "dist/index.js"
   },

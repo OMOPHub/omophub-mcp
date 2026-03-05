@@ -3,12 +3,28 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { handleHealthRequest } from '../health.js';
 import { logger } from '../utils/logger.js';
+import { VERSION } from '../version.js';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, mcp-session-id',
+  'Access-Control-Allow-Headers': 'Content-Type, mcp-session-id, Authorization',
   'Access-Control-Expose-Headers': 'mcp-session-id',
+};
+
+const SERVER_CARD = {
+  serverInfo: { name: 'omophub', version: VERSION },
+  authentication: { required: true, schemes: ['bearer'] },
+  tools: [
+    { name: 'search_concepts' },
+    { name: 'get_concept' },
+    { name: 'get_concept_by_code' },
+    { name: 'map_concept' },
+    { name: 'get_hierarchy' },
+    { name: 'list_vocabularies' },
+  ],
+  resources: [{ name: 'vocabulary-list' }, { name: 'vocabulary-details' }],
+  prompts: [{ name: 'phenotype-concept-set' }, { name: 'code-lookup' }],
 };
 
 function setCorsHeaders(res: ServerResponse): void {
@@ -41,8 +57,26 @@ export async function startHttpTransport(mcpServer: McpServer, port: number): Pr
     // Health endpoint
     if (handleHealthRequest(req, res)) return;
 
+    // Server card for Smithery discovery
+    if (req.url === '/.well-known/mcp/server-card.json' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(SERVER_CARD));
+      return;
+    }
+
     // MCP endpoint
     if (req.url === '/mcp') {
+      // Check for Authorization header
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.writeHead(401, {
+          'Content-Type': 'application/json',
+          'WWW-Authenticate': 'Bearer realm="omophub-mcp"',
+        });
+        res.end(JSON.stringify({ error: 'Authentication required. Provide a Bearer token.' }));
+        return;
+      }
+
       try {
         await transport.handleRequest(req, res);
       } catch (error) {

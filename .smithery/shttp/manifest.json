@@ -1,0 +1,267 @@
+{
+  "payload": {
+    "type": "hosted",
+    "stateful": false,
+    "hasAuthAdapter": false,
+    "configSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "omophubApiKey": {
+          "type": "string",
+          "description": "Your OMOPHub API key. Get one at https://omophub.com/dashboard/api-keys"
+        }
+      },
+      "required": [
+        "omophubApiKey"
+      ],
+      "additionalProperties": false
+    },
+    "serverCard": {
+      "serverInfo": {
+        "name": "omophub",
+        "version": "1.0.0",
+        "description": "Access OHDSI standardized medical vocabularies — search concepts, navigate hierarchies, and map between clinical coding systems like SNOMED CT, ICD-10, RxNorm, and LOINC."
+      },
+      "tools": [
+        {
+          "name": "search_concepts",
+          "description": "Search for medical concepts across OHDSI standardized vocabularies by name, synonym, or clinical term. Returns matching concepts with IDs, names, vocabulary, domain, and standard status. Use this when you need to find the OMOP concept ID for a medical term. Examples: 'type 2 diabetes', 'metformin 500mg', 'systolic blood pressure', 'HbA1c'.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500,
+                "description": "The medical term or concept name to search for"
+              },
+              "vocabulary_ids": {
+                "description": "Comma-separated vocabulary IDs to filter by. Examples: 'SNOMED', 'ICD10CM', 'RxNorm', 'LOINC'. Leave empty to search all vocabularies.",
+                "type": "string",
+                "maxLength": 200
+              },
+              "domain_ids": {
+                "description": "Comma-separated domain IDs to filter by. Examples: 'Condition', 'Drug', 'Measurement', 'Procedure'. Leave empty for all domains.",
+                "type": "string",
+                "maxLength": 200
+              },
+              "standard_concept": {
+                "description": "Filter by standard concept status: 'S' for Standard, 'C' for Classification. Omit to search all.",
+                "type": "string",
+                "enum": [
+                  "S",
+                  "C"
+                ]
+              },
+              "page": {
+                "default": 1,
+                "description": "Page number (1-based, default 1)",
+                "type": "number",
+                "minimum": 1
+              },
+              "page_size": {
+                "default": 10,
+                "description": "Number of results to return (1-50, default 10)",
+                "type": "number",
+                "minimum": 1,
+                "maximum": 50
+              }
+            },
+            "required": [
+              "query"
+            ],
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          },
+          "execution": {
+            "taskSupport": "forbidden"
+          }
+        },
+        {
+          "name": "get_concept",
+          "description": "Get detailed information about a specific OMOP concept by its numeric concept_id. Returns the concept name, vocabulary, domain, concept class, standard status, valid dates, and synonyms. Use this when you already have a concept_id and need its details.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "concept_id": {
+                "type": "number",
+                "description": "The OMOP concept_id (numeric identifier)"
+              }
+            },
+            "required": [
+              "concept_id"
+            ],
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          },
+          "execution": {
+            "taskSupport": "forbidden"
+          }
+        },
+        {
+          "name": "get_concept_by_code",
+          "description": "Look up an OMOP concept using a vocabulary-specific code and vocabulary ID. Both parameters are required to avoid ambiguity — the same code can exist in multiple vocabularies (e.g., 'E11' exists in both ICD10CM and ICD10). If multiple concepts share the same code within a vocabulary, all matches are returned — prefer the one with standard_concept='S'.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "vocabulary_id": {
+                "type": "string",
+                "maxLength": 50,
+                "description": "The vocabulary system. Examples: 'ICD10CM', 'SNOMED', 'RxNorm', 'LOINC', 'CPT4', 'HCPCS', 'NDC'"
+              },
+              "concept_code": {
+                "type": "string",
+                "maxLength": 50,
+                "description": "The vocabulary-specific code. Examples: 'E11.9' (ICD-10), '44054006' (SNOMED), '4850' (LOINC)"
+              }
+            },
+            "required": [
+              "vocabulary_id",
+              "concept_code"
+            ],
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          },
+          "execution": {
+            "taskSupport": "forbidden"
+          }
+        },
+        {
+          "name": "map_concept",
+          "description": "Find mappings FROM a source concept TO equivalent concepts in other vocabularies. The concept_id you provide is always the SOURCE — results show what it maps TO. Returns cross-vocabulary mappings with relationship types and mapping quality. If no mappings exist, the response explicitly states 'No mappings found' with mapped=false in JSON — never returns ambiguous empty results. Example: provide a SNOMED concept_id and filter by target_vocabularies='ICD10CM' to get the ICD-10 equivalent.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "concept_id": {
+                "type": "number",
+                "description": "The source OMOP concept_id to map FROM"
+              },
+              "target_vocabularies": {
+                "description": "Comma-separated vocabulary IDs to map TO. Examples: 'ICD10CM', 'SNOMED', 'RxNorm'. Omit to see all available mappings.",
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "concept_id"
+            ],
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          },
+          "execution": {
+            "taskSupport": "forbidden"
+          }
+        },
+        {
+          "name": "get_hierarchy",
+          "description": "Navigate the vocabulary hierarchy for a concept. Use direction='up' for ancestors (broader terms like 'Diabetes mellitus' → 'Metabolic disease'), direction='down' for descendants (narrower terms, essential for building concept sets in phenotype definitions), or direction='both' for full hierarchical context. Results are capped at max_results nodes (default 500). If truncated, the response will indicate total available count so you can narrow with vocabulary_ids or reduce max_levels.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "concept_id": {
+                "type": "number",
+                "description": "The OMOP concept_id"
+              },
+              "direction": {
+                "default": "both",
+                "description": "Hierarchy direction: 'up' for ancestors, 'down' for descendants, 'both' for full context (default: 'both')",
+                "type": "string",
+                "enum": [
+                  "up",
+                  "down",
+                  "both"
+                ]
+              },
+              "max_levels": {
+                "description": "Maximum levels to traverse (default 5 for 'up', 10 for 'down', 5/3 for 'both')",
+                "type": "number"
+              },
+              "max_results": {
+                "default": 500,
+                "description": "Maximum number of nodes to return (1-500, default 500). Use a smaller value for broad concepts.",
+                "type": "number",
+                "minimum": 1,
+                "maximum": 500
+              },
+              "vocabulary_ids": {
+                "description": "Comma-separated vocabulary IDs to filter results. Leave empty for all.",
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "concept_id"
+            ],
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          },
+          "execution": {
+            "taskSupport": "forbidden"
+          }
+        },
+        {
+          "name": "list_vocabularies",
+          "description": "List all available medical vocabularies in the OMOP standardized vocabulary system with concept counts and metadata. Use this to understand what terminology systems are available (SNOMED CT, ICD-10-CM, RxNorm, LOINC, etc.) and their scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "search": {
+                "description": "Optional search term to filter vocabularies by name",
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          },
+          "execution": {
+            "taskSupport": "forbidden"
+          }
+        }
+      ],
+      "resources": [
+        {
+          "name": "vocabulary-list",
+          "uri": "omophub://vocabularies"
+        }
+      ],
+      "prompts": [
+        {
+          "name": "phenotype-concept-set",
+          "description": "Build a concept set for a clinical phenotype definition. Guides the AI through searching for concepts, exploring hierarchies, and assembling a complete concept set.",
+          "arguments": [
+            {
+              "name": "condition",
+              "description": "The clinical condition or phenotype to define (e.g., \"Type 2 diabetes mellitus\")",
+              "required": true
+            },
+            {
+              "name": "vocabularies",
+              "description": "Comma-separated vocabulary IDs to focus on (e.g., \"SNOMED,ICD10CM\"). Default: all",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "code-lookup",
+          "description": "Look up and validate a medical code. Resolves a vocabulary-specific code to its OMOP concept and shows mappings.",
+          "arguments": [
+            {
+              "name": "code",
+              "description": "The medical code to look up (e.g., \"E11.9\", \"44054006\", \"4850\")",
+              "required": true
+            },
+            {
+              "name": "vocabulary",
+              "description": "The vocabulary system (e.g., \"ICD10CM\", \"SNOMED\", \"LOINC\")",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    "source": {
+      "commit": "003b11aa5c51d09aa52e498127a423f35ad38038",
+      "branch": "main"
+    }
+  },
+  "artifacts": {
+    "module": "module.js",
+    "sourcemap": "module.js.map"
+  }
+}

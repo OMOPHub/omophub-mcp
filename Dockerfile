@@ -13,6 +13,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
+COPY smithery.yaml ./
 
 USER node
 
