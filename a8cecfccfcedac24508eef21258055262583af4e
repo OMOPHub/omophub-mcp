@@ -1,0 +1,115 @@
+smithery.yaml
+  5b13cf8cd8478139 1
+src/smithery.ts
+  2340940f67385bbf 1,4-7
+  d855690cd9a7ed2c 20
+  0283d45a3c215d2b 2-3,8
+  5b13cf8cd8478139 10
+  9a487ecc2baa2587 9,11-19
+src/transports/http.ts
+  0283d45a3c215d2b 6,11,15-29,60-65,69-79
+Dockerfile
+  0283d45a3c215d2b 16
+src/version.ts
+  d855690cd9a7ed2c 1
+package.json
+  2340940f67385bbf 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "a8cecfccfcedac24508eef21258055262583af4e",
+  "prompts": {
+    "0283d45a3c215d2b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1319187-18ad-4140-a9ff-0128af46aff2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 59,
+      "total_deletions": 1,
+      "accepted_lines": 39,
+      "overriden_lines": 0
+    },
+    "2340940f67385bbf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d780e13a-c485-46b9-a115-d9880224c3a0",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 15,
+      "accepted_lines": 6,
+      "overriden_lines": 0
+    },
+    "5b13cf8cd8478139": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cf401c39-ab4f-402d-90f6-0be96ebd5716",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 15,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    },
+    "9a487ecc2baa2587": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4395d32d-7198-4c19-bbd4-7f8bb5dc9bec",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 10,
+      "total_deletions": 2,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    },
+    "c7474223f0b7c6ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "27509d6d-1471-4fec-aa3d-57c144616837",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    },
+    "d00d2c98a084379a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "62c178fb-6829-4188-8e8a-d45687bb9d1e",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 7,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "d855690cd9a7ed2c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5ec81d2-9d6e-4c38-9d2d-7b9c4ac7e741",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 5,
+      "total_deletions": 6,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
