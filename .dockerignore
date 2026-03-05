@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+*.md
+test/
+.env*
+.vscode
+.cursor
+coverage

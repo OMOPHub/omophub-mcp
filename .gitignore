@@ -843,3 +843,4 @@ PUBLISH.md
 # Coverage directory
 coverage/
 
+.doc
