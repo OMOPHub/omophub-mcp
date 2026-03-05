@@ -6,8 +6,8 @@
 </p>
 
 <p>
-  <a href="https://www.npmjs.com/package/omophub-mcp"><img src="https://img.shields.io/npm/v/omophub-mcp?style=flat-square&color=cb3837&label=npm" alt="npm version" /></a>
-  <a href="https://www.npmjs.com/package/omophub-mcp"><img src="https://img.shields.io/npm/dm/omophub-mcp?style=flat-square&color=blue" alt="npm downloads" /></a>
+  <a href="https://www.npmjs.com/package/@omophub/omophub-mcp"><img src="https://img.shields.io/npm/v/@omophub/omophub-mcp?style=flat-square&color=cb3837&label=npm" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/@omophub/omophub-mcp"><img src="https://img.shields.io/npm/dm/@omophub/omophub-mcp?style=flat-square&color=blue" alt="npm downloads" /></a>
   <a href="https://github.com/OMOPHub/omophub-mcp/blob/main/LICENSE"><img src="https://img.shields.io/github/license/OMOPHub/omophub-mcp?style=flat-square" alt="License" /></a>
   <a href="https://github.com/OMOPHub/omophub-mcp"><img src="https://img.shields.io/badge/TypeScript-5.x-3178c6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" /></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-green?style=flat-square" alt="MCP Compatible" /></a>
@@ -64,7 +64,7 @@ Open Claude Desktop settings > "Developer" tab > "Edit Config". Add to `claude_d
   "mcpServers": {
     "omophub": {
       "command": "npx",
-      "args": ["-y", "omophub-mcp"],
+      "args": ["-y", "@omophub/omophub-mcp"],
       "env": {
         "OMOPHUB_API_KEY": "oh_your_key_here"
       }
@@ -79,7 +79,7 @@ Open Claude Desktop settings > "Developer" tab > "Edit Config". Add to `claude_d
 <summary><strong>Claude Code</strong></summary>
 
 ```bash
-claude mcp add omophub -- npx -y omophub-mcp
+claude mcp add omophub -- npx -y @omophub/omophub-mcp
 # Then set OMOPHUB_API_KEY in your environment
 ```
 
@@ -95,7 +95,7 @@ Open the command palette and choose "Cursor Settings" > "MCP" > "Add new global 
   "mcpServers": {
     "omophub": {
       "command": "npx",
-      "args": ["-y", "omophub-mcp"],
+      "args": ["-y", "@omophub/omophub-mcp"],
       "env": {
         "OMOPHUB_API_KEY": "oh_your_key_here"
       }
@@ -116,7 +116,7 @@ Add to `.vscode/mcp.json`:
   "servers": {
     "omophub": {
       "command": "npx",
-      "args": ["-y", "omophub-mcp"],
+      "args": ["-y", "@omophub/omophub-mcp"],
       "env": {
         "OMOPHUB_API_KEY": "oh_your_key_here"
       }
@@ -134,7 +134,7 @@ Run the MCP server as an HTTP service that clients connect to via URL:
 
 ```bash
 # Start HTTP server on port 3100
-npx -y omophub-mcp --transport=http --port=3100 --api-key=oh_your_key_here
+npx -y @omophub/omophub-mcp --transport=http --port=3100 --api-key=oh_your_key_here
 
 # MCP endpoint: http://localhost:3100/mcp
 # Health check:  http://localhost:3100/health
@@ -228,13 +228,13 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transpor
 
 ```bash
 # Stdio mode (default)
-npx omophub-mcp --api-key=oh_your_key --base-url=https://custom.api.com/v1
+npx @omophub/omophub-mcp --api-key=oh_your_key --base-url=https://custom.api.com/v1
 
 # HTTP mode
-npx omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
+npx @omophub/omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
 
 # Stdio mode with standalone health endpoint
-npx omophub-mcp --api-key=oh_your_key --health-port=8080
+npx @omophub/omophub-mcp --api-key=oh_your_key --health-port=8080
 ```
 
 ### Health Endpoint (Docker / Kubernetes)
@@ -242,15 +242,15 @@ npx omophub-mcp --api-key=oh_your_key --health-port=8080
 In **HTTP mode**, the health endpoint is available at `/health` on the same port as the MCP endpoint:
 
 ```bash
-npx omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
+npx @omophub/omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
 curl http://localhost:3100/health
-# → {"status":"ok","version":"1.0.0","uptime_seconds":42}
+# → {"status":"ok","version":"1.1.0","uptime_seconds":42}
 ```
 
 In **stdio mode**, use `--health-port` for a standalone health endpoint:
 
 ```bash
-HEALTH_PORT=8080 OMOPHUB_API_KEY=oh_your_key npx omophub-mcp
+HEALTH_PORT=8080 OMOPHUB_API_KEY=oh_your_key npx @omophub/omophub-mcp
 curl http://localhost:8080/health
 ```
 
@@ -283,7 +283,7 @@ OMOPHUB_API_KEY=oh_your_key npx tsx src/index.ts
 | `API key required` | Set `OMOPHUB_API_KEY` in your environment or MCP config |
 | `Authentication failed` | API key may be invalid or expired - [generate a new one](https://omophub.com/dashboard/api-keys) |
 | `Rate limit exceeded` | Automatic retries are built in. For higher limits, [upgrade your plan](https://omophub.com/dashboard/billing) |
-| Tools not appearing | Restart your AI client, verify `npx omophub-mcp` runs without errors, check config path |
+| Tools not appearing | Restart your AI client, verify `npx @omophub/omophub-mcp` runs without errors, check config path |
 
 ---
 

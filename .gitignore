@@ -837,6 +837,9 @@ PUBLISH.md
 
 # MCP local config
 .mcp.json
+.mcpregistry_github_token
+.mcpregistry_registry_token
 
 # Coverage directory
 coverage/
+

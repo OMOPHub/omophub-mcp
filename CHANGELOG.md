@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0] - 2026-03-05
+
+### Added
+
+- Streamable HTTP transport (`--transport=http`) with `/mcp` endpoint
+- Health check endpoint (`/health`) for container orchestration
+- MCP Registry support (`server.json`, `mcpName`)
+- Scoped npm package (`@omophub/omophub-mcp`)
+
+### Changed
+
+- Package name from `omophub-mcp` to `@omophub/omophub-mcp`
+
 ## [1.0.0] - 2026-02-28
 
 ### Added
