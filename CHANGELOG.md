@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0] - 2026-03-27
+
+### Added
+
+- `semantic_search` tool — natural language concept search using neural embeddings
+- `find_similar_concepts` tool — find related concepts by semantic, lexical, or hybrid similarity
+- `explore_concept` tool — unified concept exploration (details + hierarchy + mappings in one call)
+
+### Fixed
+
+- Defensive handling of missing `similarity_score` in semantic search and similar results
+- Filter empty strings from comma-separated vocabulary/domain ID inputs
+
 ## [1.1.0] - 2026-03-05
 
 ### Added

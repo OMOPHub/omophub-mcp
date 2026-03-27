@@ -177,6 +177,9 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transpor
 | `map_concept` | Map a concept to equivalent concepts in other vocabularies |
 | `get_hierarchy` | Navigate concept hierarchy - ancestors, descendants, or both |
 | `list_vocabularies` | List available medical vocabularies with statistics |
+| `semantic_search` | Search using natural language with neural embeddings (understands clinical meaning) |
+| `find_similar_concepts` | Find concepts similar to a reference concept, name, or description |
+| `explore_concept` | Get concept details, hierarchy, and cross-vocabulary mappings in one call |
 
 ### Resources
 
@@ -207,6 +210,15 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transpor
 
 **Validate a code →** `get_concept_by_code` → `map_concept`
 > "Is ICD-10 code E11.9 valid? What does it map to in SNOMED?"
+
+**Semantic search →** `semantic_search`
+> "Find concepts related to 'heart attack'"
+
+**Explore a concept →** `explore_concept`
+> "Give me everything about SNOMED concept 201826"
+
+**Find similar →** `find_similar_concepts`
+> "What concepts are similar to 'Type 2 diabetes mellitus'?"
 
 ---
 
@@ -244,7 +256,7 @@ In **HTTP mode**, the health endpoint is available at `/health` on the same port
 ```bash
 npx @omophub/omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
 curl http://localhost:3100/health
-# → {"status":"ok","version":"1.1.0","uptime_seconds":42}
+# → {"status":"ok","version":"1.2.0","uptime_seconds":42}
 ```
 
 In **stdio mode**, use `--health-port` for a standalone health endpoint:

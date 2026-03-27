@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "data": {
+    "results": [
+      {
+        "concept_id": 312327,
+        "concept_name": "Acute myocardial infarction",
+        "domain_id": "Condition",
+        "vocabulary_id": "SNOMED",
+        "concept_class_id": "Clinical Finding",
+        "standard_concept": "S",
+        "concept_code": "57054005",
+        "similarity_score": 0.92,
+        "matched_text": "heart attack"
+      },
+      {
+        "concept_id": 4329847,
+        "concept_name": "Myocardial infarction",
+        "domain_id": "Condition",
+        "vocabulary_id": "SNOMED",
+        "concept_class_id": "Clinical Finding",
+        "standard_concept": "S",
+        "concept_code": "22298006",
+        "similarity_score": 0.87,
+        "matched_text": "heart attack"
+      }
+    ]
+  },
+  "meta": {
+    "execution_time_ms": 45
+  }
+}
