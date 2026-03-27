@@ -1,0 +1,25 @@
+.github/workflows/publish.yml
+  fbf8eddf7d63a736 15-16
+.github/workflows/ci.yml
+  fbf8eddf7d63a736 14,17-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.21",
+  "base_commit_sha": "8a62205632b0008af48baa3f95723d4fc2238646",
+  "prompts": {
+    "fbf8eddf7d63a736": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7194bf1-48e2-427b-93c7-45db94416fa3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 5,
+      "total_deletions": 5,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    }
+  }
+}
