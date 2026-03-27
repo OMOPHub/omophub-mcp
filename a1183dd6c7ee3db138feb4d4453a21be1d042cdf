@@ -1,0 +1,53 @@
+test/fixtures/similar-response.json
+  fbf8eddf7d63a736 1-36
+README.md
+  fbf8eddf7d63a736 180-182,214-222,259
+Dockerfile
+  fbf8eddf7d63a736 26
+src/tools/semantic-search.ts
+  fbf8eddf7d63a736 1-27,29-34,36-78,80-117
+test/fixtures/semantic-search-response.json
+  fbf8eddf7d63a736 1-32
+src/tools/similar.ts
+  fbf8eddf7d63a736 1-49,51-68,70-84,86-94,96-132,134-137,139-141,143-176,178-193
+src/tools/explore.ts
+  fbf8eddf7d63a736 1-27,29-49,51-57,59-124,126-145,147-161,163-173,175-190,192-197,199-202,204-211,213-248
+test/fixtures/relationships-response.json
+  fbf8eddf7d63a736 1-49
+server.json
+  fbf8eddf7d63a736 9,14
+src/tools/index.ts
+  fbf8eddf7d63a736 2,6-7
+CHANGELOG.md
+  fbf8eddf7d63a736 3-15
+src/server.ts
+  fbf8eddf7d63a736 7,11-12,28,30-31,33,43
+test/tools/semantic-search.test.ts
+  fbf8eddf7d63a736 1-3,5-124
+test/tools/explore.test.ts
+  fbf8eddf7d63a736 1-5,7-164
+package.json
+  fbf8eddf7d63a736 3
+test/tools/similar.test.ts
+  fbf8eddf7d63a736 1-3,5-132,134-172,174-210
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "a1183dd6c7ee3db138feb4d4453a21be1d042cdf",
+  "prompts": {
+    "fbf8eddf7d63a736": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7194bf1-48e2-427b-93c7-45db94416fa3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 1169,
+      "total_deletions": 38,
+      "accepted_lines": 1187,
+      "overriden_lines": 24
+    }
+  }
+}
