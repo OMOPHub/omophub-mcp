@@ -1,0 +1,36 @@
+{
+  "success": true,
+  "data": {
+    "similar_concepts": [
+      {
+        "concept_id": 4193704,
+        "concept_name": "Type 2 diabetes mellitus without complication",
+        "domain_id": "Condition",
+        "vocabulary_id": "SNOMED",
+        "concept_class_id": "Clinical Finding",
+        "standard_concept": "S",
+        "concept_code": "313436004",
+        "similarity_score": 0.94
+      },
+      {
+        "concept_id": 443238,
+        "concept_name": "Diabetic retinopathy due to type 2 diabetes mellitus",
+        "domain_id": "Condition",
+        "vocabulary_id": "SNOMED",
+        "concept_class_id": "Clinical Finding",
+        "standard_concept": "S",
+        "concept_code": "422034002",
+        "similarity_score": 0.85,
+        "similarity_explanation": "Related diabetic complication"
+      }
+    ],
+    "search_metadata": {
+      "algorithm_used": "hybrid",
+      "similarity_threshold": 0.7,
+      "results_returned": 2
+    }
+  },
+  "meta": {
+    "execution_time_ms": 120
+  }
+}

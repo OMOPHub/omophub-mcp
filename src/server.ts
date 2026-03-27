@@ -4,9 +4,12 @@ import { registerPrompts } from './prompts/index.js';
 import { registerResources } from './resources/index.js';
 import {
   registerConceptTools,
+  registerExploreTools,
   registerHierarchyTools,
   registerMappingTools,
   registerSearchTools,
+  registerSemanticSearchTools,
+  registerSimilarTools,
   registerVocabularyTools,
 } from './tools/index.js';
 import { logger } from './utils/logger.js';
@@ -22,9 +25,12 @@ export function createServer(apiKey: string, baseUrl?: string): McpServer {
 
   const client = new OmopHubClient(apiKey, baseUrl);
 
-  // Register all Phase 1 tools
+  // Register tools
   registerSearchTools(server, client);
+  registerSemanticSearchTools(server, client);
+  registerSimilarTools(server, client);
   registerConceptTools(server, client);
+  registerExploreTools(server, client);
   registerMappingTools(server, client);
   registerHierarchyTools(server, client);
   registerVocabularyTools(server, client);
@@ -34,7 +40,7 @@ export function createServer(apiKey: string, baseUrl?: string): McpServer {
   registerPrompts(server);
 
   logger.info('OMOPHub MCP server initialized', {
-    tools: 6,
+    tools: 9,
     resources: 2,
     prompts: 2,
   });
