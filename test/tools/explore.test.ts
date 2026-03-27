@@ -142,7 +142,7 @@ describe('explore_concept', () => {
     expect(text).not.toContain('MeSH');
   });
 
-  it('returns error when concept fetch fails', async () => {
+  it('propagates original error when concept fetch fails', async () => {
     const server = createMockServer();
     const client = createMockClient();
     client.request.mockRejectedValue(new Error('Network error'));
@@ -157,8 +157,10 @@ describe('explore_concept', () => {
       include_mappings: true,
     });
 
-    // When concept fetch fails via Promise.allSettled, concept is null → "not found" response
     expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('not found');
+    expect(result.content).toHaveLength(2);
+    // Should get the formatted error, not a generic "not found"
+    expect(result.content[0].text).toContain('failed');
+    expect(result.content[0].text).not.toContain('not found');
   });
 });

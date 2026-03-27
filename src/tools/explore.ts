@@ -121,6 +121,17 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
         }
 
         if (!concept) {
+          // If the request was rejected, propagate the original error
+          if (conceptResult.status === 'rejected') {
+            const { text, json } = formatErrorForMcp(conceptResult.reason, 'explore_concept');
+            return {
+              content: [
+                { type: 'text' as const, text },
+                { type: 'text' as const, text: json },
+              ],
+              isError: true,
+            };
+          }
           return {
             content: [{ type: 'text' as const, text: `Concept ${concept_id} not found.` }],
             isError: true,
