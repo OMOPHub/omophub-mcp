@@ -50,7 +50,7 @@ Claude: Found it - E11.9 (Type 2 diabetes mellitus without complications)
 
 ### 1. Get an API Key
 
-Sign up at [omophub.com](https://omophub.com) → create an API key in your [dashboard](https://omophub.com/dashboard/api-keys).
+Sign up at [omophub.com](https://omophub.com) → create an API key in your [dashboard](https://dashboard.omophub.com/api-keys).
 
 ### 2. Add to Your AI Client
 
@@ -256,7 +256,7 @@ In **HTTP mode**, the health endpoint is available at `/health` on the same port
 ```bash
 npx @omophub/omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
 curl http://localhost:3100/health
-# → {"status":"ok","version":"1.2.0","uptime_seconds":42}
+# → {"status":"ok","version":"1.2.1","uptime_seconds":42}
 ```
 
 In **stdio mode**, use `--health-port` for a standalone health endpoint:
@@ -293,8 +293,8 @@ OMOPHUB_API_KEY=oh_your_key npx tsx src/index.ts
 | Error | Solution |
 | :--- | :--- |
 | `API key required` | Set `OMOPHUB_API_KEY` in your environment or MCP config |
-| `Authentication failed` | API key may be invalid or expired - [generate a new one](https://omophub.com/dashboard/api-keys) |
-| `Rate limit exceeded` | Automatic retries are built in. For higher limits, [upgrade your plan](https://omophub.com/dashboard/billing) |
+| `Authentication failed` | API key may be invalid or expired - [generate a new one](https://dashboard.omophub.com/api-keys) |
+| `Rate limit exceeded` | Automatic retries are built in. For higher limits, [upgrade your plan](https://dashboard.omophub.com/billing) |
 | Tools not appearing | Restart your AI client, verify `npx @omophub/omophub-mcp` runs without errors, check config path |
 
 ---
@@ -302,7 +302,7 @@ OMOPHUB_API_KEY=oh_your_key npx tsx src/index.ts
 ## Links
 
 - [Documentation](https://docs.omophub.com)
-- [Get an API Key](https://omophub.com/dashboard/api-keys)
+- [Get an API Key](https://dashboard.omophub.com/api-keys)
 - [Python SDK](https://github.com/OMOPHub/omophub-python)
 - [Community & Support](https://github.com/OMOPHub/omophub-mcp/issues)
 
