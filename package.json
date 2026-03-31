@@ -1,6 +1,6 @@
 {
   "name": "@omophub/omophub-mcp",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "mcpName": "io.github.OMOPHub/omophub-mcp",
   "description": "MCP server for OHDSI OMOP standardized medical vocabularies — search, lookup, map, and navigate concepts via AI agents",
   "type": "module",

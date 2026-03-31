@@ -4,7 +4,7 @@ export function resolveApiKey(cliKey?: string): string {
   if (!key) {
     throw new Error(
       'OMOPHub API key required. Set OMOPHUB_API_KEY environment variable or pass --api-key=KEY.\n' +
-        'Get your free API key at: https://omophub.com/dashboard/api-keys',
+        'Get your free API key at: https://dashboard.omophub.com/api-keys',
     );
   }
 

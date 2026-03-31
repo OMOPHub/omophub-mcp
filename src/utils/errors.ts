@@ -9,8 +9,8 @@ export class OmopHubApiError extends Error {
   }
 }
 
-const UPGRADE_URL = 'https://omophub.com/dashboard/billing';
-const API_KEYS_URL = 'https://omophub.com/dashboard/api-keys';
+const UPGRADE_URL = 'https://dashboard.omophub.com/billing';
+const API_KEYS_URL = 'https://dashboard.omophub.com/api-keys';
 
 export function formatErrorForMcp(
   error: unknown,
