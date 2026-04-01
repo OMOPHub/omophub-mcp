@@ -256,7 +256,7 @@ In **HTTP mode**, the health endpoint is available at `/health` on the same port
 ```bash
 npx @omophub/omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
 curl http://localhost:3100/health
-# → {"status":"ok","version":"1.2.1","uptime_seconds":42}
+# → {"status":"ok","version":"1.2.2","uptime_seconds":42}
 ```
 
 In **stdio mode**, use `--health-port` for a standalone health endpoint:
