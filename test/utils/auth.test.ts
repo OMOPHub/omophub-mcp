@@ -33,6 +33,6 @@ describe('resolveApiKey', () => {
   it('throws with helpful message when both are missing', () => {
     expect(() => resolveApiKey()).toThrow('OMOPHub API key required');
     expect(() => resolveApiKey()).toThrow('OMOPHUB_API_KEY');
-    expect(() => resolveApiKey()).toThrow('omophub.com/dashboard/api-keys');
+    expect(() => resolveApiKey()).toThrow('dashboard.omophub.com/api-keys');
   });
 });

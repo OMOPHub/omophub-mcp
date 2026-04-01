@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.2] - 2026-04-01
+
+### Fixed
+
+- Update dashboard URL in auth error message to `dashboard.omophub.com/api-keys`
+- Fix test assertion to match updated URL
+
+## [1.2.1] - 2026-03-31
+
+### Fixed
+
+- Propagate original error when concept fetch fails in `explore_concept` instead of generic "not found"
+- Update dashboard URLs in error messages and README to `dashboard.omophub.com`
+
 ## [1.2.0] - 2026-03-27
 
 ### Added
