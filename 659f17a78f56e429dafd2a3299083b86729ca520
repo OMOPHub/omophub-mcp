@@ -1,0 +1,25 @@
+CHANGELOG.md
+  fbf8eddf7d63a736 3-16
+test/utils/auth.test.ts
+  fbf8eddf7d63a736 36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "659f17a78f56e429dafd2a3299083b86729ca520",
+  "prompts": {
+    "fbf8eddf7d63a736": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7194bf1-48e2-427b-93c7-45db94416fa3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>",
+      "messages": [],
+      "total_additions": 15,
+      "total_deletions": 1,
+      "accepted_lines": 15,
+      "overriden_lines": 0
+    }
+  }
+}
