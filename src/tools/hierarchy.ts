@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { OmopHubClient } from '../client/api.js';
+import { resolveClient } from '../client/resolve.js';
 import type { ApiResponse, HierarchyResponse, RawHierarchyResponse } from '../client/types.js';
 import { formatHierarchy } from '../formatters/index.js';
 import { hierarchyCache } from '../utils/cache.js';
@@ -36,8 +37,9 @@ export function registerHierarchyTools(server: McpServer, client: OmopHubClient)
         .optional()
         .describe('Comma-separated vocabulary IDs to filter results. Leave empty for all.'),
     },
-    async ({ concept_id, direction, max_levels, max_results, vocabulary_ids }) => {
+    async ({ concept_id, direction, max_levels, max_results, vocabulary_ids }, extra) => {
       try {
+        const rc = resolveClient(extra, client);
         const cacheKey = `hierarchy:${concept_id}:${direction}:${max_levels}:${max_results}:${vocabulary_ids}`;
         const cached = hierarchyCache.get(cacheKey) as
           | { response: unknown; direction: 'up' | 'down' | 'both' }
@@ -70,7 +72,7 @@ export function registerHierarchyTools(server: McpServer, client: OmopHubClient)
         if (max_results !== undefined) params.page_size = max_results;
         if (vocabulary_ids) params.vocabulary_ids = vocabulary_ids;
 
-        const rawResponse = await client.request<RawHierarchyResponse>(
+        const rawResponse = await rc.request<RawHierarchyResponse>(
           `/concepts/${concept_id}/${endpoint}`,
           params,
           'get_hierarchy',

@@ -36,15 +36,22 @@ export interface SearchResult extends Concept {
 }
 
 export interface Mapping {
-  concept_id: number;
-  concept_name: string;
-  vocabulary_id: string;
-  concept_code: string;
-  domain_id: string;
-  standard_concept: string | null;
-  concept_class_id: string;
-  relationship_id: string;
+  // Flat target fields (expected by formatter)
+  concept_id?: number;
+  concept_name?: string;
+  vocabulary_id?: string;
+  concept_code?: string;
+  domain_id?: string;
+  standard_concept?: string | null;
+  concept_class_id?: string;
+  relationship_id?: string;
   relationship_name?: string;
+  // API response format (target/source split)
+  target_concept_id?: number;
+  target_concept_name?: string;
+  source_concept_id?: number;
+  source_concept_name?: string;
+  confidence?: number;
 }
 
 export interface HierarchyNode extends Concept {

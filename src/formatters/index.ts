@@ -100,6 +100,25 @@ export function formatConcept(concept: Concept): { text: string; json: string } 
   };
 }
 
+/** Normalize a mapping to flat target fields regardless of API shape */
+function normalizeMapping(m: Mapping): {
+  concept_id: number | undefined;
+  concept_name: string;
+  vocabulary_id: string;
+  concept_code: string;
+  relationship_id: string;
+  standard_concept: string | null | undefined;
+} {
+  return {
+    concept_id: m.concept_id ?? m.target_concept_id,
+    concept_name: m.concept_name ?? m.target_concept_name ?? 'Unknown',
+    vocabulary_id: m.vocabulary_id ?? '',
+    concept_code: m.concept_code ?? '',
+    relationship_id: m.relationship_id ?? 'Maps to',
+    standard_concept: m.standard_concept,
+  };
+}
+
 export function formatMappings(
   response: ApiResponse<MappingsResponse>,
   conceptId: number,
@@ -122,10 +141,14 @@ export function formatMappings(
   const source = data.source_concept;
   const header = `Mappings for **${source?.concept_name || `Concept ${conceptId}`}** (${source?.vocabulary_id || 'unknown'} → targets):`;
 
-  const lines = mappings.map(
-    (m: Mapping, i: number) =>
-      `${i + 1}. **${m.concept_name}** (ID: ${m.concept_id})\n   ${m.vocabulary_id} | Code: ${m.concept_code} | Relationship: ${m.relationship_id}`,
-  );
+  const normalized = mappings.map(normalizeMapping);
+
+  const lines = normalized.map((m, i) => {
+    const idPart = m.concept_id ? ` (ID: ${m.concept_id})` : '';
+    const vocabPart = m.vocabulary_id ? ` ${m.vocabulary_id} |` : '';
+    const codePart = m.concept_code ? ` Code: ${m.concept_code} |` : '';
+    return `${i + 1}. **${m.concept_name}**${idPart}\n  ${vocabPart}${codePart} Relationship: ${m.relationship_id}`;
+  });
 
   return {
     text: `${header}\n\n${lines.join('\n\n')}`,
@@ -134,11 +157,11 @@ export function formatMappings(
       source_concept_name: source?.concept_name,
       mapped: true,
       total_mappings: data.total_mappings ?? mappings.length,
-      mappings: mappings.map((m: Mapping) => ({
+      mappings: normalized.map((m) => ({
         concept_id: m.concept_id,
         concept_name: m.concept_name,
-        vocabulary_id: m.vocabulary_id,
-        concept_code: m.concept_code,
+        vocabulary_id: m.vocabulary_id || undefined,
+        concept_code: m.concept_code || undefined,
         relationship_id: m.relationship_id,
         standard_concept: m.standard_concept,
       })),

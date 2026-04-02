@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { OmopHubClient } from '../client/api.js';
+import { resolveClient } from '../client/resolve.js';
 import { formatErrorForMcp } from '../utils/errors.js';
 
 interface SimilarConcept {
@@ -74,17 +75,21 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
         .optional()
         .describe("Comma-separated domain IDs to filter results. Examples: 'Condition', 'Drug'."),
     },
-    async ({
-      concept_id,
-      concept_name,
-      query,
-      algorithm,
-      similarity_threshold,
-      page_size,
-      vocabulary_ids,
-      domain_ids,
-    }) => {
+    async (
+      {
+        concept_id,
+        concept_name,
+        query,
+        algorithm,
+        similarity_threshold,
+        page_size,
+        vocabulary_ids,
+        domain_ids,
+      },
+      extra,
+    ) => {
       try {
+        const rc = resolveClient(extra, client);
         // Validate exactly one input source
         const provided = [concept_id, concept_name, query].filter((v) => v !== undefined).length;
         if (provided !== 1) {
@@ -119,7 +124,7 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
             .map((s) => s.trim())
             .filter(Boolean);
 
-        const response = await client.post<SimilarResponse>(
+        const response = await rc.post<SimilarResponse>(
           '/search/similar',
           body,
           'find_similar_concepts',

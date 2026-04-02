@@ -85,7 +85,7 @@ describe('list_vocabularies', () => {
 
       expect(client.request).toHaveBeenCalledWith(
         '/vocabularies',
-        { include_stats: true, page_size: 100 },
+        { include_stats: true, page_size: 100, page: 1 },
         'list_vocabularies',
       );
       expect(result.content).toHaveLength(2);

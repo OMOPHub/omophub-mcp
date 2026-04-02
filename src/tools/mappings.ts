@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { OmopHubClient } from '../client/api.js';
+import { resolveClient } from '../client/resolve.js';
 import type { MappingsResponse } from '../client/types.js';
 import { formatMappings } from '../formatters/index.js';
 import { formatErrorForMcp } from '../utils/errors.js';
@@ -19,14 +20,15 @@ export function registerMappingTools(server: McpServer, client: OmopHubClient): 
           "Comma-separated vocabulary IDs to map TO. Examples: 'ICD10CM', 'SNOMED', 'RxNorm'. Omit to see all available mappings.",
         ),
     },
-    async ({ concept_id, target_vocabularies }) => {
+    async ({ concept_id, target_vocabularies }, extra) => {
       try {
+        const rc = resolveClient(extra, client);
         const params: Record<string, string | number | boolean | undefined> = {};
 
         // Map PRD param to actual API param (target_vocabularies → target_vocabulary)
         if (target_vocabularies) params.target_vocabulary = target_vocabularies;
 
-        const response = await client.request<MappingsResponse>(
+        const response = await rc.request<MappingsResponse>(
           `/concepts/${concept_id}/mappings`,
           params,
           'map_concept',

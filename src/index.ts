@@ -96,16 +96,24 @@ export function resolvePort(cliPort?: number): number {
 export async function main(): Promise<void> {
   const args = parseArgs(process.argv);
 
-  let apiKey: string;
-  try {
-    apiKey = resolveApiKey(args.apiKey);
-  } catch (error) {
-    logger.error(error instanceof Error ? error.message : String(error));
+  const apiKey = resolveApiKey(args.apiKey);
+  const transportType = resolveTransport(args.transport);
+
+  if (!apiKey && transportType === 'stdio') {
+    logger.error(
+      'OMOPHub API key required for stdio mode. Set OMOPHUB_API_KEY or pass --api-key=KEY.\n' +
+        'Get your free API key at: https://dashboard.omophub.com/api-keys',
+    );
     process.exit(1);
   }
 
+  if (!apiKey) {
+    logger.info(
+      'No default API key — hosted mode: all requests must include Authorization: Bearer header',
+    );
+  }
+
   const server = createServer(apiKey, args.baseUrl);
-  const transportType = resolveTransport(args.transport);
 
   if (transportType === 'http') {
     const port = resolvePort(args.port);

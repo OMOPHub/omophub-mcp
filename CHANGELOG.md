@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.3.0] - 2026-04-02
+
+### Added
+
+- Per-client API key resolution via `Authorization: Bearer` header for hosted deployments
+- Cloud Run deployment workflow (`.github/workflows/deploy-cloudrun.yml`)
+- Root endpoint `/` support for cleaner hosted URLs (alongside `/mcp` for backward compatibility)
+- CORS `Authorization` header support for cross-origin Bearer token requests
+
+### Fixed
+
+- `list_vocabularies` now fetches all pages (130+ vocabularies) instead of only the first 100 — SNOMED and other late-alphabet vocabularies are no longer missing
+- `map_concept` correctly displays target concept fields from the API response — no more `undefined` in mapping results
+
+### Changed
+
+- All 9 tools and 2 resources now resolve client per-request (supports multi-client hosted mode)
+- HTTP transport accepts both `/` and `/mcp` endpoints with query string support
+
 ## [1.2.2] - 2026-04-01
 
 ### Fixed
