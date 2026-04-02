@@ -20,12 +20,12 @@ function parseRetryAfter(header: string, fallbackMs: number): number {
 }
 
 export class OmopHubClient {
-  private readonly baseUrl: string;
+  readonly baseUrl: string;
   private readonly apiKey: string;
   private readonly analyticsOptout: boolean;
 
-  constructor(apiKey: string, baseUrl?: string) {
-    this.apiKey = apiKey;
+  constructor(apiKey: string | undefined, baseUrl?: string) {
+    this.apiKey = apiKey ?? '';
     this.baseUrl = (
       baseUrl ||
       process.env.OMOPHUB_BASE_URL ||

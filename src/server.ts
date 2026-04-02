@@ -15,7 +15,7 @@ import {
 import { logger } from './utils/logger.js';
 import { VERSION } from './version.js';
 
-export function createServer(apiKey: string, baseUrl?: string): McpServer {
+export function createServer(apiKey: string | undefined, baseUrl?: string): McpServer {
   const server = new McpServer({
     name: 'omophub',
     version: VERSION,

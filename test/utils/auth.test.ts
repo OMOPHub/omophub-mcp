@@ -30,9 +30,7 @@ describe('resolveApiKey', () => {
     expect(resolveApiKey('oh_cli_key')).toBe('oh_cli_key');
   });
 
-  it('throws with helpful message when both are missing', () => {
-    expect(() => resolveApiKey()).toThrow('OMOPHub API key required');
-    expect(() => resolveApiKey()).toThrow('OMOPHUB_API_KEY');
-    expect(() => resolveApiKey()).toThrow('dashboard.omophub.com/api-keys');
+  it('returns undefined when both are missing (hosted mode)', () => {
+    expect(resolveApiKey()).toBeUndefined();
   });
 });

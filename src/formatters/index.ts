@@ -107,6 +107,7 @@ function normalizeMapping(m: Mapping): {
   vocabulary_id: string;
   concept_code: string;
   relationship_id: string;
+  standard_concept: string | null | undefined;
 } {
   return {
     concept_id: m.concept_id ?? m.target_concept_id,
@@ -114,6 +115,7 @@ function normalizeMapping(m: Mapping): {
     vocabulary_id: m.vocabulary_id ?? '',
     concept_code: m.concept_code ?? '',
     relationship_id: m.relationship_id ?? 'Maps to',
+    standard_concept: m.standard_concept,
   };
 }
 
@@ -161,6 +163,7 @@ export function formatMappings(
         vocabulary_id: m.vocabulary_id || undefined,
         concept_code: m.concept_code || undefined,
         relationship_id: m.relationship_id,
+        standard_concept: m.standard_concept,
       })),
     }),
   };

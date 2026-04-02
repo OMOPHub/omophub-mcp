@@ -58,8 +58,8 @@ export function resolveClient(extra: ToolExtra, defaultClient: OmopHubClient): O
     return cached.client;
   }
 
-  // Create new client for this key
-  const client = new OmopHubClient(apiKey);
+  // Create new client for this key, inheriting baseUrl from the default client
+  const client = new OmopHubClient(apiKey, defaultClient.baseUrl);
   clientCache.set(apiKey, { client, lastUsed: Date.now() });
   pruneClientCache();
 
