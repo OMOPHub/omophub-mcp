@@ -7,7 +7,7 @@ import { logger } from '../utils/logger.js';
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, mcp-session-id',
+  'Access-Control-Allow-Headers': 'Content-Type, mcp-session-id, Authorization',
   'Access-Control-Expose-Headers': 'mcp-session-id',
 };
 
@@ -18,7 +18,7 @@ function setCorsHeaders(res: ServerResponse): void {
 }
 
 /**
- * Starts an HTTP server with Streamable HTTP MCP transport on /mcp
+ * Starts an HTTP server with Streamable HTTP MCP transport on /
  * and a health endpoint on /health.
  */
 export async function startHttpTransport(mcpServer: McpServer, port: number): Promise<Server> {
@@ -41,8 +41,9 @@ export async function startHttpTransport(mcpServer: McpServer, port: number): Pr
     // Health endpoint
     if (handleHealthRequest(req, res)) return;
 
-    // MCP endpoint
-    if (req.url === '/mcp') {
+    // MCP endpoint (/ for hosted, /mcp for self-hosted backward compat)
+    const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+    if (pathname === '/' || pathname === '/mcp') {
       try {
         await transport.handleRequest(req, res);
       } catch (error) {
@@ -66,7 +67,7 @@ export async function startHttpTransport(mcpServer: McpServer, port: number): Pr
 
   await new Promise<void>((resolve) => {
     httpServer.listen(port, () => {
-      logger.info(`OMOPHub MCP server listening on http://localhost:${String(port)}/mcp`);
+      logger.info(`OMOPHub MCP server listening on http://localhost:${String(port)}`);
       logger.info(`Health endpoint at http://localhost:${String(port)}/health`);
       resolve();
     });

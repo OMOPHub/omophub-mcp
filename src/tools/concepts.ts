@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { OmopHubClient } from '../client/api.js';
+import { resolveClient } from '../client/resolve.js';
 import type { ApiResponse, Concept } from '../client/types.js';
 import { formatConcept } from '../formatters/index.js';
 import { conceptCache } from '../utils/cache.js';
@@ -13,8 +14,9 @@ export function registerConceptTools(server: McpServer, client: OmopHubClient): 
     {
       concept_id: z.number().describe('The OMOP concept_id (numeric identifier)'),
     },
-    async ({ concept_id }) => {
+    async ({ concept_id }, extra) => {
       try {
+        const rc = resolveClient(extra, client);
         const cacheKey = `concept:${concept_id}`;
         const cached = conceptCache.get(cacheKey) as ApiResponse<Concept> | undefined;
 
@@ -28,7 +30,7 @@ export function registerConceptTools(server: McpServer, client: OmopHubClient): 
           };
         }
 
-        const response = await client.request<Concept>(
+        const response = await rc.request<Concept>(
           `/concepts/${concept_id}`,
           undefined,
           'get_concept',
@@ -73,8 +75,9 @@ export function registerConceptTools(server: McpServer, client: OmopHubClient): 
           "The vocabulary-specific code. Examples: 'E11.9' (ICD-10), '44054006' (SNOMED), '4850' (LOINC)",
         ),
     },
-    async ({ vocabulary_id, concept_code }) => {
+    async ({ vocabulary_id, concept_code }, extra) => {
       try {
+        const rc = resolveClient(extra, client);
         const cacheKey = `code:${vocabulary_id}:${concept_code}`;
         const cached = conceptCache.get(cacheKey) as ApiResponse<Concept | Concept[]> | undefined;
 
@@ -90,7 +93,7 @@ export function registerConceptTools(server: McpServer, client: OmopHubClient): 
         }
 
         // Actual API uses /concepts/by-code/{vocabulary_id}/{concept_code}
-        const response = await client.request<Concept | Concept[]>(
+        const response = await rc.request<Concept | Concept[]>(
           `/concepts/by-code/${encodeURIComponent(vocabulary_id)}/${encodeURIComponent(concept_code)}`,
           undefined,
           'get_concept_by_code',

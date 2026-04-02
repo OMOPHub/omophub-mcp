@@ -1,0 +1,203 @@
+name: Deploy MCP Server to Cloud Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to deploy'
+        required: false
+        default: 'latest'
+        type: string
+      skip_health_check:
+        description: 'Skip health check (emergency deployment)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  GCP_PROJECT_ID: calios-457620
+  GCP_REGION: us-central1
+  SERVICE_NAME: omophub-mcp
+  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev
+  REPOSITORY: omophub-artifacts
+
+jobs:
+  deploy:
+    name: Build & Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "$ARTIFACT_REGISTRY" --quiet
+
+      - name: Set image tags
+        id: tags
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag || 'latest' }}
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          FULL_IMAGE="${ARTIFACT_REGISTRY}/${GCP_PROJECT_ID}/${REPOSITORY}/${SERVICE_NAME}"
+          echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "full_image=$FULL_IMAGE" >> "$GITHUB_OUTPUT"
+          echo "deploy_image=$FULL_IMAGE:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "sha_tag=$FULL_IMAGE:$GIT_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Build Docker image
+        env:
+          DEPLOY_IMAGE: ${{ steps.tags.outputs.deploy_image }}
+          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+        run: |
+          echo "Building ${SERVICE_NAME}..."
+          docker build -t "$DEPLOY_IMAGE" -t "$SHA_TAG" .
+
+      - name: Push Docker image
+        env:
+          DEPLOY_IMAGE: ${{ steps.tags.outputs.deploy_image }}
+          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+        run: |
+          echo "Pushing to Artifact Registry..."
+          docker push "$DEPLOY_IMAGE"
+          docker push "$SHA_TAG"
+
+      - name: Deploy to Cloud Run (no traffic)
+        id: deploy
+        env:
+          DEPLOY_IMAGE: ${{ steps.tags.outputs.deploy_image }}
+          OMOPHUB_API_KEY: ${{ secrets.OMOPHUB_API_KEY }}
+        run: |
+          echo "Deploying ${SERVICE_NAME} to Cloud Run..."
+          gcloud run deploy "$SERVICE_NAME" \
+            --image="$DEPLOY_IMAGE" \
+            --region="$GCP_REGION" \
+            --platform=managed \
+            --port=3100 \
+            --memory=256Mi \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=5 \
+            --concurrency=40 \
+            --cpu-throttling \
+            --timeout=60 \
+            --allow-unauthenticated \
+            --set-env-vars="MCP_TRANSPORT=http,MCP_PORT=3100,OMOPHUB_LOG_LEVEL=warn,OMOPHUB_API_KEY=${OMOPHUB_API_KEY}" \
+            --no-traffic \
+            --tag=candidate \
+            --quiet
+
+          # Get candidate URL
+          CANDIDATE_URL=$(gcloud run services describe "$SERVICE_NAME" \
+            --region="$GCP_REGION" \
+            --format='json(status.traffic)' | \
+            python3 -c "import sys,json; t=json.load(sys.stdin).get('status',{}).get('traffic',[]); print(next((x.get('url','') for x in t if x.get('tag')=='candidate'),''))" 2>/dev/null || true)
+
+          if [ -z "$CANDIDATE_URL" ]; then
+            echo "Error: Could not determine candidate revision URL for ${SERVICE_NAME} in ${GCP_REGION}"
+            exit 1
+          fi
+          echo "revision_url=${CANDIDATE_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for revision to be ready
+        run: |
+          echo "Waiting for revision to be ready..."
+          for i in $(seq 1 30); do
+            STATUS=$(gcloud run services describe "$SERVICE_NAME" \
+              --region="$GCP_REGION" \
+              --format='value(status.conditions.filter(type=Ready).status)' 2>/dev/null || echo "Unknown")
+            if [ "$STATUS" = "True" ]; then
+              echo "Revision is ready."
+              break
+            fi
+            echo "  Attempt $i/30: Status=$STATUS, waiting 10s..."
+            sleep 10
+          done
+
+          if [ "$STATUS" != "True" ]; then
+            echo "Error: Revision for ${SERVICE_NAME} in ${GCP_REGION} did not become ready after 5 minutes (status: $STATUS)"
+            exit 1
+          fi
+
+      - name: Health check
+        if: ${{ !inputs.skip_health_check }}
+        env:
+          REVISION_URL: ${{ steps.deploy.outputs.revision_url }}
+        run: |
+          HEALTH_URL="${REVISION_URL}/health"
+          echo "Health checking: $HEALTH_URL"
+          HTTP_CODE="000"
+          for i in $(seq 1 10); do
+            HTTP_CODE=$(curl -s --connect-timeout 5 --max-time 10 -o /tmp/health_response.txt -w '%{http_code}' "$HEALTH_URL" 2>/dev/null || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "Health check passed!"
+              cat /tmp/health_response.txt
+              break
+            fi
+            echo "  Attempt $i/10: HTTP $HTTP_CODE, retrying in 10s..."
+            sleep 10
+          done
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Health check failed after 10 attempts."
+            exit 1
+          fi
+
+      - name: Route 100% traffic
+        run: |
+          echo "Routing 100% traffic to new revision..."
+          REVISION=$(gcloud run services describe "$SERVICE_NAME" \
+            --region="$GCP_REGION" \
+            --format='json(status.traffic)' | \
+            python3 -c "import sys,json; t=json.load(sys.stdin).get('status',{}).get('traffic',[]); print(next((x.get('revisionName','') for x in t if x.get('tag')=='candidate'),''))" 2>/dev/null)
+          if [ -n "$REVISION" ]; then
+            gcloud run services update-traffic "$SERVICE_NAME" \
+              --region="$GCP_REGION" \
+              --to-revisions="$REVISION=100"
+            echo "Traffic routed to $REVISION"
+          else
+            echo "Error: Could not determine candidate revision for ${SERVICE_NAME} in ${GCP_REGION}" >&2
+            exit 1
+          fi
+
+      - name: Cleanup old revisions
+        if: always()
+        run: |
+          echo "Cleaning up old revisions (keeping last 2)..."
+          REVISIONS=$(gcloud run revisions list \
+            --service="$SERVICE_NAME" \
+            --region="$GCP_REGION" \
+            --format='value(name)' \
+            --sort-by='~createTime' 2>/dev/null || true)
+          COUNT=0
+          for REV in $REVISIONS; do
+            COUNT=$((COUNT + 1))
+            if [ $COUNT -gt 2 ]; then
+              echo "  Deleting: $REV"
+              gcloud run revisions delete "$REV" --region="$GCP_REGION" --quiet 2>/dev/null || true
+            fi
+          done
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" \
+            --region="$GCP_REGION" \
+            --format='value(status.url)' 2>/dev/null || echo "unknown")
+          echo "================================================"
+          echo "  MCP Server Deployment Summary"
+          echo "================================================"
+          echo "  Service:  ${SERVICE_NAME}"
+          echo "  Image:    ${{ steps.tags.outputs.deploy_image }}"
+          echo "  URL:      ${SERVICE_URL}"
+          echo "  Health:   ${SERVICE_URL}/health"
+          echo "  MCP:      ${SERVICE_URL}/mcp"
+          echo "================================================"

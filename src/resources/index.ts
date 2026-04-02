@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { OmopHubClient } from '../client/api.js';
+import { resolveClient } from '../client/resolve.js';
 import type { Vocabulary } from '../client/types.js';
 import { vocabularyCache } from '../utils/cache.js';
 
@@ -45,8 +46,9 @@ async function getCachedVocabularies(
 
 export function registerResources(server: McpServer, client: OmopHubClient): void {
   // Static resource: vocabulary catalog
-  server.resource('vocabulary-list', 'omophub://vocabularies', async (uri) => {
-    const vocabs = await getCachedVocabularies(client, 'resource:vocabulary-list');
+  server.resource('vocabulary-list', 'omophub://vocabularies', async (uri, extra) => {
+    const rc = resolveClient(extra, client);
+    const vocabs = await getCachedVocabularies(rc, 'resource:vocabulary-list');
     const text = vocabs
       .map(
         (v) =>
@@ -70,9 +72,10 @@ export function registerResources(server: McpServer, client: OmopHubClient): voi
     list: undefined,
   });
 
-  server.resource('vocabulary-details', vocabularyTemplate, async (uri, variables) => {
+  server.resource('vocabulary-details', vocabularyTemplate, async (uri, variables, extra) => {
+    const rc = resolveClient(extra, client);
     const vocabularyId = String(variables.vocabulary_id);
-    const vocabs = await getCachedVocabularies(client, 'resource:vocabulary-details');
+    const vocabs = await getCachedVocabularies(rc, 'resource:vocabulary-details');
 
     const vocab = vocabs.find((v) => v.vocabulary_id.toLowerCase() === vocabularyId.toLowerCase());
 

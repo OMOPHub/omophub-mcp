@@ -140,7 +140,48 @@ npx -y @omophub/omophub-mcp --transport=http --port=3100 --api-key=oh_your_key_h
 # Health check:  http://localhost:3100/health
 ```
 
-Connect MCP clients to the `/mcp` endpoint. Useful for centralized deployments where multiple AI agents share one server instance.
+Connect MCP clients to `/` or `/mcp`. Useful for centralized deployments where multiple AI agents share one server instance.
+
+</details>
+
+<details>
+<summary><strong>Hosted (mcp.omophub.com)</strong></summary>
+
+Connect directly to the OMOPHub-hosted MCP server — no installation required. Each client authenticates with their own API key via the `Authorization` header:
+
+**Claude Code:**
+```bash
+claude mcp add omophub --transport http \
+  -H "Authorization: Bearer oh_your_key_here" \
+  https://mcp.omophub.com
+```
+
+**VS Code** (`.vscode/mcp.json`):
+```json
+{
+  "servers": {
+    "omophub": {
+      "type": "http",
+      "url": "https://mcp.omophub.com",
+      "headers": { "Authorization": "Bearer oh_your_key_here" }
+    }
+  }
+}
+```
+
+**Cursor / Windsurf:**
+```json
+{
+  "mcpServers": {
+    "omophub": {
+      "url": "https://mcp.omophub.com",
+      "headers": { "Authorization": "Bearer oh_your_key_here" }
+    }
+  }
+}
+```
+
+> **Note:** Claude Desktop's Custom Connectors UI only supports OAuth and cannot send custom headers. Use the [npx setup](#claude-desktop) instead.
 
 </details>
 
@@ -256,7 +297,7 @@ In **HTTP mode**, the health endpoint is available at `/health` on the same port
 ```bash
 npx @omophub/omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
 curl http://localhost:3100/health
-# → {"status":"ok","version":"1.2.2","uptime_seconds":42}
+# → {"status":"ok","version":"1.3.0","uptime_seconds":42}
 ```
 
 In **stdio mode**, use `--health-port` for a standalone health endpoint:

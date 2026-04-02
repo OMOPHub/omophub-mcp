@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { OmopHubClient } from '../client/api.js';
+import { resolveClient } from '../client/resolve.js';
 import type { Concept, RawHierarchyResponse } from '../client/types.js';
 import { formatErrorForMcp } from '../utils/errors.js';
 
@@ -50,30 +51,24 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
           "Comma-separated vocabulary IDs to filter mappings. Examples: 'ICD10CM', 'SNOMED'.",
         ),
     },
-    async ({
-      concept_id,
-      include_hierarchy,
-      include_mappings,
-      hierarchy_levels,
-      target_vocabularies,
-    }) => {
+    async (
+      { concept_id, include_hierarchy, include_mappings, hierarchy_levels, target_vocabularies },
+      extra,
+    ) => {
       try {
+        const rc = resolveClient(extra, client);
         // Build parallel requests
         const requests: Promise<unknown>[] = [];
 
         // 1. Always fetch concept details
-        const conceptReq = client.request<Concept>(
-          `/concepts/${concept_id}`,
-          {},
-          'explore_concept',
-        );
+        const conceptReq = rc.request<Concept>(`/concepts/${concept_id}`, {}, 'explore_concept');
         requests.push(conceptReq);
 
         // 2. Optionally fetch hierarchy
         let hierarchyReq: Promise<unknown> | null = null;
         if (include_hierarchy !== false) {
           const levels = hierarchy_levels ?? 2;
-          hierarchyReq = client.request<RawHierarchyResponse>(
+          hierarchyReq = rc.request<RawHierarchyResponse>(
             `/concepts/${concept_id}/hierarchy`,
             { max_levels: levels },
             'explore_concept',
@@ -85,7 +80,7 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
         // (The /mappings endpoint has a schema resolution bug — using /relationships instead)
         let mappingsReq: Promise<unknown> | null = null;
         if (include_mappings !== false) {
-          mappingsReq = client.request<RelationshipsData>(
+          mappingsReq = rc.request<RelationshipsData>(
             `/concepts/${concept_id}/relationships`,
             { page_size: 100 },
             'explore_concept',

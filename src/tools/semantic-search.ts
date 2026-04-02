@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { OmopHubClient } from '../client/api.js';
+import { resolveClient } from '../client/resolve.js';
 import type { SearchResult } from '../client/types.js';
 import { formatErrorForMcp } from '../utils/errors.js';
 
@@ -51,8 +52,12 @@ export function registerSemanticSearchTools(server: McpServer, client: OmopHubCl
         .default(10)
         .describe('Number of results to return (1-50, default 10)'),
     },
-    async ({ query, vocabulary_ids, domain_ids, standard_concept, threshold, page_size }) => {
+    async (
+      { query, vocabulary_ids, domain_ids, standard_concept, threshold, page_size },
+      extra,
+    ) => {
       try {
+        const rc = resolveClient(extra, client);
         const params: Record<string, string | number | boolean | undefined> = {
           query,
           page_size: page_size ?? 10,
@@ -63,7 +68,7 @@ export function registerSemanticSearchTools(server: McpServer, client: OmopHubCl
         if (domain_ids) params.domain_ids = domain_ids;
         if (standard_concept) params.standard_concept = standard_concept;
 
-        const response = await client.request<{ results: SemanticResult[] }>(
+        const response = await rc.request<{ results: SemanticResult[] }>(
           '/concepts/semantic-search',
           params,
           'semantic_search',
