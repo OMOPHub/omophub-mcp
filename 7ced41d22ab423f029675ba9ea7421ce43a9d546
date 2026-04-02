@@ -1,0 +1,37 @@
+.github/workflows/deploy-cloudrun.yml
+  fbf8eddf7d63a736 94
+src/server.ts
+  fbf8eddf7d63a736 18
+src/utils/auth.ts
+  fbf8eddf7d63a736 1-2
+src/index.ts
+  fbf8eddf7d63a736 99-106,110-113
+src/formatters/index.ts
+  fbf8eddf7d63a736 110,118,166
+src/client/api.ts
+  fbf8eddf7d63a736 23,27-28
+src/client/resolve.ts
+  fbf8eddf7d63a736 61-62
+test/utils/auth.test.ts
+  fbf8eddf7d63a736 33-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "7ced41d22ab423f029675ba9ea7421ce43a9d546",
+  "prompts": {
+    "fbf8eddf7d63a736": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7194bf1-48e2-427b-93c7-45db94416fa3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub",
+      "messages": [],
+      "total_additions": 26,
+      "total_deletions": 28,
+      "accepted_lines": 26,
+      "overriden_lines": 0
+    }
+  }
+}
