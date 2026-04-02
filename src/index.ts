@@ -108,7 +108,9 @@ export async function main(): Promise<void> {
   }
 
   if (!apiKey) {
-    logger.info('No default API key — hosted mode: all requests must include Authorization: Bearer header');
+    logger.info(
+      'No default API key — hosted mode: all requests must include Authorization: Bearer header',
+    );
   }
 
   const server = createServer(apiKey, args.baseUrl);
