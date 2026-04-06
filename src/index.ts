@@ -3,6 +3,7 @@
 import { realpathSync } from 'node:fs';
 import url from 'node:url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { OmopHubClient } from './client/api.js';
 import { startHealthServer } from './health.js';
 import { createServer } from './server.js';
 import { startHttpTransport } from './transports/http.js';
@@ -113,13 +114,14 @@ export async function main(): Promise<void> {
     );
   }
 
-  const server = createServer(apiKey, args.baseUrl);
+  const defaultClient = new OmopHubClient(apiKey, args.baseUrl);
 
   if (transportType === 'http') {
     const port = resolvePort(args.port);
     logger.info('Starting OMOPHub MCP server (http transport)');
-    await startHttpTransport(server, port);
+    await startHttpTransport(createServer, defaultClient, port);
   } else {
+    const server = createServer(defaultClient);
     const transport = new StdioServerTransport();
     logger.info('Starting OMOPHub MCP server (stdio transport)');
     await server.connect(transport);

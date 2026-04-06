@@ -38,13 +38,15 @@ describe('createServer', () => {
   });
 
   it('returns an McpServer instance', () => {
-    const server = createServer('test-api-key');
+    const client = new OmopHubClient('test-api-key');
+    const server = createServer(client);
     expect(server).toBeDefined();
     expect(server).toHaveProperty('connect');
   });
 
   it('calls all tool registration functions', () => {
-    createServer('test-api-key');
+    const client = new OmopHubClient('test-api-key');
+    createServer(client);
 
     expect(registerSearchTools).toHaveBeenCalledOnce();
     expect(registerConceptTools).toHaveBeenCalledOnce();
@@ -54,16 +56,17 @@ describe('createServer', () => {
   });
 
   it('calls registerResources and registerPrompts', () => {
-    createServer('test-api-key');
+    const client = new OmopHubClient('test-api-key');
+    createServer(client);
 
     expect(registerResources).toHaveBeenCalledOnce();
     expect(registerPrompts).toHaveBeenCalledOnce();
   });
 
-  it('passes baseUrl to OmopHubClient', () => {
-    createServer('test-api-key', 'https://custom.api.com/v1');
+  it('passes client to registration functions', () => {
+    const client = new OmopHubClient('test-api-key', 'https://custom.api.com/v1');
+    createServer(client);
 
-    // The registration functions receive an OmopHubClient instance
-    expect(registerSearchTools).toHaveBeenCalledWith(expect.anything(), expect.any(OmopHubClient));
+    expect(registerSearchTools).toHaveBeenCalledWith(expect.anything(), client);
   });
 });
