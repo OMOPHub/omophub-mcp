@@ -75,7 +75,6 @@ jobs:
         id: deploy
         env:
           DEPLOY_IMAGE: ${{ steps.tags.outputs.deploy_image }}
-          OMOPHUB_API_KEY: ${{ secrets.OMOPHUB_API_KEY }}
         run: |
           echo "Deploying ${SERVICE_NAME} to Cloud Run..."
           gcloud run deploy "$SERVICE_NAME" \
@@ -83,7 +82,7 @@ jobs:
             --region="$GCP_REGION" \
             --platform=managed \
             --port=3100 \
-            --memory=256Mi \
+            --memory=512Mi \
             --cpu=1 \
             --min-instances=0 \
             --max-instances=5 \
