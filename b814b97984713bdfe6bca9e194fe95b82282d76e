@@ -1,0 +1,23 @@
+src/transports/http.ts
+  fbf8eddf7d63a736 56-78,80-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "b814b97984713bdfe6bca9e194fe95b82282d76e",
+  "prompts": {
+    "fbf8eddf7d63a736": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7194bf1-48e2-427b-93c7-45db94416fa3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub",
+      "messages": [],
+      "total_additions": 38,
+      "total_deletions": 18,
+      "accepted_lines": 30,
+      "overriden_lines": 1
+    }
+  }
+}
