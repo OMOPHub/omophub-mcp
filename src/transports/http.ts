@@ -53,7 +53,36 @@ export async function startHttpTransport(
 
     const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
     if (pathname === '/' || pathname === '/mcp') {
-      // Read body with size limit
+      const rawSessionId = req.headers['mcp-session-id'];
+      const sessionId = Array.isArray(rawSessionId) ? rawSessionId[0] : rawSessionId;
+
+      // GET (SSE stream) and DELETE (session close) carry no body — route directly
+      if (req.method === 'GET' || req.method === 'DELETE') {
+        if (sessionId && sessions.has(sessionId)) {
+          const transport = sessions.get(sessionId)!;
+          try {
+            await transport.handleRequest(req, res);
+          } catch (error) {
+            logger.error('MCP transport error', { error: String(error), sessionId });
+            if (!res.headersSent) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON_RPC_INTERNAL_ERROR);
+            }
+          }
+        } else {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              error: { code: -32000, message: 'Bad Request: No valid session ID provided' },
+              id: null,
+            }),
+          );
+        }
+        return;
+      }
+
+      // POST — read body with size limit
       const chunks: Buffer[] = [];
       let totalBytes = 0;
       let aborted = false;
@@ -91,9 +120,6 @@ export async function startHttpTransport(
         );
         return;
       }
-
-      const rawSessionId = req.headers['mcp-session-id'];
-      const sessionId = Array.isArray(rawSessionId) ? rawSessionId[0] : rawSessionId;
 
       // Existing session
       if (sessionId && sessions.has(sessionId)) {
