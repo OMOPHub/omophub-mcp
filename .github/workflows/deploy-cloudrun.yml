@@ -91,6 +91,8 @@ jobs:
             --timeout=60 \
             --allow-unauthenticated \
             --set-env-vars="MCP_TRANSPORT=http,MCP_PORT=3100,OMOPHUB_LOG_LEVEL=warn" \
+            --liveness-probe="httpGet,path=/health,port=3100,initialDelaySeconds=5,periodSeconds=10,failureThreshold=3" \
+            --startup-probe="tcpSocket,port=3100,periodSeconds=5,failureThreshold=6" \
             --no-traffic \
             --tag=candidate \
             --quiet
