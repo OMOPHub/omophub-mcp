@@ -1,0 +1,33 @@
+test/server.test.ts
+  fbf8eddf7d63a736 41-42,48-49,59-60,66-68,70
+src/transports/http.ts
+  fbf8eddf7d63a736 1,5-6,23-33,35,39-41,56-70,72-80,82-88,91-102,104-108,110,112-136,139-140,142,144-151,153
+src/index.ts
+  fbf8eddf7d63a736 6,117,122,124
+src/server.ts
+  fbf8eddf7d63a736 2,18
+test/transports/http.test.ts
+  fbf8eddf7d63a736 24,27-28,30,33-34,49,62,72,86
+test/index.test.ts
+  fbf8eddf7d63a736 284,305,314,317,363-364
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "a99a11a4144e48c58c4dbf3ef1d5e9c9a373889d",
+  "prompts": {
+    "fbf8eddf7d63a736": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7194bf1-48e2-427b-93c7-45db94416fa3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub",
+      "messages": [],
+      "total_additions": 149,
+      "total_deletions": 65,
+      "accepted_lines": 140,
+      "overriden_lines": 5
+    }
+  }
+}
