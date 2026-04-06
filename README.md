@@ -2,7 +2,7 @@
 
 <p>
   <strong>Medical vocabularies for AI agents.</strong><br/>
-  Search, map, and navigate 5M+ OMOP concepts: SNOMED CT, ICD-10, RxNorm, LOINC, and more. Directly from Claude, Cursor, VS Code, or any MCP-compatible client.
+  Search, map, and navigate 10M+ OMOP concepts: SNOMED CT, ICD-10, RxNorm, LOINC, and more. Directly from Claude, Cursor, VS Code, or any MCP-compatible client.
 </p>
 
 <p>
@@ -147,7 +147,7 @@ Connect MCP clients to `/` or `/mcp`. Useful for centralized deployments where m
 <details>
 <summary><strong>Hosted (mcp.omophub.com)</strong></summary>
 
-Connect directly to the OMOPHub-hosted MCP server — no installation required. Each client authenticates with their own API key via the `Authorization` header:
+Connect directly to the OMOPHub-hosted MCP server - no installation required. Each client authenticates with their own API key via the `Authorization` header:
 
 **Claude Code:**
 ```bash
@@ -189,7 +189,7 @@ claude mcp add omophub --transport http \
 <summary><strong>Docker</strong></summary>
 
 ```bash
-# HTTP mode (default in Docker) — serves MCP on port 3100
+# HTTP mode (default in Docker) - serves MCP on port 3100
 docker run -e OMOPHUB_API_KEY=oh_your_key_here -p 3100:3100 omophub/omophub-mcp
 
 # Stdio mode (for piping)
@@ -297,7 +297,7 @@ In **HTTP mode**, the health endpoint is available at `/health` on the same port
 ```bash
 npx @omophub/omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
 curl http://localhost:3100/health
-# → {"status":"ok","version":"1.3.0","uptime_seconds":42}
+# → {"status":"ok","version":"1.3.1","uptime_seconds":42}
 ```
 
 In **stdio mode**, use `--health-port` for a standalone health endpoint:

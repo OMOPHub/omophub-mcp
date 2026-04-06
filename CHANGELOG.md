@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.1] - 2026-04-06
+
+### Fixed
+
+- Per-session HTTP transport - each client gets its own MCP session, fixing 500 errors on concurrent connections
+- GET (SSE) and DELETE (session close) no longer fail with "Parse error" from body-reading logic
+- Request body size limit (1 MB) to prevent memory exhaustion
+- Consistent JSON-RPC error format on all 500 responses
+- Safe `mcp-session-id` header normalization (handles string arrays)
+
+### Changed
+
+- HTTP transport uses per-session architecture with session tracking via `mcp-session-id`
+
 ## [1.3.0] - 2026-04-02
 
 ### Added
@@ -11,8 +25,8 @@
 
 ### Fixed
 
-- `list_vocabularies` now fetches all pages (130+ vocabularies) instead of only the first 100 — SNOMED and other late-alphabet vocabularies are no longer missing
-- `map_concept` correctly displays target concept fields from the API response — no more `undefined` in mapping results
+- `list_vocabularies` now fetches all pages (130+ vocabularies) instead of only the first 100 - SNOMED and other late-alphabet vocabularies are no longer missing
+- `map_concept` correctly displays target concept fields from the API response - no more `undefined` in mapping results
 
 ### Changed
 
@@ -37,9 +51,9 @@
 
 ### Added
 
-- `semantic_search` tool — natural language concept search using neural embeddings
-- `find_similar_concepts` tool — find related concepts by semantic, lexical, or hybrid similarity
-- `explore_concept` tool — unified concept exploration (details + hierarchy + mappings in one call)
+- `semantic_search` tool - natural language concept search using neural embeddings
+- `find_similar_concepts` tool - find related concepts by semantic, lexical, or hybrid similarity
+- `explore_concept` tool - unified concept exploration (details + hierarchy + mappings in one call)
 
 ### Fixed
 

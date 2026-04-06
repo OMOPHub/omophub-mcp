@@ -23,7 +23,7 @@ EXPOSE 3100
 
 LABEL org.opencontainers.image.title="omophub-mcp" \
       org.opencontainers.image.description="MCP server for OHDSI OMOP standardized medical vocabularies" \
-      org.opencontainers.image.version="1.3.0" \
+      org.opencontainers.image.version="1.3.1" \
       org.opencontainers.image.source="https://github.com/OMOPHub/omophub-mcp"
 
 ENTRYPOINT ["/nodejs/bin/node", "dist/index.js"]
