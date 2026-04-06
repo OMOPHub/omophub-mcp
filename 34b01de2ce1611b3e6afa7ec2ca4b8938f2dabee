@@ -1,0 +1,31 @@
+server.json
+  fbf8eddf7d63a736 9,14
+Dockerfile
+  fbf8eddf7d63a736 26
+CHANGELOG.md
+  fbf8eddf7d63a736 3-6,8-16
+package.json
+  fbf8eddf7d63a736 3
+README.md
+  fbf8eddf7d63a736 300
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "34b01de2ce1611b3e6afa7ec2ca4b8938f2dabee",
+  "prompts": {
+    "fbf8eddf7d63a736": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7194bf1-48e2-427b-93c7-45db94416fa3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub",
+      "messages": [],
+      "total_additions": 21,
+      "total_deletions": 5,
+      "accepted_lines": 18,
+      "overriden_lines": 1
+    }
+  }
+}
