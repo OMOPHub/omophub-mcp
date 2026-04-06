@@ -113,7 +113,8 @@ jobs:
           for i in $(seq 1 30); do
             STATUS=$(gcloud run services describe "$SERVICE_NAME" \
               --region="$GCP_REGION" \
-              --format='value(status.conditions.filter(type=Ready).status)' 2>/dev/null || echo "Unknown")
+              --format='json(status.conditions)' 2>/dev/null | \
+              python3 -c "import sys,json; cs=json.load(sys.stdin).get('status',{}).get('conditions',[]); print(next((c['status'] for c in cs if c.get('type')=='Ready'),'Unknown'))" 2>/dev/null || echo "Unknown")
             if [ "$STATUS" = "True" ]; then
               echo "Revision is ready."
               break
