@@ -21,12 +21,17 @@ vi.mock('../../src/version.js', () => ({
 }));
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { OmopHubClient } from '../../src/client/api.js';
 import { startHttpTransport } from '../../src/transports/http.js';
 
-function createMockServer(): McpServer {
-  return {
+function createMockServerFactory(): (client: OmopHubClient) => McpServer {
+  return vi.fn(() => ({
     connect: vi.fn().mockResolvedValue(undefined),
-  } as unknown as McpServer;
+  })) as unknown as (client: OmopHubClient) => McpServer;
+}
+
+function createMockClient(): OmopHubClient {
+  return { baseUrl: 'https://api.test.com/v1' } as unknown as OmopHubClient;
 }
 
 describe('HTTP Transport', () => {
@@ -41,8 +46,7 @@ describe('HTTP Transport', () => {
   });
 
   it('starts HTTP server and serves health endpoint', async () => {
-    const mcpServer = createMockServer();
-    server = await startHttpTransport(mcpServer, 0);
+    server = await startHttpTransport(createMockServerFactory(), createMockClient(), 0);
 
     const addr = server.address();
     if (!addr || typeof addr === 'string') throw new Error('Unexpected address');
@@ -55,8 +59,7 @@ describe('HTTP Transport', () => {
   });
 
   it('returns 404 for unknown paths', async () => {
-    const mcpServer = createMockServer();
-    server = await startHttpTransport(mcpServer, 0);
+    server = await startHttpTransport(createMockServerFactory(), createMockClient(), 0);
 
     const addr = server.address();
     if (!addr || typeof addr === 'string') throw new Error('Unexpected address');
@@ -66,8 +69,7 @@ describe('HTTP Transport', () => {
   });
 
   it('handles CORS preflight requests', async () => {
-    const mcpServer = createMockServer();
-    server = await startHttpTransport(mcpServer, 0);
+    server = await startHttpTransport(createMockServerFactory(), createMockClient(), 0);
 
     const addr = server.address();
     if (!addr || typeof addr === 'string') throw new Error('Unexpected address');
@@ -81,20 +83,12 @@ describe('HTTP Transport', () => {
   });
 
   it('sets CORS headers on all responses', async () => {
-    const mcpServer = createMockServer();
-    server = await startHttpTransport(mcpServer, 0);
+    server = await startHttpTransport(createMockServerFactory(), createMockClient(), 0);
 
     const addr = server.address();
     if (!addr || typeof addr === 'string') throw new Error('Unexpected address');
 
     const res = await fetch(`http://localhost:${String(addr.port)}/health`);
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
-  });
-
-  it('connects MCP server to transport', async () => {
-    const mcpServer = createMockServer();
-    server = await startHttpTransport(mcpServer, 0);
-
-    expect(mcpServer.connect).toHaveBeenCalled();
   });
 });

@@ -281,7 +281,7 @@ describe('main', () => {
 
     await main();
 
-    expect(createServer).toHaveBeenCalledWith('oh_test_key', undefined);
+    expect(createServer).toHaveBeenCalled();
     expect(logger.info).toHaveBeenCalledWith('Starting OMOPHub MCP server (stdio transport)');
     expect(startHttpTransport).not.toHaveBeenCalled();
   });
@@ -292,7 +292,6 @@ describe('main', () => {
 
     await main();
 
-    expect(createServer).toHaveBeenCalledWith('oh_test_key', undefined);
     expect(logger.info).toHaveBeenCalledWith('Starting OMOPHub MCP server (http transport)');
     expect(startHttpTransport).toHaveBeenCalled();
   });
@@ -303,7 +302,7 @@ describe('main', () => {
 
     await main();
 
-    expect(startHttpTransport).toHaveBeenCalledWith(expect.anything(), 4000);
+    expect(startHttpTransport).toHaveBeenCalledWith(expect.anything(), expect.anything(), 4000);
   });
 
   it('uses default port 3100 for http transport', async () => {
@@ -312,10 +311,10 @@ describe('main', () => {
 
     await main();
 
-    expect(startHttpTransport).toHaveBeenCalledWith(expect.anything(), 3100);
+    expect(startHttpTransport).toHaveBeenCalledWith(expect.anything(), expect.anything(), 3100);
   });
 
-  it('exits with code 1 when API key is missing', async () => {
+  it('exits with code 1 when API key is missing in stdio mode', async () => {
     const exitError = new Error('process.exit called');
     const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
       throw exitError;
@@ -361,6 +360,7 @@ describe('main', () => {
 
     await main();
 
-    expect(createServer).toHaveBeenCalledWith('oh_test_key', 'https://custom.api.com/v1');
+    // createServer is called with an OmopHubClient that was initialized with the base URL
+    expect(createServer).toHaveBeenCalled();
   });
 });

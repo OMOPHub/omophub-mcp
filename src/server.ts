@@ -1,5 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { OmopHubClient } from './client/api.js';
+import type { OmopHubClient } from './client/api.js';
 import { registerPrompts } from './prompts/index.js';
 import { registerResources } from './resources/index.js';
 import {
@@ -15,15 +15,13 @@ import {
 import { logger } from './utils/logger.js';
 import { VERSION } from './version.js';
 
-export function createServer(apiKey: string | undefined, baseUrl?: string): McpServer {
+export function createServer(client: OmopHubClient): McpServer {
   const server = new McpServer({
     name: 'omophub',
     version: VERSION,
     description:
       'Access OHDSI standardized medical vocabularies — search concepts, navigate hierarchies, and map between clinical coding systems like SNOMED CT, ICD-10, RxNorm, and LOINC.',
   });
-
-  const client = new OmopHubClient(apiKey, baseUrl);
 
   // Register tools
   registerSearchTools(server, client);
