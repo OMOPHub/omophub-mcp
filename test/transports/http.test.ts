@@ -164,11 +164,12 @@ describe('HTTP Transport', () => {
       });
       // Some runtimes return 413 before the socket closes
       expect(res.status).toBe(413);
-    } catch {
+    } catch (error) {
       // The server destroys the socket mid-upload, which causes fetch to
-      // throw a SocketError. This is the expected server-side behaviour —
-      // the payload-too-large guard triggered.
-      expect(true).toBe(true);
+      // throw a TypeError wrapping a SocketError. Assert the specific
+      // error shape so unrelated failures still fail the test.
+      expect(error).toBeInstanceOf(TypeError);
+      expect((error as TypeError).message).toMatch(/fetch failed|terminated|socket/i);
     }
   });
 
