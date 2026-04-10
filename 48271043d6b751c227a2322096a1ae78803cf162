@@ -1,0 +1,45 @@
+src/client/resolve.ts
+  995c8e6367b1e02f 41
+test/client/resolve.test.ts
+  995c8e6367b1e02f 1-11,13-33,35-118
+src/tools/fhir.ts
+  995c8e6367b1e02f 1-78,80-187,189-249
+src/transports/http.ts
+  995c8e6367b1e02f 62-63,127-128
+CHANGELOG.md
+  995c8e6367b1e02f 3-19,21
+README.md
+  995c8e6367b1e02f 224-226,264-272
+test/tools/fhir.test.ts
+  995c8e6367b1e02f 1-122,124-360
+test/transports/http.test.ts
+  995c8e6367b1e02f 94-131,133-187
+test/client/api.test.ts
+  995c8e6367b1e02f 171-275
+src/tools/index.ts
+  995c8e6367b1e02f 3
+package.json
+  995c8e6367b1e02f 3
+src/server.ts
+  995c8e6367b1e02f 8,36,43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "48271043d6b751c227a2322096a1ae78803cf162",
+  "prompts": {
+    "995c8e6367b1e02f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea546814-6533-459a-8829-c1e8c71caab6",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "alex-omophub",
+      "messages": [],
+      "total_additions": 54,
+      "total_deletions": 13,
+      "accepted_lines": 960,
+      "overriden_lines": 7
+    }
+  }
+}
