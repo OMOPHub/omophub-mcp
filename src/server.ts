@@ -40,7 +40,7 @@ export function createServer(client: OmopHubClient): McpServer {
   registerPrompts(server);
 
   logger.info('OMOPHub MCP server initialized', {
-    tools: 12,
+    tools: 11,
     resources: 2,
     prompts: 2,
   });

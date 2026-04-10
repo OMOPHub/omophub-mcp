@@ -28,14 +28,6 @@ const SNOMED_RESOLVE_RESPONSE = {
   meta: { request_id: 'test', timestamp: '2026-04-10T00:00:00Z', vocab_release: '2025.2' },
 };
 
-const BATCH_RESOLVE_RESPONSE = {
-  success: true,
-  data: {
-    results: [SNOMED_RESOLVE_RESPONSE.data],
-    summary: { total: 2, resolved: 1, failed: 1 },
-  },
-};
-
 const CODEABLE_CONCEPT_RESPONSE = {
   success: true,
   data: {
@@ -62,14 +54,13 @@ describe('FHIR tools', () => {
     vi.unstubAllGlobals();
   });
 
-  it('registers all three FHIR tools', () => {
+  it('registers both FHIR tools', () => {
     const server = createMockServer();
     const client = createMockClient();
     registerFhirTools(server as never, client as never);
 
-    expect(server.tool).toHaveBeenCalledTimes(3);
+    expect(server.tool).toHaveBeenCalledTimes(2);
     expect(server.tools.has('fhir_resolve')).toBe(true);
-    expect(server.tools.has('fhir_resolve_batch')).toBe(true);
     expect(server.tools.has('fhir_resolve_codeable_concept')).toBe(true);
   });
 
@@ -195,81 +186,6 @@ describe('FHIR tools', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content).toHaveLength(2);
-    });
-  });
-
-  // -- fhir_resolve_batch -----------------------------------------------------
-
-  describe('fhir_resolve_batch', () => {
-    it('calls POST /fhir/resolve/batch and returns summary text', async () => {
-      const server = createMockServer();
-      const client = createMockClient();
-      client.post.mockResolvedValueOnce(BATCH_RESOLVE_RESPONSE);
-
-      registerFhirTools(server as never, client as never);
-      const handler = server.tools.get('fhir_resolve_batch')!;
-
-      const result = await handler({
-        codings: [
-          { system: 'http://snomed.info/sct', code: '44054006' },
-          { system: 'http://loinc.org', code: '2339-0' },
-        ],
-      });
-
-      expect(client.post).toHaveBeenCalledWith(
-        '/fhir/resolve/batch',
-        expect.objectContaining({
-          codings: expect.any(Array),
-        }),
-        'fhir_resolve_batch',
-      );
-      expect(result.content[0].text).toContain('1/2 resolved');
-      expect(result.content[0].text).toContain('1 failed');
-    });
-
-    it('passes resource_type and quality flags', async () => {
-      const server = createMockServer();
-      const client = createMockClient();
-      client.post.mockResolvedValueOnce(BATCH_RESOLVE_RESPONSE);
-
-      registerFhirTools(server as never, client as never);
-      const handler = server.tools.get('fhir_resolve_batch')!;
-
-      await handler({
-        codings: [{ system: 'http://snomed.info/sct', code: '44054006' }],
-        resource_type: 'Condition',
-        include_quality: true,
-      });
-
-      const body = client.post.mock.calls[0][1] as Record<string, unknown>;
-      expect(body.resource_type).toBe('Condition');
-      expect(body.include_quality).toBe(true);
-    });
-
-    it('handles missing summary gracefully', async () => {
-      const server = createMockServer();
-      const client = createMockClient();
-      client.post.mockResolvedValueOnce({ success: true, data: {} });
-
-      registerFhirTools(server as never, client as never);
-      const handler = server.tools.get('fhir_resolve_batch')!;
-
-      const result = await handler({ codings: [{ code: '123' }] });
-
-      expect(result.content[0].text).toContain('Batch resolution failed');
-    });
-
-    it('returns error content on API failure', async () => {
-      const server = createMockServer();
-      const client = createMockClient();
-      client.post.mockRejectedValueOnce(new Error('timeout'));
-
-      registerFhirTools(server as never, client as never);
-      const handler = server.tools.get('fhir_resolve_batch')!;
-
-      const result = await handler({ codings: [{ code: 'x' }] });
-
-      expect(result.isError).toBe(true);
     });
   });
 

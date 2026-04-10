@@ -222,7 +222,6 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transpor
 | `find_similar_concepts` | Find concepts similar to a reference concept, name, or description |
 | `explore_concept` | Get concept details, hierarchy, and cross-vocabulary mappings in one call |
 | `fhir_resolve` | Resolve a FHIR coded value (system URI + code) to its OMOP standard concept and CDM target table |
-| `fhir_resolve_batch` | Batch-resolve up to 100 FHIR codings with inline per-item error reporting |
 | `fhir_resolve_codeable_concept` | Resolve a FHIR CodeableConcept — picks the best match per OHDSI vocabulary preference |
 
 ### Resources
@@ -263,9 +262,6 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transpor
 
 **FHIR-to-OMOP resolution →** `fhir_resolve`
 > "Resolve FHIR SNOMED code 44054006 to OMOP — what table does it go in?"
-
-**Batch FHIR resolution →** `fhir_resolve_batch`
-> "Resolve these FHIR codes from our ETL: SNOMED 44054006, LOINC 2339-0, RxNorm 197696"
 
 **CodeableConcept →** `fhir_resolve_codeable_concept`
 > "This CodeableConcept has both SNOMED 44054006 and ICD-10 E11.9 — which should I use for OMOP?"

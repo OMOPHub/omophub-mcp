@@ -21,11 +21,6 @@ interface FhirResolveResponse {
   resolution: FhirResolution;
 }
 
-interface FhirBatchResponse {
-  results: Array<Record<string, unknown>>;
-  summary: { total: number; resolved: number; failed: number };
-}
-
 interface FhirCodeableConceptResponse {
   input: Record<string, unknown>;
   best_match: FhirResolveResponse | null;
@@ -114,64 +109,6 @@ export function registerFhirTools(server: McpServer, client: OmopHubClient): voi
         };
       } catch (error) {
         const { text, json } = formatErrorForMcp(error, 'fhir_resolve');
-        return {
-          content: [
-            { type: 'text' as const, text },
-            { type: 'text' as const, text: json },
-          ],
-          isError: true,
-        };
-      }
-    },
-  );
-
-  server.tool(
-    'fhir_resolve_batch',
-    'Batch-resolve up to 100 FHIR codings in one call. Failed items are reported inline without failing the batch. Use for ETL pipelines processing FHIR Bundles.',
-    {
-      codings: z
-        .array(
-          z.object({
-            system: z.string().optional(),
-            code: z.string().optional(),
-            display: z.string().optional(),
-            vocabulary_id: z.string().optional(),
-          }),
-        )
-        .min(1)
-        .max(100)
-        .describe('Array of FHIR codings to resolve (max 100)'),
-      resource_type: z.string().optional().describe('FHIR resource type applied to all codings'),
-      include_recommendations: z.boolean().optional().default(false),
-      include_quality: z.boolean().optional().default(false),
-    },
-    async (params, extra) => {
-      try {
-        const rc = resolveClient(extra, client);
-        const body: Record<string, unknown> = { codings: params.codings };
-        if (params.resource_type) body.resource_type = params.resource_type;
-        if (params.include_recommendations) body.include_recommendations = true;
-        if (params.include_quality) body.include_quality = true;
-
-        const response = await rc.post<FhirBatchResponse>(
-          '/fhir/resolve/batch',
-          body,
-          'fhir_resolve_batch',
-        );
-
-        const summary = response.data?.summary;
-        const text = summary
-          ? `Batch: ${summary.resolved}/${summary.total} resolved, ${summary.failed} failed`
-          : 'Batch resolution failed — no summary returned';
-
-        return {
-          content: [
-            { type: 'text' as const, text },
-            { type: 'text' as const, text: JSON.stringify(response, null, 2) },
-          ],
-        };
-      } catch (error) {
-        const { text, json } = formatErrorForMcp(error, 'fhir_resolve_batch');
         return {
           content: [
             { type: 'text' as const, text },
