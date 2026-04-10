@@ -5,6 +5,7 @@ import { registerResources } from './resources/index.js';
 import {
   registerConceptTools,
   registerExploreTools,
+  registerFhirTools,
   registerHierarchyTools,
   registerMappingTools,
   registerSearchTools,
@@ -32,13 +33,14 @@ export function createServer(client: OmopHubClient): McpServer {
   registerMappingTools(server, client);
   registerHierarchyTools(server, client);
   registerVocabularyTools(server, client);
+  registerFhirTools(server, client);
 
   // Register resources and prompts
   registerResources(server, client);
   registerPrompts(server);
 
   logger.info('OMOPHub MCP server initialized', {
-    tools: 9,
+    tools: 12,
     resources: 2,
     prompts: 2,
   });

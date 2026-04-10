@@ -168,6 +168,111 @@ describe('OmopHubClient', () => {
     });
   });
 
+  it('retries on network error and eventually throws', async () => {
+    mockFetch
+      .mockRejectedValueOnce(new Error('ECONNREFUSED'))
+      .mockRejectedValueOnce(new Error('ECONNREFUSED'))
+      .mockRejectedValueOnce(new Error('ECONNREFUSED'));
+
+    const client = new OmopHubClient('oh_key', 'https://api.test.com/v1');
+    await expect(client.request('/concepts/1')).rejects.toThrow('ECONNREFUSED');
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+  });
+
+  it('falls back to response text when error body is not JSON', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+      text: async () => 'plain text error',
+      headers: new Headers(),
+    });
+
+    const client = new OmopHubClient('oh_key', 'https://api.test.com/v1');
+    await expect(client.request('/broken')).rejects.toMatchObject({
+      status: 500,
+      message: 'plain text error',
+    });
+  });
+
+  it('falls back to response.message when error.message is absent', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      text: async () => JSON.stringify({ message: 'top-level message' }),
+      headers: new Headers(),
+    });
+
+    const client = new OmopHubClient('oh_key', 'https://api.test.com/v1');
+    await expect(client.request('/bad')).rejects.toMatchObject({
+      message: 'top-level message',
+    });
+  });
+
+  describe('post() retries and error handling', () => {
+    it('retries POST on 429 rate limit', async () => {
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 429,
+          statusText: 'Too Many Requests',
+          text: async () => '{"message":"Rate limited"}',
+          headers: new Headers({ 'Retry-After': '0' }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+
+      const client = new OmopHubClient('oh_key', 'https://api.test.com/v1');
+      const result = await client.post('/fhir/resolve', { code: '123' }, 'fhir_resolve');
+
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(result.success).toBe(true);
+    });
+
+    it('throws network errors immediately on POST (no retry)', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+
+      const client = new OmopHubClient('oh_key', 'https://api.test.com/v1');
+      await expect(client.post('/fhir/resolve', { code: '123' })).rejects.toThrow('ECONNREFUSED');
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to plain text on non-JSON POST error body', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        statusText: 'Bad Gateway',
+        text: async () => '<html>Bad Gateway</html>',
+      });
+
+      const client = new OmopHubClient('oh_key', 'https://api.test.com/v1');
+      await expect(client.post('/fhir/resolve', {})).rejects.toMatchObject({
+        status: 502,
+        message: '<html>Bad Gateway</html>',
+      });
+    });
+
+    it('omits analytics headers when opted out', async () => {
+      vi.stubEnv('OMOPHUB_ANALYTICS_OPTOUT', 'true');
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: {} }),
+      });
+
+      const client = new OmopHubClient('oh_key', 'https://api.test.com/v1');
+      await client.post('/fhir/resolve', { code: '123' }, 'fhir_resolve');
+
+      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+      const headers = options.headers as Record<string, string>;
+      expect(headers['X-MCP-Client']).toBeUndefined();
+      expect(headers['X-MCP-Tool']).toBeUndefined();
+    });
+  });
+
   it('respects analytics opt-out', async () => {
     vi.stubEnv('OMOPHUB_ANALYTICS_OPTOUT', 'true');
 

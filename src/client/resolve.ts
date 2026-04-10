@@ -38,7 +38,7 @@ function pruneClientCache(): void {
  */
 export function resolveClient(extra: ToolExtra, defaultClient: OmopHubClient): OmopHubClient {
   const headers = extra?.requestInfo?.headers;
-  const rawHeader = headers?.['authorization'] ?? headers?.['Authorization'];
+  const rawHeader = headers?.authorization ?? headers?.Authorization;
 
   if (!rawHeader) return defaultClient;
 

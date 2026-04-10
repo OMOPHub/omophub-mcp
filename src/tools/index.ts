@@ -1,5 +1,6 @@
 export { registerConceptTools } from './concepts.js';
 export { registerExploreTools } from './explore.js';
+export { registerFhirTools } from './fhir.js';
 export { registerHierarchyTools } from './hierarchy.js';
 export { registerMappingTools } from './mappings.js';
 export { registerSearchTools } from './search.js';
