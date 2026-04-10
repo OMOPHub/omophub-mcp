@@ -221,6 +221,8 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transpor
 | `semantic_search` | Search using natural language with neural embeddings (understands clinical meaning) |
 | `find_similar_concepts` | Find concepts similar to a reference concept, name, or description |
 | `explore_concept` | Get concept details, hierarchy, and cross-vocabulary mappings in one call |
+| `fhir_resolve` | Resolve a FHIR coded value (system URI + code) to its OMOP standard concept and CDM target table |
+| `fhir_resolve_codeable_concept` | Resolve a FHIR CodeableConcept — picks the best match per OHDSI vocabulary preference |
 
 ### Resources
 
@@ -257,6 +259,12 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transpor
 
 **Explore a concept →** `explore_concept`
 > "Give me everything about SNOMED concept 201826"
+
+**FHIR-to-OMOP resolution →** `fhir_resolve`
+> "Resolve FHIR SNOMED code 44054006 to OMOP — what table does it go in?"
+
+**CodeableConcept →** `fhir_resolve_codeable_concept`
+> "This CodeableConcept has both SNOMED 44054006 and ICD-10 E11.9 — which should I use for OMOP?"
 
 **Find similar →** `find_similar_concepts`
 > "What concepts are similar to 'Type 2 diabetes mellitus'?"

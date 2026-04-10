@@ -59,7 +59,8 @@ export async function startHttpTransport(
       // GET (SSE stream) and DELETE (session close) carry no body — route directly
       if (req.method === 'GET' || req.method === 'DELETE') {
         if (sessionId && sessions.has(sessionId)) {
-          const transport = sessions.get(sessionId)!;
+          const transport = sessions.get(sessionId);
+          if (!transport) return;
           try {
             await transport.handleRequest(req, res);
           } catch (error) {
@@ -123,7 +124,8 @@ export async function startHttpTransport(
 
       // Existing session
       if (sessionId && sessions.has(sessionId)) {
-        const transport = sessions.get(sessionId)!;
+        const transport = sessions.get(sessionId);
+        if (!transport) return;
         try {
           await transport.handleRequest(req, res, parsedBody);
         } catch (error) {

@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.4.0] - 2026-04-10
+
+### Added
+
+- **FHIR-to-OMOP Concept Resolver** — 2 new tools for translating FHIR coded values into OMOP standard concepts:
+  - `fhir_resolve`: Resolve a single FHIR Coding (system URI + code) to its OMOP standard concept, CDM target table, and optional Phoebe recommendations. Supports text-only input via semantic search fallback.
+  - `fhir_resolve_codeable_concept`: Resolve a FHIR CodeableConcept with multiple codings. Picks the best match per OHDSI vocabulary preference (SNOMED > RxNorm > LOINC > CVX > ICD-10). Falls back to the `text` field via semantic search.
+
+### Fixed
+
+- Non-null assertions in HTTP transport replaced with proper guard clauses (`noNonNullAssertion` lint rule)
+- Bracket notation on `resolve.ts` header access replaced with dot notation (`useLiteralKeys` lint rule)
+
+### Changed
+
+- Tool count updated from 9 to 11
+- Overall test coverage increased
+
 ## [1.3.1] - 2026-04-06
 
 ### Fixed
