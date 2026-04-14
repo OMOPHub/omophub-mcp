@@ -60,13 +60,13 @@ export function registerConceptTools(server: McpServer, client: OmopHubClient): 
 
   server.tool(
     'get_concept_by_code',
-    "Look up an OMOP concept using a vocabulary-specific code and vocabulary ID. Both parameters are required to avoid ambiguity — the same code can exist in multiple vocabularies (e.g., 'E11' exists in both ICD10CM and ICD10). If multiple concepts share the same code within a vocabulary, all matches are returned — prefer the one with standard_concept='S'.",
+    "Look up an OMOP concept using a vocabulary-specific code and vocabulary ID. Both parameters are required to avoid ambiguity - the same code can exist in multiple vocabularies (e.g., 'E11' exists in both ICD10CM and ICD10). If multiple concepts share the same code within a vocabulary, all matches are returned - prefer the one with standard_concept='S'.",
     {
       vocabulary_id: z
         .string()
         .max(50)
         .describe(
-          "The vocabulary system. Examples: 'ICD10CM', 'SNOMED', 'RxNorm', 'LOINC', 'CPT4', 'HCPCS', 'NDC'",
+          "The vocabulary system. Examples: 'ICD10CM', 'SNOMED', 'RxNorm', 'LOINC', 'HCPCS', 'NDC'",
         ),
       concept_code: z
         .string()
