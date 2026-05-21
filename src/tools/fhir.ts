@@ -127,8 +127,8 @@ export function registerFhirTools(server: McpServer, client: OmopHubClient): voi
       coding: z
         .array(
           z.object({
-            system: z.string().describe('FHIR code system URI'),
-            code: z.string().describe('Code value'),
+            system: z.string().trim().min(1).describe('FHIR code system URI'),
+            code: z.string().trim().min(1).describe('Code value'),
             display: z.string().optional().describe('Display text'),
           }),
         )
