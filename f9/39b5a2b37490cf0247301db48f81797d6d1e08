@@ -1,0 +1,22 @@
+test/tools/fhir.test.ts
+  s_8057469a3c21cc::t_e05f23241fe2c6 2
+  s_8057469a3c21cc::t_27d3c58af6a18d 276-292,295-302
+src/tools/fhir.ts
+  s_8057469a3c21cc::t_e4ed5cd9515f33 130-131
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "f939b5a2b37490cf0247301db48f81797d6d1e08",
+  "prompts": {},
+  "sessions": {
+    "s_8057469a3c21cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "18c0fa5e-4234-4499-95d1-373ac83b7771",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
