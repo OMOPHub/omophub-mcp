@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import { registerFhirTools } from '../../src/tools/fhir.js';
 import { createMockClient, createMockServer } from '../helpers/mock-server.js';
 
@@ -271,6 +272,33 @@ describe('FHIR tools', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content).toHaveLength(2);
+    });
+
+    it('rejects coding entries with empty or whitespace-only system/code', () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      registerFhirTools(server as never, client as never);
+
+      // The MCP SDK validates tool input against this Zod shape before the
+      // handler runs. The mock discards the shape, so rebuild it from the
+      // recorded server.tool(name, desc, shape, handler) call to test it.
+      const call = server.tool.mock.calls.find((c) => c[0] === 'fhir_resolve_codeable_concept')!;
+      const schema = z.object(call[2] as z.ZodRawShape);
+
+      // Empty or whitespace-only system/code must fail validation.
+      expect(schema.safeParse({ coding: [{ system: '', code: '44054006' }] }).success).toBe(false);
+      expect(
+        schema.safeParse({ coding: [{ system: 'http://snomed.info/sct', code: '' }] }).success,
+      ).toBe(false);
+      expect(schema.safeParse({ coding: [{ system: '   ', code: '44054006' }] }).success).toBe(
+        false,
+      );
+
+      // A well-formed coding still passes.
+      expect(
+        schema.safeParse({ coding: [{ system: 'http://snomed.info/sct', code: '44054006' }] })
+          .success,
+      ).toBe(true);
     });
   });
 });
