@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.5.0] - 2026-05-25
+
+### Added
+
+- `fhir_resolve` output now surfaces `value_as_concept` (with `value_target_field`) when the API decomposes a composite concept via `Maps to value` (HL7 FHIR-to-OMOP IG Value-as-Concept pattern), plus `concept_map_id` / `mapping_note` for FHIR administrative-code resolutions.
+
+- `fhir_resolve_codeable_concept` codings accept `user_selected`; a user-selected coding wins over vocabulary preference (FHIR-to-OMOP IG CodeableConcept pattern).
+
+- `fhir_resolve` and `fhir_resolve_codeable_concept` accept `on_unmapped` (`error` default / `sentinel`); with `sentinel` the resolver returns a `concept_id` 0 record instead of a 404 when nothing resolves (parity with the Python and R SDKs).
+
+### Changed
+
+- `fhir_resolve` now presents the OMOP `concept_id` 0 sentinel as **Unmapped** rather than as a successful resolution, so agents don't treat "no matching concept" as a real mapping.
+
 ## [1.4.0] - 2026-04-10
 
 ### Added

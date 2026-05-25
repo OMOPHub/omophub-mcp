@@ -44,6 +44,58 @@ const CODEABLE_CONCEPT_RESPONSE = {
   },
 };
 
+const ALLERGY_VALUE_RESPONSE = {
+  success: true,
+  data: {
+    input: { system: 'http://snomed.info/sct', code: '294499007' },
+    resolution: {
+      vocabulary_id: 'SNOMED',
+      source_concept: {
+        concept_id: 4222295,
+        concept_name: 'Allergy to penicillin',
+        vocabulary_id: 'SNOMED',
+      },
+      standard_concept: {
+        concept_id: 439224,
+        concept_name: 'Allergy to drug',
+        vocabulary_id: 'SNOMED',
+      },
+      value_as_concept: {
+        concept_id: 1728416,
+        concept_name: 'Penicillin G',
+        vocabulary_id: 'RxNorm',
+      },
+      value_target_field: 'value_as_concept_id',
+      mapping_type: 'mapped',
+      target_table: 'observation',
+      domain_resource_alignment: 'aligned',
+    },
+  },
+};
+
+const UNMAPPED_RESPONSE = {
+  success: true,
+  data: {
+    input: { system: 'http://hl7.org/fhir/sid/icd-10-cm', code: 'E11.9' },
+    resolution: {
+      vocabulary_id: 'ICD10CM',
+      source_concept: {
+        concept_id: 45576876,
+        concept_name: 'Some non-standard code',
+        vocabulary_id: 'ICD10CM',
+      },
+      standard_concept: {
+        concept_id: 0,
+        concept_name: 'No matching concept',
+        vocabulary_id: '',
+      },
+      mapping_type: 'unmapped',
+      target_table: null,
+      domain_resource_alignment: 'not_checked',
+    },
+  },
+};
+
 // -- Tests -------------------------------------------------------------------
 
 describe('FHIR tools', () => {
@@ -95,6 +147,62 @@ describe('FHIR tools', () => {
       expect(result.content[0].text).toContain('Type 2 diabetes mellitus');
       expect(result.content[0].text).toContain('condition_occurrence');
       expect(result.isError).toBeUndefined();
+    });
+
+    it('forwards on_unmapped to the request body', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.post.mockResolvedValueOnce(SNOMED_RESOLVE_RESPONSE);
+
+      registerFhirTools(server as never, client as never);
+      const handler = server.tools.get('fhir_resolve')!;
+
+      await handler({
+        system: 'http://snomed.info/sct',
+        code: '44054006',
+        on_unmapped: 'sentinel',
+      });
+
+      expect(client.post).toHaveBeenCalledWith(
+        '/fhir/resolve',
+        expect.objectContaining({ on_unmapped: 'sentinel' }),
+        'fhir_resolve',
+      );
+    });
+
+    it('surfaces value_as_concept (Maps to value) in the formatted output', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.post.mockResolvedValueOnce(ALLERGY_VALUE_RESPONSE);
+
+      registerFhirTools(server as never, client as never);
+      const handler = server.tools.get('fhir_resolve')!;
+
+      const result = await handler({
+        system: 'http://snomed.info/sct',
+        code: '294499007',
+      });
+
+      expect(result.content[0].text).toContain('Allergy to drug');
+      expect(result.content[0].text).toContain('Value concept: Penicillin G (1728416)');
+      expect(result.content[0].text).toContain('value_as_concept_id');
+    });
+
+    it('presents concept_id 0 as unmapped, not a successful resolution', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.post.mockResolvedValueOnce(UNMAPPED_RESPONSE);
+
+      registerFhirTools(server as never, client as never);
+      const handler = server.tools.get('fhir_resolve')!;
+
+      const result = await handler({
+        system: 'http://hl7.org/fhir/sid/icd-10-cm',
+        code: 'E11.9',
+      });
+
+      expect(result.content[0].text).toContain('Unmapped');
+      expect(result.content[0].text).not.toContain('Resolved:');
     });
 
     it('includes quality and recommendations when requested', async () => {
@@ -219,6 +327,26 @@ describe('FHIR tools', () => {
       );
       expect(result.content[0].text).toContain('Best match');
       expect(result.content[0].text).toContain('Type 2 diabetes mellitus');
+    });
+
+    it('forwards on_unmapped to the request body', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.post.mockResolvedValueOnce(CODEABLE_CONCEPT_RESPONSE);
+
+      registerFhirTools(server as never, client as never);
+      const handler = server.tools.get('fhir_resolve_codeable_concept')!;
+
+      await handler({
+        coding: [{ system: 'http://snomed.info/sct', code: '44054006' }],
+        on_unmapped: 'sentinel',
+      });
+
+      expect(client.post).toHaveBeenCalledWith(
+        '/fhir/resolve/codeable-concept',
+        expect.objectContaining({ on_unmapped: 'sentinel' }),
+        'fhir_resolve_codeable_concept',
+      );
     });
 
     it('passes text fallback and enrichment flags', async () => {

@@ -8,12 +8,19 @@ interface FhirResolution {
   vocabulary_id: string | null;
   source_concept: { concept_id: number; concept_name: string; vocabulary_id: string };
   standard_concept: { concept_id: number; concept_name: string; vocabulary_id: string };
+  // Value concept for composite source concepts decomposed via `Maps to value`
+  // (HL7 FHIR-to-OMOP IG Value-as-Concept pattern).
+  value_as_concept?: { concept_id: number; concept_name: string; vocabulary_id: string };
+  value_target_field?: string;
   mapping_type: string;
   target_table: string | null;
   domain_resource_alignment: string;
   similarity_score?: number;
   mapping_quality?: string;
   recommendations?: Array<{ concept_id: number; concept_name: string; relationship_id: string }>;
+  // Set when a FHIR administrative code resolved via an IG ConceptMap.
+  concept_map_id?: string;
+  mapping_note?: string;
 }
 
 interface FhirResolveResponse {
@@ -29,8 +36,14 @@ interface FhirCodeableConceptResponse {
 }
 
 function formatResolution(res: FhirResolution): string {
+  // concept_id 0 is the OMOP "no matching concept" sentinel — surface it as
+  // unmapped rather than presenting it as a successful resolution.
+  const header =
+    res.standard_concept.concept_id === 0
+      ? 'Unmapped: no OMOP standard concept (concept_id 0) for this input'
+      : `Resolved: ${res.standard_concept.concept_name} (ID: ${res.standard_concept.concept_id})`;
   const lines = [
-    `Resolved: ${res.standard_concept.concept_name} (ID: ${res.standard_concept.concept_id})`,
+    header,
     `Vocabulary: ${res.vocabulary_id ?? 'N/A'} | Type: ${res.mapping_type}`,
     `Target table: ${res.target_table ?? 'unknown'} | Alignment: ${res.domain_resource_alignment}`,
   ];
@@ -39,6 +52,17 @@ function formatResolution(res: FhirResolution): string {
   }
   if (res.mapping_quality) {
     lines.push(`Quality: ${res.mapping_quality}`);
+  }
+  if (res.value_as_concept) {
+    lines.push(
+      `Value concept: ${res.value_as_concept.concept_name} (${res.value_as_concept.concept_id}) → ${res.value_target_field ?? 'value_as_concept_id'}`,
+    );
+  }
+  if (res.concept_map_id) {
+    lines.push(`Via IG ConceptMap: ${res.concept_map_id}`);
+  }
+  if (res.mapping_note) {
+    lines.push(`Note: ${res.mapping_note}`);
   }
   if (res.recommendations && res.recommendations.length > 0) {
     lines.push(`Recommendations (${res.recommendations.length}):`);
@@ -83,6 +107,12 @@ export function registerFhirTools(server: McpServer, client: OmopHubClient): voi
         .optional()
         .default(false)
         .describe('Include mapping quality signal (high/medium/low/manual_review)'),
+      on_unmapped: z
+        .enum(['error', 'sentinel'])
+        .optional()
+        .describe(
+          "Behavior when nothing resolves: 'error' (default, 404) or 'sentinel' (return a concept_id 0 record)",
+        ),
     },
     async (params, extra) => {
       try {
@@ -95,6 +125,7 @@ export function registerFhirTools(server: McpServer, client: OmopHubClient): voi
         if (params.resource_type) body.resource_type = params.resource_type;
         if (params.include_recommendations) body.include_recommendations = true;
         if (params.include_quality) body.include_quality = true;
+        if (params.on_unmapped) body.on_unmapped = params.on_unmapped;
 
         const response = await rc.post<FhirResolveResponse>('/fhir/resolve', body, 'fhir_resolve');
 
@@ -130,6 +161,10 @@ export function registerFhirTools(server: McpServer, client: OmopHubClient): voi
             system: z.string().trim().min(1).describe('FHIR code system URI'),
             code: z.string().trim().min(1).describe('Code value'),
             display: z.string().optional().describe('Display text'),
+            user_selected: z
+              .boolean()
+              .optional()
+              .describe('FHIR Coding.userSelected — wins over vocabulary preference when set'),
           }),
         )
         .min(1)
@@ -142,6 +177,12 @@ export function registerFhirTools(server: McpServer, client: OmopHubClient): voi
       resource_type: z.string().optional().describe('FHIR resource type'),
       include_recommendations: z.boolean().optional().default(false),
       include_quality: z.boolean().optional().default(false),
+      on_unmapped: z
+        .enum(['error', 'sentinel'])
+        .optional()
+        .describe(
+          "Behavior when nothing resolves: 'error' (default, 404) or 'sentinel' (concept_id 0 record)",
+        ),
     },
     async (params, extra) => {
       try {
@@ -151,6 +192,7 @@ export function registerFhirTools(server: McpServer, client: OmopHubClient): voi
         if (params.resource_type) body.resource_type = params.resource_type;
         if (params.include_recommendations) body.include_recommendations = true;
         if (params.include_quality) body.include_quality = true;
+        if (params.on_unmapped) body.on_unmapped = params.on_unmapped;
 
         const response = await rc.post<FhirCodeableConceptResponse>(
           '/fhir/resolve/codeable-concept',

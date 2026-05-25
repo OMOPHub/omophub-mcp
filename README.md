@@ -221,8 +221,8 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transpor
 | `semantic_search` | Search using natural language with neural embeddings (understands clinical meaning) |
 | `find_similar_concepts` | Find concepts similar to a reference concept, name, or description |
 | `explore_concept` | Get concept details, hierarchy, and cross-vocabulary mappings in one call |
-| `fhir_resolve` | Resolve a FHIR coded value (system URI + code) to its OMOP standard concept and CDM target table |
-| `fhir_resolve_codeable_concept` | Resolve a FHIR CodeableConcept — picks the best match per OHDSI vocabulary preference |
+| `fhir_resolve` | Resolve a FHIR coded value (incl. administrative codes via the HL7 FHIR-to-OMOP IG ConceptMaps) to its OMOP standard concept and CDM target table |
+| `fhir_resolve_codeable_concept` | Resolve a FHIR CodeableConcept — best match by OHDSI vocabulary preference, honoring `userSelected` |
 
 ### Resources
 
@@ -305,7 +305,7 @@ In **HTTP mode**, the health endpoint is available at `/health` on the same port
 ```bash
 npx @omophub/omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
 curl http://localhost:3100/health
-# → {"status":"ok","version":"1.3.1","uptime_seconds":42}
+# → {"status":"ok","version":"1.5.0","uptime_seconds":42}
 ```
 
 In **stdio mode**, use `--health-port` for a standalone health endpoint:
