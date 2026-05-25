@@ -1,0 +1,19 @@
+.github/workflows/deploy-cloudrun.yml
+  s_c995e58523efd2::t_f5c4c693d679f5 38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.1",
+  "base_commit_sha": "3a216af8c3b31f5a6767bcd4736fab2073d1ce70",
+  "prompts": {},
+  "sessions": {
+    "s_c995e58523efd2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "98408716-d0fe-4669-a33d-cdf3c6afe981",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
