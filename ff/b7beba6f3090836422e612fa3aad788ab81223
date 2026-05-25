@@ -1,0 +1,48 @@
+src/tools/fhir.ts
+  s_c995e58523efd2::t_7cc277e5525254 56-66
+  s_c995e58523efd2::t_6339b528970489 128
+  s_c995e58523efd2::t_58414d8dea03bb 39-44,46
+  s_c995e58523efd2::t_6cc7af6a338f4d 164-167
+  s_c995e58523efd2::t_5f0a0e6e23b708 110-115
+  s_c995e58523efd2::t_7d2a2237f6db1c 195
+  s_c995e58523efd2::t_5ccd434ee0780c 11-14,21-23
+  s_c995e58523efd2::t_db0f419bd67665 180-185
+Dockerfile
+  s_c995e58523efd2::t_b811ead19bf0ef 26
+server.json
+  s_c995e58523efd2::t_0109a1c0bce925 9,14
+test/tools/fhir.test.ts
+  s_c995e58523efd2::t_a0494388ac4d12 47-75
+  s_c995e58523efd2::t_fcbfe6ad5b08ba 173-190
+  s_c995e58523efd2::t_e0daea1572ab37 191-207
+  s_c995e58523efd2::t_a4aa2cd7092ecb 332-351
+  s_c995e58523efd2::t_9203c8f7159709 152-172
+  s_c995e58523efd2::t_1827991530ebc6 76-98
+README.md
+  s_c995e58523efd2::t_5e8692bbeaf7e2 224-225
+  s_c995e58523efd2::t_aa64136969d61b 308
+package.json
+  s_c995e58523efd2::t_ffdd030269609d 3
+CHANGELOG.md
+  s_c995e58523efd2::t_4643114d9e4190 11-12
+  s_c995e58523efd2::t_a94412eafa0f45 3
+  s_c995e58523efd2::t_89303e09fff895 13-16
+  s_c995e58523efd2::t_a8deb9c01c6332 4-8
+  s_c995e58523efd2::t_6718d98f4292f4 9-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "ffb7beba6f3090836422e612fa3aad788ab81223",
+  "prompts": {},
+  "sessions": {
+    "s_c995e58523efd2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "98408716-d0fe-4669-a33d-cdf3c6afe981",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
