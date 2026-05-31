@@ -7,6 +7,7 @@
 
 <p>
   <a href="https://www.npmjs.com/package/@omophub/omophub-mcp"><img src="https://img.shields.io/npm/v/@omophub/omophub-mcp?style=flat-square&color=cb3837&label=npm" alt="npm version" /></a>
+  <a href="https://app.codecov.io/gh/OMOPHub/omophub-mcp?branch=main"><img src="https://codecov.io/gh/OMOPHub/omophub-mcp/branch/main/graph/badge.svg" alt="Codecov" /></a>
   <a href="https://www.npmjs.com/package/@omophub/omophub-mcp"><img src="https://img.shields.io/npm/dm/@omophub/omophub-mcp?style=flat-square&color=blue" alt="npm downloads" /></a>
   <a href="https://github.com/OMOPHub/omophub-mcp/blob/main/LICENSE"><img src="https://img.shields.io/github/license/OMOPHub/omophub-mcp?style=flat-square" alt="License" /></a>
   <a href="https://github.com/OMOPHub/omophub-mcp"><img src="https://img.shields.io/badge/TypeScript-5.x-3178c6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" /></a>
