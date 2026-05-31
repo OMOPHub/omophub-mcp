@@ -1,0 +1,14 @@
+.github/workflows/ci.yml
+  h_70ae365dc0c3d1 28-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "19d3186445e7abdc08a731f5dd34eacf90d0e5db",
+  "prompts": {},
+  "humans": {
+    "h_70ae365dc0c3d1": {
+      "author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
