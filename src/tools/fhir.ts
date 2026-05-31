@@ -202,10 +202,21 @@ export function registerFhirTools(server: McpServer, client: OmopHubClient): voi
 
         const best = response.data?.best_match?.resolution;
         const altCount = response.data?.alternatives?.length ?? 0;
-        const text = best
-          ? `Best match: ${best.standard_concept.concept_name} (${best.source_concept.vocabulary_id})\n` +
-            `Target table: ${best.target_table ?? 'unknown'} | Alternatives: ${altCount}`
-          : 'No resolution found — all codings failed to resolve';
+        let text: string;
+        if (!best) {
+          text = 'No resolution found — all codings failed to resolve';
+        } else if (best.standard_concept.concept_id === 0) {
+          // concept_id 0 is the OMOP "no matching concept" sentinel (from
+          // on_unmapped: 'sentinel') — surface it as unmapped rather than
+          // presenting it as a successful best match.
+          text =
+            `Unmapped: no OMOP standard concept (concept_id 0) for any coding\n` +
+            `Alternatives: ${altCount}`;
+        } else {
+          text =
+            `Best match: ${best.standard_concept.concept_name} (${best.source_concept.vocabulary_id})\n` +
+            `Target table: ${best.target_table ?? 'unknown'} | Alternatives: ${altCount}`;
+        }
 
         return {
           content: [

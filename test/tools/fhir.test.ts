@@ -386,6 +386,26 @@ describe('FHIR tools', () => {
       expect(result.content[0].text).toContain('No resolution found');
     });
 
+    it('presents a concept_id 0 best_match as unmapped, not a best match', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.post.mockResolvedValueOnce({
+        success: true,
+        data: { best_match: UNMAPPED_RESPONSE.data, alternatives: [], unresolved: [] },
+      });
+
+      registerFhirTools(server as never, client as never);
+      const handler = server.tools.get('fhir_resolve_codeable_concept')!;
+
+      const result = await handler({
+        coding: [{ system: 'http://hl7.org/fhir/sid/icd-10-cm', code: 'E11.9' }],
+        on_unmapped: 'sentinel',
+      });
+
+      expect(result.content[0].text).toContain('Unmapped');
+      expect(result.content[0].text).not.toContain('Best match');
+    });
+
     it('returns error content on API failure', async () => {
       const server = createMockServer();
       const client = createMockClient();
