@@ -1,0 +1,23 @@
+.github/workflows/ci.yml
+  s_6dfc0807556258::t_441da000115e89 27
+test/tools/fhir.test.ts
+  s_6dfc0807556258::t_006e348c0d92b1 389-408
+src/tools/fhir.ts
+  s_6dfc0807556258::t_be094f3007270f 205-219
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "d1eacaeb0c800d3f8761440b6de28a788fee0c3a",
+  "prompts": {},
+  "sessions": {
+    "s_6dfc0807556258": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5045d4f8-d080-4d7c-a15a-675cbea93008",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
