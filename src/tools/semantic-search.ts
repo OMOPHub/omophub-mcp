@@ -69,7 +69,7 @@ export function registerSemanticSearchTools(server: McpServer, client: OmopHubCl
         if (standard_concept) params.standard_concept = standard_concept;
 
         const response = await rc.request<{ results: SemanticResult[] }>(
-          '/concepts/semantic-search',
+          '/search/semantic',
           params,
           'semantic_search',
         );
