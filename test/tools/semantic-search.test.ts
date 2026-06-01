@@ -24,7 +24,7 @@ describe('semantic_search', () => {
     const result = await handler({ query: 'heart attack', page_size: 10, threshold: 0.5 });
 
     expect(client.request).toHaveBeenCalledWith(
-      '/concepts/semantic-search',
+      '/search/semantic',
       expect.objectContaining({ query: 'heart attack', page_size: 10, threshold: 0.5 }),
       'semantic_search',
     );
@@ -52,7 +52,7 @@ describe('semantic_search', () => {
     });
 
     expect(client.request).toHaveBeenCalledWith(
-      '/concepts/semantic-search',
+      '/search/semantic',
       expect.objectContaining({
         vocabulary_ids: 'SNOMED',
         domain_ids: 'Condition',

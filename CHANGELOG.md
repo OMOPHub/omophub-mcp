@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.5.1] - 2026-06-01
+
+### Changed
+
+- The `semantic_search` tool now calls the canonical API path `GET /v1/search/semantic` instead of `GET /v1/concepts/semantic-search`. The legacy path remains a permanent server-side alias, so older MCP installations continue to work — no breaking change. Hosted clients at [mcp.omophub.com](https://mcp.omophub.com) get the new path automatically.
+
 ## [1.5.0] - 2026-05-25
 
 ### Added
