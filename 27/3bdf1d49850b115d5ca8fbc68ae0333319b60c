@@ -1,0 +1,25 @@
+test/tools/semantic-search.test.ts
+  s_b724aff89835a7::t_7aab33fac72dda 27,55
+src/tools/semantic-search.ts
+  s_b724aff89835a7::t_3e385e904fd9e9 72
+package.json
+  s_b724aff89835a7::t_71433c05834b75 3
+CHANGELOG.md
+  s_b724aff89835a7::t_8841d728c6de1d 3-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "273bdf1d49850b115d5ca8fbc68ae0333319b60c",
+  "prompts": {},
+  "sessions": {
+    "s_b724aff89835a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "abbaee52-99b6-404f-b925-4f46c3915990",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
