@@ -1,0 +1,29 @@
+CHANGELOG.md
+  s_b724aff89835a7::t_b6f2860ffba880 3-8,10
+  h_70ae365dc0c3d1 9
+package.json
+  s_b724aff89835a7::t_20fcac331a3e9c 67
+  h_70ae365dc0c3d1 3
+  s_b724aff89835a7::t_b58dea8376a632 70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "c7e726b4efaf1004adb58c086d78da53c0a70231",
+  "prompts": {},
+  "humans": {
+    "h_70ae365dc0c3d1": {
+      "author": "alex-omophub <sdk@omophub.com>"
+    }
+  },
+  "sessions": {
+    "s_b724aff89835a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "abbaee52-99b6-404f-b925-4f46c3915990",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
