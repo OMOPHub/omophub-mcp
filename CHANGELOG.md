@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+## [1.5.2] - 2026-06-02
+
+### Changed
+
+- Bumped `vitest` and `@vitest/coverage-v8` devDependencies from `^3.2.4` to `^4.1.8`. 
+
 ## [1.5.1] - 2026-06-01
 
 ### Changed
