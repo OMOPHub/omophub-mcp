@@ -1,0 +1,137 @@
+name: Build & Push MCP Image (VM)
+
+# Builds the omophub-mcp Docker image and pushes it to Artifact Registry.
+# Actual rollout to the shared VM (omophub-services-prod) is a separate step:
+# trigger the `Deploy Services to VM` workflow in the OMOPHub/oh-platform
+# repository with services=mcp-only (and optionally mcp_image_tag=<short_sha>
+# to pin a specific build for rollback).
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Additional tag to apply alongside :latest and :<short_sha>'
+        required: false
+        default: ''
+        type: string
+
+env:
+  GCP_PROJECT_ID: calios-457620
+  GCP_REGION: us-central1
+  SERVICE_NAME: omophub-mcp
+  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev
+  REPOSITORY: omophub-artifacts
+
+jobs:
+  build:
+    name: Build & Push to Artifact Registry
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Validate extra image tag
+        # The `image_tag` workflow_dispatch input is free-form and ends up
+        # being passed to `docker tag` / `docker push`. Reject anything that
+        # isn't a valid Docker tag (or the empty default).
+        env:
+          EXTRA_TAG: ${{ inputs.image_tag }}
+        run: |
+          if [ -z "$EXTRA_TAG" ]; then
+            echo "No extra tag provided (using :latest and :<short_sha> only)."
+            exit 0
+          fi
+          if ! printf '%s' "$EXTRA_TAG" | grep -Eq '^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$'; then
+            echo "Invalid image_tag: must match Docker tag spec [A-Za-z0-9_][A-Za-z0-9._-]{0,127}" >&2
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "$ARTIFACT_REGISTRY" --quiet
+
+      - name: Set image tags
+        id: tags
+        env:
+          GIT_SHA: ${{ github.sha }}
+          EXTRA_TAG: ${{ inputs.image_tag }}
+        run: |
+          SHORT_SHA=$(echo "$GIT_SHA" | cut -c1-7)
+          FULL_IMAGE="${ARTIFACT_REGISTRY}/${GCP_PROJECT_ID}/${REPOSITORY}/${SERVICE_NAME}"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+          echo "full_image=$FULL_IMAGE" >> "$GITHUB_OUTPUT"
+          echo "sha_tag=${FULL_IMAGE}:${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=${FULL_IMAGE}:latest" >> "$GITHUB_OUTPUT"
+          if [ -n "$EXTRA_TAG" ]; then
+            echo "extra_tag=${FULL_IMAGE}:${EXTRA_TAG}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Docker image
+        env:
+          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+          LATEST_TAG: ${{ steps.tags.outputs.latest_tag }}
+          EXTRA_TAG: ${{ steps.tags.outputs.extra_tag }}
+        run: |
+          echo "Building ${SERVICE_NAME}..."
+          BUILD_ARGS=( -t "$SHA_TAG" -t "$LATEST_TAG" )
+          if [ -n "$EXTRA_TAG" ]; then
+            BUILD_ARGS+=( -t "$EXTRA_TAG" )
+          fi
+          docker build "${BUILD_ARGS[@]}" .
+
+      - name: Push Docker image
+        env:
+          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+          LATEST_TAG: ${{ steps.tags.outputs.latest_tag }}
+          EXTRA_TAG: ${{ steps.tags.outputs.extra_tag }}
+        run: |
+          echo "Pushing to Artifact Registry..."
+          docker push "$SHA_TAG"
+          docker push "$LATEST_TAG"
+          if [ -n "$EXTRA_TAG" ]; then
+            docker push "$EXTRA_TAG"
+          fi
+
+      - name: Summary
+        run: |
+          SHA="${{ steps.tags.outputs.short_sha }}"
+          FULL="${{ steps.tags.outputs.full_image }}"
+
+          echo "================================================"
+          echo "  MCP Image Build Summary"
+          echo "================================================"
+          echo "  Image (sha):    ${FULL}:${SHA}"
+          echo "  Image (latest): ${FULL}:latest"
+          echo "================================================"
+          echo ""
+          echo "Next step: roll out to the VM."
+          echo ""
+          echo "  Trigger \`Deploy Services to VM\` in OMOPHub/oh-platform with:"
+          echo "    services:       mcp-only"
+          echo "    mcp_image_tag:  latest   (or ${SHA} to pin this build)"
+          echo ""
+
+          {
+            echo "## 🐳 MCP Image Pushed"
+            echo ""
+            echo "| Tag | Image |"
+            echo "|-----|-------|"
+            echo "| sha | \`${FULL}:${SHA}\` |"
+            echo "| latest | \`${FULL}:latest\` |"
+            echo ""
+            echo "### Next step"
+            echo ""
+            echo "Trigger **Deploy Services to VM** in [\`OMOPHub/oh-platform\`](https://github.com/OMOPHub/oh-platform/actions/workflows/deploy-vm-services.yml) with:"
+            echo ""
+            echo "- \`services\`: \`mcp-only\`"
+            echo "- \`mcp_image_tag\`: \`latest\` (or \`${SHA}\` to pin this build for rollback)"
+          } >> "$GITHUB_STEP_SUMMARY"
