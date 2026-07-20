@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [1.5.3] - 2026-07-20
+
+### Fixed
+
+- **HTTP transport session leak (out-of-memory crashes).** Sessions were only released when a client sent an explicit `DELETE`. Any client that disconnected without one (network drop, sleep, crash, container restart) leaked its transport _and_ its full `McpServer` instance permanently, so long-running servers climbed to the ~768 MB heap ceiling and were killed by V8. Sessions are now reaped on a 30-minute idle timeout, with a session-count backstop, so memory stays bounded regardless of how clients disconnect.
+- **HTTP transport crash on aborted requests.** A client aborting mid-request surfaced as an unhandled `Error: aborted` (`ECONNRESET`) that terminated the process. Aborted requests are now handled gracefully and logged at debug level; the server keeps serving other sessions.
+- **Process-level safety nets.** Added top-level `unhandledRejection` (log and continue) and `uncaughtException` (log and exit for a clean supervised restart) handlers, so a single stray async failure can no longer silently take the server down. Note: the `uncaughtException` path assumes the container runs under a restart policy.
+
 ## [1.5.2] - 2026-06-02
 
 ### Changed

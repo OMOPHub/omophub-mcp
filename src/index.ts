@@ -144,7 +144,51 @@ function isRunDirectly(): boolean {
 
 const isDirectRun = isRunDirectly();
 
+/**
+ * Last-resort process handlers. The two cases are deliberately NOT symmetric.
+ *
+ * `unhandledRejection` — recoverable. In practice this is a scoped async
+ * failure (e.g. a client aborting mid-request), where the rest of the process
+ * is unaffected. One aborted request must not kill every other live session,
+ * so we log and keep serving.
+ *
+ * `uncaughtException` — NOT recoverable. An exception escaped all the way to
+ * the top, so we know nothing about what state was left behind: half-applied
+ * mutations, un-released handles, a transport mid-write. Node's own guidance
+ * is that resuming here is undefined behaviour. We log, then exit non-zero and
+ * let the supervisor restart us clean.
+ *
+ * NOTE: this assumes the container is run under a restart policy that
+ * restarts on a non-zero exit — Docker's `always` or `unless-stopped`
+ * (`--restart always` / `restart: always` in compose) both work; they
+ * differ only in how they treat a manual `docker stop` across a daemon
+ * restart, which is irrelevant here. Without any restart policy, an
+ * uncaught exception now stops the service instead of limping on.
+ */
+export function installProcessSafetyNets(): void {
+  process.on('unhandledRejection', (reason: unknown) => {
+    logger.error('Unhandled promise rejection', {
+      error: reason instanceof Error ? (reason.stack ?? reason.message) : String(reason),
+    });
+  });
+
+  process.on('uncaughtException', (error: Error) => {
+    logger.error('Uncaught exception — exiting for a clean restart', {
+      error: error.stack ?? error.message,
+    });
+    // Give the logger a tick to flush, but never hang: if the event loop is
+    // already wedged, force the exit.
+    const forceExit = setTimeout(() => {
+      process.exit(1);
+    }, 1000);
+    forceExit.unref();
+    process.exitCode = 1;
+    process.exit(1);
+  });
+}
+
 if (isDirectRun) {
+  installProcessSafetyNets();
   main().catch((error: unknown) => {
     logger.error('Fatal error', { error: String(error) });
     process.exit(1);
