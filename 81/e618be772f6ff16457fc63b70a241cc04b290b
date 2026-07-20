@@ -1,0 +1,47 @@
+src/index.ts
+  s_b7c44b9c47ccad::t_adc10c444a20eb 148-160,167-186
+  s_b7c44b9c47ccad::t_7cbe46bde1f4ec 187-189
+  s_b7c44b9c47ccad::t_1812e736005cf2 161-166
+  s_b7c44b9c47ccad::t_1666fbd1efd179 147
+  s_b7c44b9c47ccad::t_1dd56a82db4070 191
+CHANGELOG.md
+  s_b7c44b9c47ccad::t_2d717a24bba29e 5-12
+server.json
+  s_b7c44b9c47ccad::t_df75957560cd40 14
+  s_b7c44b9c47ccad::t_938f6febe83e25 9
+.github/workflows/build-image.yml
+  s_b7c44b9c47ccad::t_c52a74b56faae8 144-146
+  s_b7c44b9c47ccad::t_e7ac0dd56f12e6 112-118,125-127
+  s_b7c44b9c47ccad::t_3ba36d4d9d2d7d 18-24
+package.json
+  s_b7c44b9c47ccad::t_6a010f934746c7 3
+vitest.config.ts
+  s_b7c44b9c47ccad::t_19fb6a76333a83 15-18
+src/transports/http.ts
+  s_b7c44b9c47ccad::t_9c434b2c91e325 23-37,40-84,101-124,143-145,147,209-211,213,229-231,235-236,240-243,276,282-290
+Dockerfile
+  s_b7c44b9c47ccad::t_c463b5400d0430 26
+test/transports/http-sessions.test.ts
+  s_b7c44b9c47ccad::t_09b07e17489dcf 1-224
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "81e618be772f6ff16457fc63b70a241cc04b290b",
+  "prompts": {},
+  "humans": {
+    "h_70ae365dc0c3d1": {
+      "author": "alex-omophub <sdk@omophub.com>"
+    }
+  },
+  "sessions": {
+    "s_b7c44b9c47ccad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d1bc244a-c989-422f-a9a3-1f6399a27a04",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}
