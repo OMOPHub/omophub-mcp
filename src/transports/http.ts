@@ -20,10 +20,90 @@ function setCorsHeaders(res: ServerResponse): void {
   }
 }
 
-// Active sessions — each client gets its own transport + server
-const sessions = new Map<string, StreamableHTTPServerTransport>();
+interface Session {
+  transport: StreamableHTTPServerTransport;
+  lastSeenAt: number;
+  // Count of currently-open long-lived responses (the GET SSE stream, or a
+  // POST that streams). A session with an open stream is actively connected
+  // even if it hasn't sent a new request in a while, so it must not be reaped.
+  openStreams: number;
+}
+
+// Active sessions — each client gets its own transport + server.
+//
+// Cleanup is driven by idle timeout, not by socket lifecycle. The SDK only
+// fires transport.onclose from close(), which it calls solely from the DELETE
+// handler, so any client that vanishes without a clean shutdown (network drop,
+// sleep, crash) would otherwise leak its transport AND its McpServer forever.
+//
+// A session is reaped only when it has NO open stream AND has not been seen
+// for the idle timeout. We deliberately do NOT close sessions the moment a
+// socket drops: Streamable HTTP clients legitimately disconnect and reconnect
+// their SSE stream, and a client can hold an SSE stream open for hours while
+// only receiving server pushes, so socket- or last-request-based reaping alone
+// would disconnect working clients.
+const sessions = new Map<string, Session>();
 
 const MAX_BODY_SIZE = 1_048_576; // 1 MB
+const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 min without a request
+const SESSION_SWEEP_INTERVAL_MS = 60 * 1000;
+const MAX_SESSIONS = 1000; // backstop against a burst of initialize requests
+
+function touchSession(sessionId: string): void {
+  const session = sessions.get(sessionId);
+  if (session) session.lastSeenAt = Date.now();
+}
+
+/** Marks a long-lived response (GET SSE stream, or streaming POST) as open for
+ *  the session and refreshes the idle clock when it closes. While open, the
+ *  session is exempt from the idle sweep even if no new requests arrive. */
+function trackStream(session: Session, res: ServerResponse): void {
+  session.openStreams++;
+  res.once('close', () => {
+    session.openStreams = Math.max(0, session.openStreams - 1);
+    // Reset the idle clock on disconnect so a reconnect window is preserved.
+    session.lastSeenAt = Date.now();
+  });
+}
+
+/** Closes sessions idle past the timeout. transport.close() fires onclose,
+ *  which removes the map entry and shuts down the attached McpServer.
+ *  Sessions with an open stream are actively connected and never reaped. */
+export function sweepIdleSessions(now: number = Date.now()): number {
+  let closed = 0;
+  for (const [sessionId, session] of sessions) {
+    if (session.openStreams > 0) continue;
+    if (now - session.lastSeenAt <= SESSION_IDLE_TIMEOUT_MS) continue;
+    logger.info('Closing idle MCP session', { sessionId });
+    void Promise.resolve(session.transport.close()).catch((error: unknown) => {
+      logger.error('Failed to close idle session', { error: String(error), sessionId });
+      sessions.delete(sessionId); // never let a failed close pin the entry
+    });
+    closed++;
+  }
+  return closed;
+}
+
+/** Evicts the least-recently-seen session. Backstop only. */
+function evictOldestSession(): void {
+  let oldestId: string | undefined;
+  let oldestSeenAt = Number.POSITIVE_INFINITY;
+  for (const [sessionId, session] of sessions) {
+    if (session.lastSeenAt < oldestSeenAt) {
+      oldestSeenAt = session.lastSeenAt;
+      oldestId = sessionId;
+    }
+  }
+  if (!oldestId) return;
+  const session = sessions.get(oldestId);
+  logger.warn('Session limit reached, evicting oldest session', {
+    sessionId: oldestId,
+    maxSessions: MAX_SESSIONS,
+  });
+  void Promise.resolve(session?.transport.close()).catch(() => {
+    sessions.delete(oldestId);
+  });
+}
 
 const JSON_RPC_INTERNAL_ERROR = JSON.stringify({
   jsonrpc: '2.0',
@@ -40,7 +120,30 @@ export async function startHttpTransport(
   defaultClient: OmopHubClient,
   port: number,
 ): Promise<Server> {
-  const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+  const httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
+    // The handler is async; an unhandled rejection here (e.g. the request
+    // stream aborting mid-body with ECONNRESET) would terminate the process.
+    void handleRequest(req, res).catch((error: unknown) => {
+      // A client that aborted mid-request is routine, not an error worth alarming on.
+      const aborted =
+        (error as { code?: string } | null)?.code === 'ECONNRESET' ||
+        req.destroyed ||
+        res.destroyed;
+      if (aborted) {
+        logger.debug('Client aborted request', { error: String(error) });
+      } else {
+        logger.error('Unhandled request error', { error: String(error) });
+      }
+      if (!res.headersSent && !res.writableEnded) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON_RPC_INTERNAL_ERROR);
+      } else if (!res.writableEnded) {
+        res.end();
+      }
+    });
+  });
+
+  async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
     setCorsHeaders(res);
 
     if (req.method === 'OPTIONS') {
@@ -59,10 +162,14 @@ export async function startHttpTransport(
       // GET (SSE stream) and DELETE (session close) carry no body — route directly
       if (req.method === 'GET' || req.method === 'DELETE') {
         if (sessionId && sessions.has(sessionId)) {
-          const transport = sessions.get(sessionId);
-          if (!transport) return;
+          const session = sessions.get(sessionId);
+          if (!session) return;
+          touchSession(sessionId);
+          // A GET opens the long-lived SSE stream; track it so the idle sweep
+          // won't reap a client that's connected but quietly receiving pushes.
+          if (req.method === 'GET') trackStream(session, res);
           try {
-            await transport.handleRequest(req, res);
+            await session.transport.handleRequest(req, res);
           } catch (error) {
             logger.error('MCP transport error', { error: String(error), sessionId });
             if (!res.headersSent) {
@@ -124,10 +231,14 @@ export async function startHttpTransport(
 
       // Existing session
       if (sessionId && sessions.has(sessionId)) {
-        const transport = sessions.get(sessionId);
-        if (!transport) return;
+        const session = sessions.get(sessionId);
+        if (!session) return;
+        touchSession(sessionId);
+        // A POST response may itself be a long-lived SSE stream (server needs
+        // to send notifications/requests back mid-call); track it too.
+        trackStream(session, res);
         try {
-          await transport.handleRequest(req, res, parsedBody);
+          await session.transport.handleRequest(req, res, parsedBody);
         } catch (error) {
           logger.error('MCP transport error', { error: String(error), sessionId });
           if (!res.headersSent) {
@@ -143,15 +254,21 @@ export async function startHttpTransport(
         const transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
           onsessioninitialized: (id) => {
-            sessions.set(id, transport);
-            logger.info('MCP session created', { sessionId: id });
+            if (sessions.size >= MAX_SESSIONS) evictOldestSession();
+            sessions.set(id, { transport, lastSeenAt: Date.now(), openStreams: 0 });
+            logger.info('MCP session created', { sessionId: id, activeSessions: sessions.size });
           },
         });
 
+        // Assigned before connect() — the SDK chains rather than replaces this,
+        // so both this cleanup and the McpServer shutdown run on close.
         transport.onclose = () => {
           if (transport.sessionId) {
             sessions.delete(transport.sessionId);
-            logger.info('MCP session closed', { sessionId: transport.sessionId });
+            logger.info('MCP session closed', {
+              sessionId: transport.sessionId,
+              activeSessions: sessions.size,
+            });
           }
         };
 
@@ -184,10 +301,19 @@ export async function startHttpTransport(
 
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Not found' }));
-  });
+  }
 
   httpServer.on('error', (err) => {
     logger.error('HTTP server error', { error: String(err), port });
+  });
+
+  // unref'd so the sweep timer never keeps the process alive on its own
+  const sweepTimer = setInterval(() => {
+    sweepIdleSessions();
+  }, SESSION_SWEEP_INTERVAL_MS);
+  sweepTimer.unref();
+  httpServer.on('close', () => {
+    clearInterval(sweepTimer);
   });
 
   await new Promise<void>((resolve) => {

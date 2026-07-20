@@ -15,6 +15,22 @@ on:
         default: ''
         type: string
 
+# Two concurrent dispatches can interleave their pushes and leave `:latest`
+# pointing at the older build. Serialize publishes with a SINGLE fixed group
+# (not keyed on github.ref) — the publish target `:latest` is shared across
+# all branches, so a ref-scoped group would let runs from different branches
+# still race. Don't cancel in-progress runs: a half-pushed image is worse
+# than a queued one.
+#
+# Caveat: GitHub keeps only one *pending* run per group, so if 3+ dispatches
+# pile up at once, an intermediate one is dropped rather than queued — its
+# requested tag won't be published and it must be re-dispatched. That's an
+# accepted limitation for a manual workflow; ordering of `:latest` among the
+# runs that do execute is still correct, which is the point of the lock.
+concurrency:
+  group: build-image-publish
+  cancel-in-progress: false
+
 env:
   GCP_PROJECT_ID: calios-457620
   GCP_REGION: us-central1
@@ -102,15 +118,22 @@ jobs:
           fi
 
       - name: Summary
+        # Values come in via env rather than inline ${{ }} interpolation so
+        # nothing is spliced into the shell source. EXTRA_TAG is additionally
+        # regex-validated by the "Validate extra image tag" step above.
+        env:
+          SHA: ${{ steps.tags.outputs.short_sha }}
+          FULL: ${{ steps.tags.outputs.full_image }}
+          EXTRA_TAG: ${{ inputs.image_tag }}
         run: |
-          SHA="${{ steps.tags.outputs.short_sha }}"
-          FULL="${{ steps.tags.outputs.full_image }}"
-
           echo "================================================"
           echo "  MCP Image Build Summary"
           echo "================================================"
           echo "  Image (sha):    ${FULL}:${SHA}"
           echo "  Image (latest): ${FULL}:latest"
+          if [ -n "$EXTRA_TAG" ]; then
+            echo "  Image (extra):  ${FULL}:${EXTRA_TAG}"
+          fi
           echo "================================================"
           echo ""
           echo "Next step: roll out to the VM."
@@ -127,6 +150,9 @@ jobs:
             echo "|-----|-------|"
             echo "| sha | \`${FULL}:${SHA}\` |"
             echo "| latest | \`${FULL}:latest\` |"
+            if [ -n "$EXTRA_TAG" ]; then
+              echo "| extra | \`${FULL}:${EXTRA_TAG}\` |"
+            fi
             echo ""
             echo "### Next step"
             echo ""

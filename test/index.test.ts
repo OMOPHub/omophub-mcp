@@ -29,7 +29,14 @@ vi.mock('../src/utils/logger.js', () => ({
 }));
 
 import { startHealthServer } from '../src/health.js';
-import { main, parseArgs, resolveHealthPort, resolvePort, resolveTransport } from '../src/index.js';
+import {
+  formatError,
+  main,
+  parseArgs,
+  resolveHealthPort,
+  resolvePort,
+  resolveTransport,
+} from '../src/index.js';
 import { createServer } from '../src/server.js';
 import { startHttpTransport } from '../src/transports/http.js';
 import { logger } from '../src/utils/logger.js';
@@ -110,6 +117,31 @@ describe('parseArgs', () => {
     expect(args.apiKey).toBeUndefined();
     expect(args.baseUrl).toBeUndefined();
     expect(args.healthPort).toBeUndefined();
+  });
+});
+
+describe('formatError', () => {
+  it('uses the stack for an Error', () => {
+    const err = new Error('boom');
+    expect(formatError(err)).toBe(err.stack);
+  });
+
+  it('falls back to the message when an Error has no stack', () => {
+    const err = new Error('no stack here');
+    err.stack = undefined;
+    expect(formatError(err)).toBe('no stack here');
+  });
+
+  it('stringifies a non-Error throw without touching .stack', () => {
+    expect(formatError('plain string thrown')).toBe('plain string thrown');
+    expect(formatError(42)).toBe('42');
+    expect(formatError({ code: 'X' })).toBe('[object Object]');
+  });
+
+  it('does not throw on null/undefined (the case that crashed the handler)', () => {
+    expect(() => formatError(null)).not.toThrow();
+    expect(formatError(null)).toBe('null');
+    expect(formatError(undefined)).toBe('undefined');
   });
 });
 

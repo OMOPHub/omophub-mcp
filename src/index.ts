@@ -144,9 +144,59 @@ function isRunDirectly(): boolean {
 
 const isDirectRun = isRunDirectly();
 
+/** Normalizes any thrown/rejected value to a loggable string. Handles the
+ *  cases `.stack`/`.message` can't: a non-Error throw (`throw 'boom'`) or,
+ *  worse, `throw null`, where reading `.stack` would itself throw. */
+export function formatError(value: unknown): string {
+  if (value instanceof Error) return value.stack ?? value.message;
+  return String(value);
+}
+
+let fatalScheduled = false;
+
+/**
+ * Logs a fatal condition and terminates for a clean, supervised restart.
+ *
+ * We do NOT resume. Once an exception or rejection reaches the process top,
+ * we know nothing about what state was left behind — half-applied work, an
+ * un-released handle, a transport mid-write — so continuing is undefined
+ * behaviour (and Node's own default for both signals is to crash). Aborted
+ * client requests, the one routine case, are already caught at their boundary
+ * in the HTTP transport and never reach here, so anything that does is a
+ * genuine unknown.
+ *
+ * The process stays alive ~1s before exiting: `logger` writes to `stderr`,
+ * which is an async pipe under Docker, so an immediate `process.exit()` can
+ * truncate the very diagnostic we're trying to emit. The timer is referenced
+ * on purpose — it is what holds the loop open for that flush window.
+ *
+ * NOTE: this assumes the container runs under a restart policy that restarts
+ * on a non-zero exit — Docker's `always` or `unless-stopped` both work; they
+ * differ only in how they treat a manual `docker stop` across a daemon
+ * restart, which is irrelevant here. Without any restart policy, a fatal
+ * condition now stops the service instead of limping on.
+ */
+function fatalExit(message: string, value: unknown): void {
+  logger.error(message, { error: formatError(value) });
+  process.exitCode = 1;
+  if (fatalScheduled) return; // a second signal shouldn't stack timers
+  fatalScheduled = true;
+  setTimeout(() => process.exit(1), 1000);
+}
+
+export function installProcessSafetyNets(): void {
+  process.on('unhandledRejection', (reason: unknown) => {
+    fatalExit('Unhandled promise rejection — exiting for a clean restart', reason);
+  });
+
+  process.on('uncaughtException', (error: unknown) => {
+    fatalExit('Uncaught exception — exiting for a clean restart', error);
+  });
+}
+
 if (isDirectRun) {
+  installProcessSafetyNets();
   main().catch((error: unknown) => {
-    logger.error('Fatal error', { error: String(error) });
-    process.exit(1);
+    fatalExit('Fatal error during startup', error);
   });
 }
