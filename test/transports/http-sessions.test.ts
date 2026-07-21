@@ -80,7 +80,21 @@ import {
   pickEvictableSessionId,
   startHttpTransport,
   sweepIdleSessions,
+  trackStream,
 } from '../../src/transports/http.js';
+
+const settle = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+const enc = (s: string): Uint8Array => new TextEncoder().encode(s);
+const INIT_PAYLOAD = JSON.stringify({
+  jsonrpc: '2.0',
+  id: 1,
+  method: 'initialize',
+  params: {
+    protocolVersion: '2024-11-05',
+    capabilities: {},
+    clientInfo: { name: 'test-client', version: '1.0.0' },
+  },
+});
 
 const serverCloses: Array<() => void> = [];
 
@@ -312,6 +326,113 @@ describe('HTTP transport session lifecycle', () => {
     expect(liveTransports.size).toBe(0);
   });
 
+  it('times out a stalled POST upload and releases the session slot', async () => {
+    process.env.OMOPHUB_REQUEST_BODY_TIMEOUT_MS = '150';
+    try {
+      const started = await startServer();
+      server = started.server;
+      await initializeSession(started.url);
+      const sessionId = [...liveTransports][0]?.sessionId;
+      await settle(30); // release the init stream
+
+      // A body that starts but never finishes — held past the (tiny) timeout.
+      const body = new ReadableStream<Uint8Array>({
+        start(streamController) {
+          streamController.enqueue(enc('{"jsonrpc":"2.0",'));
+        },
+      });
+      const pending = fetch(started.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'mcp-session-id': sessionId as string },
+        body,
+        duplex: 'half',
+      } as RequestInit & { duplex: 'half' }).catch(() => {
+        /* server may 408 or reset the in-flight upload */
+      });
+
+      await settle(250); // > 150ms timeout + margin
+
+      // The timeout aborted the upload and released openStreams, so the now-idle
+      // session is reapable. Without the timeout it would stay pinned forever.
+      expect(sweepIdleSessions(Date.now() + 31 * 60 * 1000)).toBe(1);
+      await pending;
+    } finally {
+      delete process.env.OMOPHUB_REQUEST_BODY_TIMEOUT_MS;
+    }
+  });
+
+  it('rejects a new session with 503 when at capacity and all sessions stream', async () => {
+    process.env.OMOPHUB_MAX_SESSIONS = '1';
+    try {
+      const started = await startServer();
+      server = started.server;
+
+      // Session 1, holding an open SSE stream → non-evictable.
+      await initializeSession(started.url);
+      const sessionId = [...liveTransports][0]?.sessionId;
+      await settle(30); // release the init stream first
+      const controller = new AbortController();
+      const stream = fetch(started.url, {
+        method: 'GET',
+        headers: { 'mcp-session-id': sessionId as string, Accept: 'text/event-stream' },
+        signal: controller.signal,
+      }).catch(() => {
+        /* aborted below */
+      });
+      await settle(50); // stream open → session 1 is streaming
+
+      // Second initialize at cap=1, and the only session can't be evicted.
+      const res = await fetch(started.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: INIT_PAYLOAD,
+      });
+      expect(res.status).toBe(503);
+      expect(liveTransports.size).toBe(1); // no second session admitted
+
+      controller.abort();
+      await stream;
+    } finally {
+      delete process.env.OMOPHUB_MAX_SESSIONS;
+    }
+  });
+
+  it('rejects a POST whose session is closed while its body is uploading', async () => {
+    const started = await startServer();
+    server = started.server;
+    await initializeSession(started.url);
+    const transport = [...liveTransports][0];
+    const sessionId = transport?.sessionId;
+    await settle(30); // release the init stream
+
+    // Start a POST whose body we control: send a partial chunk, hold it open.
+    let bodyController: ReadableStreamDefaultController<Uint8Array> | undefined;
+    const body = new ReadableStream<Uint8Array>({
+      start(streamController) {
+        bodyController = streamController;
+        streamController.enqueue(enc('{"jsonrpc":"2.0","id":1,"method":"tools/list"'));
+      },
+    });
+    const pending = fetch(started.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'mcp-session-id': sessionId as string },
+      body,
+      duplex: 'half',
+    } as RequestInit & { duplex: 'half' });
+    await settle(50); // request in-flight, session marked active
+
+    // Close the session out from under the in-flight upload.
+    await transport?.close();
+    await settle(20);
+
+    // Now finish the body so the handler reaches the post-read re-check.
+    bodyController?.enqueue(enc('}'));
+    bodyController?.close();
+
+    const res = await pending;
+    expect(res.status).toBe(404); // dispatched to the dead session would be 200
+  });
+
   it('survives a client aborting mid-body without an unhandled rejection', async () => {
     const started = await startServer();
     server = started.server;
@@ -391,5 +512,56 @@ describe('pickEvictableSessionId', () => {
 
   it('returns undefined for no sessions', () => {
     expect(pickEvictableSessionId([])).toBeUndefined();
+  });
+});
+
+describe('trackStream', () => {
+  interface FakeRes {
+    destroyed: boolean;
+    writableEnded: boolean;
+    once: (event: string, cb: () => void) => void;
+    _handlers: Record<string, () => void>;
+  }
+  function fakeRes(opts: { destroyed?: boolean; writableEnded?: boolean } = {}): FakeRes {
+    const handlers: Record<string, () => void> = {};
+    return {
+      destroyed: opts.destroyed ?? false,
+      writableEnded: opts.writableEnded ?? false,
+      once(event, cb) {
+        handlers[event] = cb;
+      },
+      _handlers: handlers,
+    };
+  }
+  // trackStream only reads {openStreams,lastSeenAt} and the res fields above.
+  function fakeSession(): { transport: unknown; lastSeenAt: number; openStreams: number } {
+    return { transport: {}, lastSeenAt: 0, openStreams: 0 };
+  }
+  // biome-ignore lint/suspicious/noExplicitAny: exercising trackStream with fakes
+  const track = trackStream as unknown as (s: any, r: any) => void;
+
+  it('increments openStreams and decrements when the response closes', () => {
+    const session = fakeSession();
+    const res = fakeRes();
+    track(session, res);
+    expect(session.openStreams).toBe(1);
+    res._handlers.close?.(); // simulate the client disconnecting
+    expect(session.openStreams).toBe(0);
+    expect(session.lastSeenAt).toBeGreaterThan(0);
+  });
+
+  it('does not track (or pin) a response that is already destroyed', () => {
+    const session = fakeSession();
+    const res = fakeRes({ destroyed: true });
+    track(session, res);
+    expect(session.openStreams).toBe(0); // the pin-forever bug would make this 1
+    expect(res._handlers.close).toBeUndefined(); // no dead listener attached
+  });
+
+  it('does not track a response that has already ended', () => {
+    const session = fakeSession();
+    const res = fakeRes({ writableEnded: true });
+    track(session, res);
+    expect(session.openStreams).toBe(0);
   });
 });

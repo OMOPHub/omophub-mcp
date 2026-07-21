@@ -47,7 +47,21 @@ const sessions = new Map<string, Session>();
 const MAX_BODY_SIZE = 1_048_576; // 1 MB
 const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 min without a request
 const SESSION_SWEEP_INTERVAL_MS = 60 * 1000;
-const MAX_SESSIONS = 1000; // backstop against a burst of initialize requests
+
+// Backstops, overridable via env for ops tuning (and tests). Read lazily so a
+// value can change without reloading the module.
+const DEFAULT_MAX_SESSIONS = 1000; // hard cap on concurrent sessions
+const DEFAULT_REQUEST_BODY_TIMEOUT_MS = 30_000; // max time to receive a POST body
+
+function envPositiveInt(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+const getMaxSessions = (): number => envPositiveInt('OMOPHUB_MAX_SESSIONS', DEFAULT_MAX_SESSIONS);
+const getRequestBodyTimeoutMs = (): number =>
+  envPositiveInt('OMOPHUB_REQUEST_BODY_TIMEOUT_MS', DEFAULT_REQUEST_BODY_TIMEOUT_MS);
 
 function touchSession(sessionId: string): void {
   const session = sessions.get(sessionId);
@@ -57,7 +71,12 @@ function touchSession(sessionId: string): void {
 /** Marks a long-lived response (GET SSE stream, or streaming POST) as open for
  *  the session and refreshes the idle clock when it closes. While open, the
  *  session is exempt from the idle sweep even if no new requests arrive. */
-function trackStream(session: Session, res: ServerResponse): void {
+export function trackStream(session: Session, res: ServerResponse): void {
+  // If the response already finished (e.g. the client aborted before we got
+  // here), its 'close' event has already fired and will never fire again —
+  // attaching a listener would leave openStreams stuck at 1 and pin the
+  // session (and its McpServer) forever, since the idle sweep skips it.
+  if (res.destroyed || res.writableEnded) return;
   session.openStreams++;
   res.once('close', () => {
     session.openStreams = Math.max(0, session.openStreams - 1);
@@ -105,24 +124,24 @@ export function pickEvictableSessionId(
   return oldestId;
 }
 
-/** Evicts the oldest non-streaming session. Backstop only. If every session
- *  has an open stream we admit the newcomer instead of killing a live client —
- *  the cap is soft, and the leak it originally guarded against is fixed. */
+/** Tries to free a slot by evicting the oldest non-streaming session. Never
+ *  closes a session with a live stream. If none can be evicted (all streaming)
+ *  the map size is unchanged and the caller rejects the new session, keeping
+ *  the cap hard so held-open streams can't drive unbounded admission. */
 function evictOldestSession(): void {
   const oldestId = pickEvictableSessionId(sessions);
   if (!oldestId) {
-    logger.warn(
-      'Session limit reached but all sessions are streaming; admitting without eviction',
-      {
-        maxSessions: MAX_SESSIONS,
-      },
-    );
+    // Every session is streaming — nothing safe to evict. The caller enforces
+    // the hard cap by rejecting the new session; we just report the state.
+    logger.warn('Session limit reached and all sessions are streaming; cannot evict', {
+      maxSessions: getMaxSessions(),
+    });
     return;
   }
   const session = sessions.get(oldestId);
   logger.warn('Session limit reached, evicting oldest idle session', {
     sessionId: oldestId,
-    maxSessions: MAX_SESSIONS,
+    maxSessions: getMaxSessions(),
   });
   void Promise.resolve(session?.transport.close()).catch(() => {
     sessions.delete(oldestId);
@@ -224,27 +243,55 @@ export async function startHttpTransport(
         trackStream(postSession, res);
       }
 
-      // POST — read body with size limit
+      // POST — read body with a size limit AND a total-time limit. The time
+      // limit bounds trickled/stalled uploads: without it a client could hold
+      // a session slot (and up to MAX_BODY_SIZE of buffer) open indefinitely.
       const chunks: Buffer[] = [];
       let totalBytes = 0;
       let aborted = false;
-      for await (const chunk of req) {
-        const buf = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
-        totalBytes += buf.length;
-        if (totalBytes > MAX_BODY_SIZE) {
-          req.destroy();
-          res.writeHead(413, { 'Content-Type': 'application/json' });
+      let bodyTimedOut = false;
+      const bodyTimer = setTimeout(() => {
+        bodyTimedOut = true;
+        req.destroy(); // makes the for-await below throw; caught just below
+      }, getRequestBodyTimeoutMs());
+      try {
+        for await (const chunk of req) {
+          const buf = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
+          totalBytes += buf.length;
+          if (totalBytes > MAX_BODY_SIZE) {
+            req.destroy();
+            res.writeHead(413, { 'Content-Type': 'application/json' });
+            res.end(
+              JSON.stringify({
+                jsonrpc: '2.0',
+                error: { code: -32000, message: 'Payload too large' },
+                id: null,
+              }),
+            );
+            aborted = true;
+            break;
+          }
+          chunks.push(buf);
+        }
+      } catch (error) {
+        // A genuine mid-body abort (ECONNRESET) is not ours to handle here —
+        // let it propagate to the request wrapper. A timeout-induced destroy is.
+        if (!bodyTimedOut) throw error;
+      } finally {
+        clearTimeout(bodyTimer);
+      }
+      if (bodyTimedOut) {
+        if (!res.headersSent) {
+          res.writeHead(408, { 'Content-Type': 'application/json' });
           res.end(
             JSON.stringify({
               jsonrpc: '2.0',
-              error: { code: -32000, message: 'Payload too large' },
+              error: { code: -32000, message: 'Request body timeout' },
               id: null,
             }),
           );
-          aborted = true;
-          break;
         }
-        chunks.push(buf);
+        return;
       }
       if (aborted) return;
       const body = Buffer.concat(chunks).toString();
@@ -263,8 +310,23 @@ export async function startHttpTransport(
         return;
       }
 
-      // Existing session — already marked active before the body was read.
+      // Existing session — marked active before the body was read. Re-validate:
+      // the session may have been closed (DELETE, or its transport erroring)
+      // while we awaited the body, in which case dispatching to it is wrong.
       if (postSession) {
+        if (!sessionId || sessions.get(sessionId) !== postSession) {
+          if (!res.headersSent) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(
+              JSON.stringify({
+                jsonrpc: '2.0',
+                error: { code: -32001, message: 'Session no longer exists' },
+                id: null,
+              }),
+            );
+          }
+          return;
+        }
         try {
           await postSession.transport.handleRequest(req, res, parsedBody);
         } catch (error) {
@@ -279,10 +341,32 @@ export async function startHttpTransport(
 
       // New session (initialize request)
       if (!sessionId && isInitializeRequest(parsedBody)) {
+        // Hard admission cap. Try to free a slot; if the map is still full
+        // (every session is streaming and none can be safely evicted), reject
+        // rather than admit — otherwise a client holding many long-lived
+        // streams could drive unbounded session/transport growth.
+        if (sessions.size >= getMaxSessions()) {
+          evictOldestSession();
+          if (sessions.size >= getMaxSessions()) {
+            logger.warn('Rejecting new session — server at capacity', {
+              activeSessions: sessions.size,
+              maxSessions: getMaxSessions(),
+            });
+            res.writeHead(503, { 'Content-Type': 'application/json', 'Retry-After': '5' });
+            res.end(
+              JSON.stringify({
+                jsonrpc: '2.0',
+                error: { code: -32000, message: 'Server at capacity, retry later' },
+                id: null,
+              }),
+            );
+            return;
+          }
+        }
+
         const transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
           onsessioninitialized: (id) => {
-            if (sessions.size >= MAX_SESSIONS) evictOldestSession();
             const session: Session = { transport, lastSeenAt: Date.now(), openStreams: 0 };
             sessions.set(id, session);
             // Track the initialize response (this `res`) so a slow or streaming
