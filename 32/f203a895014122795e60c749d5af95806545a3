@@ -1,0 +1,35 @@
+test/transports/http-sessions.test.ts
+  s_b7c44b9c47ccad::t_5b147b79cc0502 18-21
+  s_b7c44b9c47ccad::t_6a47ce844037b4 139
+  s_b7c44b9c47ccad::t_2542483ac055b4 155-156
+  s_b7c44b9c47ccad::t_898b49cae21b4f 236-314
+  s_b7c44b9c47ccad::t_68ca98bbfa0677 362-395
+  s_b7c44b9c47ccad::t_45908cb0892483 42-48
+  s_b7c44b9c47ccad::t_9acb44e14e758c 79-83
+src/transports/http.ts
+  s_b7c44b9c47ccad::t_0e1528601bc7a5 87-95,98-99,105-120
+  s_b7c44b9c47ccad::t_f3d0bbc2771140 286-287
+  s_b7c44b9c47ccad::t_7a36d5575a632d 266
+  s_b7c44b9c47ccad::t_51be9928a008c3 217-223
+  s_b7c44b9c47ccad::t_c31145506124a6 121,123,224-226,267,269,288-290
+src/index.ts
+  s_b7c44b9c47ccad::t_4043d694b7cdb9 4
+  s_b7c44b9c47ccad::t_fd34bda245c434 123-124
+  s_b7c44b9c47ccad::t_31b8213216cb26 158-174,187-192,202-207,209-226
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "32f203a895014122795e60c749d5af95806545a3",
+  "prompts": {},
+  "sessions": {
+    "s_b7c44b9c47ccad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d1bc244a-c989-422f-a9a3-1f6399a27a04",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
