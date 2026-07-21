@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [1.5.3] - 2026-07-20
+
+### Fixed
+
+- **HTTP transport session leak (out-of-memory crashes).** Sessions were only released when a client sent an explicit `DELETE`. Sessions are now reaped on a 30-minute idle timeout with a session-count backstop after their SSE stream closes; sessions with an open SSE stream are treated as active and are not reaped, so connected clients receiving server pushes are not disconnected.
+- **HTTP transport crash on aborted requests.** A client aborting mid-request surfaced as an unhandled `Error: aborted` (`ECONNRESET`) that terminated the process. Aborted requests are now caught at their boundary and logged at debug level; the server keeps serving other sessions.
+- **Process-level safety nets.** Added top-level `unhandledRejection` and `uncaughtException` handlers. Since the one routine async failure (an aborted request) is now handled at its boundary, anything reaching these handlers is a genuine unknown, so both log and exit for a clean supervised restart rather than resuming in an unknown state. The handlers normalize any thrown value (a non-`Error` or `null` throw no longer crashes the handler itself) and stay alive briefly so the diagnostic flushes to `stderr` before exit. Note: this assumes the container runs under a restart policy (`always` or `unless-stopped`).
+
+### Changed
+
+- CI `build-image` workflow: image publishes are serialized via a single fixed `concurrency` group (not keyed on branch) so runs from any branch can't race and leave `:latest` pointing at the older build, and the optional extra image tag is now included in the build summary.
+
 ## [1.5.2] - 2026-06-02
 
 ### Changed
