@@ -1,0 +1,68 @@
+.github/workflows/build-image.yml
+  s_b7c44b9c47ccad::t_3ba36d4d9d2d7d 18,30,32-33
+  s_b7c44b9c47ccad::t_e7ac0dd56f12e6 121-127,134-136
+  s_b7c44b9c47ccad::t_c52a74b56faae8 153-155
+  s_b7c44b9c47ccad::t_643e875e1b9d7e 19-29,31
+vitest.config.ts
+  s_b7c44b9c47ccad::t_19fb6a76333a83 15-18
+test/index.test.ts
+  s_b7c44b9c47ccad::t_97da08efe0cbc8 123-147
+  s_b7c44b9c47ccad::t_373803b3323a2e 32-39
+CHANGELOG.md
+  s_b7c44b9c47ccad::t_bdedaaac520350 13-16
+  s_b7c44b9c47ccad::t_bfc593ce6252f5 9-11
+  s_b7c44b9c47ccad::t_2d717a24bba29e 5-8
+  s_b7c44b9c47ccad::t_21a3722b141b85 12
+Dockerfile
+  s_b7c44b9c47ccad::t_c463b5400d0430 26
+test/transports/http-sessions.test.ts
+  s_b7c44b9c47ccad::t_d1bc585fa9e8f4 1
+  s_b7c44b9c47ccad::t_fd660b79a7a30b 181,184-220
+  s_b7c44b9c47ccad::t_6a44ffbf8a1f0e 30-32,37-41
+  s_b7c44b9c47ccad::t_09b07e17489dcf 2-29,33-36,42-180,182,221-267
+  s_b7c44b9c47ccad::t_8172abccb467d4 183
+src/transports/http.ts
+  s_b7c44b9c47ccad::t_17dd146df95614 258
+  s_b7c44b9c47ccad::t_9c434b2c91e325 23-25,30-37,45,48-55,69,72-74,76-106,123-146,165-167,172,234-236,241,257,259,263-264,268-271,304,310-318
+  s_b7c44b9c47ccad::t_2cc7c08da3456b 237-239
+  s_b7c44b9c47ccad::t_4bbe5923ff7ae1 26-29,38-44
+  s_b7c44b9c47ccad::t_1e4970a4cf10ce 57-68,70-71,75
+  s_b7c44b9c47ccad::t_e49c6718a2337c 168-170
+  s_b7c44b9c47ccad::t_3253a6f71c207c 56
+server.json
+  s_b7c44b9c47ccad::t_df75957560cd40 14
+  s_b7c44b9c47ccad::t_938f6febe83e25 9
+package.json
+  s_b7c44b9c47ccad::t_6a010f934746c7 3
+src/index.ts
+  s_b7c44b9c47ccad::t_1dd56a82db4070 198
+  s_b7c44b9c47ccad::t_adc10c444a20eb 159,167,172,178,187-188,190-191
+  s_b7c44b9c47ccad::t_b2375d9d6d1737 147-156,158,160-166,168-171,173-174,176-177,179-186,189,192-193
+  s_b7c44b9c47ccad::t_1812e736005cf2 175
+  s_b7c44b9c47ccad::t_1666fbd1efd179 157
+  s_b7c44b9c47ccad::t_8ad050ce3ec27d 200
+  s_b7c44b9c47ccad::t_7cbe46bde1f4ec 194-196
+package-lock.json
+  s_b7c44b9c47ccad::t_7334548b369a82 3,9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "ff699cba83fc450414fbd15e1bdb8bf37be2e67f",
+  "prompts": {},
+  "humans": {
+    "h_70ae365dc0c3d1": {
+      "author": "alex-omophub <sdk@omophub.com>"
+    }
+  },
+  "sessions": {
+    "s_b7c44b9c47ccad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d1bc244a-c989-422f-a9a3-1f6399a27a04",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}
