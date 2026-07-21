@@ -84,19 +84,43 @@ export function sweepIdleSessions(now: number = Date.now()): number {
   return closed;
 }
 
-/** Evicts the least-recently-seen session. Backstop only. */
-function evictOldestSession(): void {
+/**
+ * Picks the least-recently-seen session that has NO open stream — the same
+ * "an open stream means actively connected" rule the idle sweep uses, so the
+ * capacity backstop never disconnects a working SSE/streaming client. Returns
+ * undefined when every session is streaming. Exported for unit testing.
+ */
+export function pickEvictableSessionId(
+  entries: Iterable<[string, { lastSeenAt: number; openStreams: number }]>,
+): string | undefined {
   let oldestId: string | undefined;
   let oldestSeenAt = Number.POSITIVE_INFINITY;
-  for (const [sessionId, session] of sessions) {
+  for (const [sessionId, session] of entries) {
+    if (session.openStreams > 0) continue;
     if (session.lastSeenAt < oldestSeenAt) {
       oldestSeenAt = session.lastSeenAt;
       oldestId = sessionId;
     }
   }
-  if (!oldestId) return;
+  return oldestId;
+}
+
+/** Evicts the oldest non-streaming session. Backstop only. If every session
+ *  has an open stream we admit the newcomer instead of killing a live client —
+ *  the cap is soft, and the leak it originally guarded against is fixed. */
+function evictOldestSession(): void {
+  const oldestId = pickEvictableSessionId(sessions);
+  if (!oldestId) {
+    logger.warn(
+      'Session limit reached but all sessions are streaming; admitting without eviction',
+      {
+        maxSessions: MAX_SESSIONS,
+      },
+    );
+    return;
+  }
   const session = sessions.get(oldestId);
-  logger.warn('Session limit reached, evicting oldest session', {
+  logger.warn('Session limit reached, evicting oldest idle session', {
     sessionId: oldestId,
     maxSessions: MAX_SESSIONS,
   });
@@ -190,6 +214,16 @@ export async function startHttpTransport(
         return;
       }
 
+      // POST. If it targets a known session, mark it active BEFORE reading the
+      // (possibly slow or trickled) body — otherwise a concurrent sweep could
+      // reap the session mid-upload. trackStream keeps it alive for the whole
+      // request/response and refreshes the idle clock when the response closes.
+      const postSession = sessionId ? sessions.get(sessionId) : undefined;
+      if (postSession && sessionId) {
+        touchSession(sessionId);
+        trackStream(postSession, res);
+      }
+
       // POST — read body with size limit
       const chunks: Buffer[] = [];
       let totalBytes = 0;
@@ -229,16 +263,10 @@ export async function startHttpTransport(
         return;
       }
 
-      // Existing session
-      if (sessionId && sessions.has(sessionId)) {
-        const session = sessions.get(sessionId);
-        if (!session) return;
-        touchSession(sessionId);
-        // A POST response may itself be a long-lived SSE stream (server needs
-        // to send notifications/requests back mid-call); track it too.
-        trackStream(session, res);
+      // Existing session — already marked active before the body was read.
+      if (postSession) {
         try {
-          await session.transport.handleRequest(req, res, parsedBody);
+          await postSession.transport.handleRequest(req, res, parsedBody);
         } catch (error) {
           logger.error('MCP transport error', { error: String(error), sessionId });
           if (!res.headersSent) {
@@ -255,7 +283,11 @@ export async function startHttpTransport(
           sessionIdGenerator: () => randomUUID(),
           onsessioninitialized: (id) => {
             if (sessions.size >= MAX_SESSIONS) evictOldestSession();
-            sessions.set(id, { transport, lastSeenAt: Date.now(), openStreams: 0 });
+            const session: Session = { transport, lastSeenAt: Date.now(), openStreams: 0 };
+            sessions.set(id, session);
+            // Track the initialize response (this `res`) so a slow or streaming
+            // init can't be reaped while it's still in flight.
+            trackStream(session, res);
             logger.info('MCP session created', { sessionId: id, activeSessions: sessions.size });
           },
         });

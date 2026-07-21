@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { realpathSync } from 'node:fs';
+import type { Server } from 'node:http';
 import url from 'node:url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { OmopHubClient } from './client/api.js';
@@ -119,7 +120,8 @@ export async function main(): Promise<void> {
   if (transportType === 'http') {
     const port = resolvePort(args.port);
     logger.info('Starting OMOPHub MCP server (http transport)');
-    await startHttpTransport(createServer, defaultClient, port);
+    // Kept so the fatal path can stop accepting new work before exiting.
+    runningServer = await startHttpTransport(createServer, defaultClient, port);
   } else {
     const server = createServer(defaultClient);
     const transport = new StdioServerTransport();
@@ -153,6 +155,23 @@ export function formatError(value: unknown): string {
 }
 
 let fatalScheduled = false;
+let runningServer: Server | undefined;
+
+/** Writes one fatal diagnostic line directly to stderr, matching the logger's
+ *  format, and invokes `onFlush` once it has actually drained to the OS — so
+ *  the last line isn't truncated by the exit that follows. */
+function writeFatalLine(message: string, value: unknown, onFlush: () => void): void {
+  const line = `[${new Date().toISOString()}] ERROR ${message} ${JSON.stringify({
+    error: formatError(value),
+  })}\n`;
+  try {
+    // The callback fires when this write flushes; ordering guarantees any
+    // earlier buffered writes have flushed by then too.
+    process.stderr.write(line, onFlush);
+  } catch {
+    onFlush();
+  }
+}
 
 /**
  * Logs a fatal condition and terminates for a clean, supervised restart.
@@ -165,10 +184,12 @@ let fatalScheduled = false;
  * in the HTTP transport and never reach here, so anything that does is a
  * genuine unknown.
  *
- * The process stays alive ~1s before exiting: `logger` writes to `stderr`,
- * which is an async pipe under Docker, so an immediate `process.exit()` can
- * truncate the very diagnostic we're trying to emit. The timer is referenced
- * on purpose — it is what holds the loop open for that flush window.
+ * Shutdown, in order: (1) stop the HTTP server accepting NEW connections — we
+ * shouldn't take on work in a state we've declared unsafe; (2) emit the
+ * diagnostic and exit only once it has flushed to stderr (an async pipe under
+ * Docker, where an immediate `process.exit()` would truncate it); (3) a
+ * referenced 1s fallback timer guarantees termination even if the flush
+ * callback never fires.
  *
  * NOTE: this assumes the container runs under a restart policy that restarts
  * on a non-zero exit — Docker's `always` or `unless-stopped` both work; they
@@ -177,11 +198,32 @@ let fatalScheduled = false;
  * condition now stops the service instead of limping on.
  */
 function fatalExit(message: string, value: unknown): void {
-  logger.error(message, { error: formatError(value) });
   process.exitCode = 1;
-  if (fatalScheduled) return; // a second signal shouldn't stack timers
+  if (fatalScheduled) {
+    // A second fatal signal while shutting down: still record it, but the
+    // exit is already queued — don't stop the server or stack timers again.
+    writeFatalLine(message, value, () => {});
+    return;
+  }
   fatalScheduled = true;
-  setTimeout(() => process.exit(1), 1000);
+
+  // (1) Stop accepting new work. close() rejects new connections immediately
+  // and lets in-flight ones finish; it can't block our exit below.
+  try {
+    runningServer?.close();
+  } catch {
+    // already closed / never started — nothing to do
+  }
+
+  // (2) + (3) Exit once the diagnostic has flushed, or after the fallback.
+  let exited = false;
+  const exit = (): void => {
+    if (exited) return;
+    exited = true;
+    process.exit(1);
+  };
+  writeFatalLine(message, value, exit);
+  setTimeout(exit, 1000);
 }
 
 export function installProcessSafetyNets(): void {

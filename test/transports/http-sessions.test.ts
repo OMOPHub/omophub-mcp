@@ -15,6 +15,10 @@ interface MockTransportOptions {
 
 const liveTransports = new Set<MockTransport>();
 
+// When true, the mock keeps the initialize response open (like a streaming
+// init) instead of ending it, so a test can observe the in-flight init.
+let holdInit = false;
+
 class MockTransport {
   sessionId: string | undefined;
   onclose: (() => void) | undefined;
@@ -35,9 +39,13 @@ class MockTransport {
       this.sessionId = this.options.sessionIdGenerator();
       this.options.onsessioninitialized(this.sessionId);
     }
-    if (req.method === 'GET') {
-      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
-      // Resolve only when the client disconnects — like a real SSE stream.
+    if (req.method === 'GET' || (isInit && holdInit)) {
+      const headers: Record<string, string> = isInit
+        ? { 'Content-Type': 'application/json' }
+        : { 'Content-Type': 'text/event-stream' };
+      if (this.sessionId) headers['mcp-session-id'] = this.sessionId;
+      res.writeHead(200, headers);
+      // Resolve only when the client disconnects — like a long-lived stream.
       return new Promise<void>((resolve) => res.once('close', () => resolve()));
     }
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -68,7 +76,11 @@ vi.mock('../../src/utils/logger.js', () => ({
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { OmopHubClient } from '../../src/client/api.js';
-import { startHttpTransport, sweepIdleSessions } from '../../src/transports/http.js';
+import {
+  pickEvictableSessionId,
+  startHttpTransport,
+  sweepIdleSessions,
+} from '../../src/transports/http.js';
 
 const serverCloses: Array<() => void> = [];
 
@@ -124,6 +136,7 @@ describe('HTTP transport session lifecycle', () => {
   let server: Server | undefined;
 
   afterEach(async () => {
+    holdInit = false;
     for (const transport of [...liveTransports]) await transport.close();
     liveTransports.clear();
     serverCloses.length = 0;
@@ -139,6 +152,8 @@ describe('HTTP transport session lifecycle', () => {
 
     await initializeSession(started.url);
     expect(liveTransports.size).toBe(1);
+    // Let the (quick) init response close so its tracked stream is released.
+    await new Promise((resolve) => setTimeout(resolve, 30));
 
     // Client vanishes without sending DELETE — nothing else would ever clean up.
     const wellPastTimeout = Date.now() + 31 * 60 * 1000;
@@ -218,6 +233,85 @@ describe('HTTP transport session lifecycle', () => {
     expect(liveTransports.size).toBe(0);
   });
 
+  it('does not reap a session while a slow POST body is still uploading', async () => {
+    const started = await startServer();
+    server = started.server;
+
+    await initializeSession(started.url);
+    const sessionId = [...liveTransports][0]?.sessionId;
+    await new Promise((resolve) => setTimeout(resolve, 30)); // release the init stream
+
+    // A POST whose body starts but never finishes (a trickled/stalled upload).
+    // The session must be marked active BEFORE the body is read, or a sweep
+    // landing during the upload would reap it mid-request.
+    const controller = new AbortController();
+    const body = new ReadableStream<Uint8Array>({
+      start(streamController) {
+        streamController.enqueue(new TextEncoder().encode('{"jsonrpc":"2.0",'));
+        // never close — the server's body read stays pending
+      },
+    });
+    const pending = fetch(started.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'mcp-session-id': sessionId as string },
+      body,
+      duplex: 'half',
+      signal: controller.signal,
+    } as RequestInit & { duplex: 'half' }).catch(() => {
+      /* aborted below */
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50)); // request reaches the server
+
+    // Mid-upload, far past the idle timeout — must NOT be reaped.
+    expect(sweepIdleSessions(Date.now() + 31 * 60 * 1000)).toBe(0);
+    expect(liveTransports.size).toBe(1);
+
+    controller.abort();
+    await pending;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Upload ended → reaped once past the timeout.
+    expect(sweepIdleSessions(Date.now() + 31 * 60 * 1000)).toBe(1);
+  });
+
+  it('does not reap a session whose initialize response is still in flight', async () => {
+    holdInit = true;
+    const started = await startServer();
+    server = started.server;
+
+    const controller = new AbortController();
+    const pending = fetch(started.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2024-11-05',
+          capabilities: {},
+          clientInfo: { name: 'slow-init', version: '1.0.0' },
+        },
+      }),
+      signal: controller.signal,
+    }).catch(() => {
+      /* aborted below */
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50)); // session created, init held open
+    expect(liveTransports.size).toBe(1);
+
+    // The init response is still streaming — the new session must not be reaped.
+    expect(sweepIdleSessions(Date.now() + 31 * 60 * 1000)).toBe(0);
+
+    controller.abort();
+    await pending;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Init finished → reaped once past the timeout.
+    expect(sweepIdleSessions(Date.now() + 31 * 60 * 1000)).toBe(1);
+    expect(liveTransports.size).toBe(0);
+  });
+
   it('survives a client aborting mid-body without an unhandled rejection', async () => {
     const started = await startServer();
     server = started.server;
@@ -263,5 +357,39 @@ describe('HTTP transport session lifecycle', () => {
     } finally {
       process.off('unhandledRejection', onRejection);
     }
+  });
+});
+
+describe('pickEvictableSessionId', () => {
+  it('picks the oldest session by lastSeenAt', () => {
+    const entries: Array<[string, { lastSeenAt: number; openStreams: number }]> = [
+      ['a', { lastSeenAt: 300, openStreams: 0 }],
+      ['b', { lastSeenAt: 100, openStreams: 0 }],
+      ['c', { lastSeenAt: 200, openStreams: 0 }],
+    ];
+    expect(pickEvictableSessionId(entries)).toBe('b');
+  });
+
+  it('skips streaming sessions even when they are the oldest', () => {
+    // 'b' is oldest but has an open stream, so it must not be chosen — the
+    // eviction backstop must never disconnect an actively-connected client.
+    const entries: Array<[string, { lastSeenAt: number; openStreams: number }]> = [
+      ['a', { lastSeenAt: 300, openStreams: 0 }],
+      ['b', { lastSeenAt: 100, openStreams: 2 }],
+      ['c', { lastSeenAt: 200, openStreams: 0 }],
+    ];
+    expect(pickEvictableSessionId(entries)).toBe('c');
+  });
+
+  it('returns undefined when every session is streaming', () => {
+    const entries: Array<[string, { lastSeenAt: number; openStreams: number }]> = [
+      ['a', { lastSeenAt: 300, openStreams: 1 }],
+      ['b', { lastSeenAt: 100, openStreams: 1 }],
+    ];
+    expect(pickEvictableSessionId(entries)).toBeUndefined();
+  });
+
+  it('returns undefined for no sessions', () => {
+    expect(pickEvictableSessionId([])).toBeUndefined();
   });
 });
