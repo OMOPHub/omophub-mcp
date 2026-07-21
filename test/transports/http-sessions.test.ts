@@ -102,6 +102,9 @@ const serverCloses: Array<() => void> = [];
 // When > 0, the mock server's connect() resolves after this delay, keeping an
 // init "in flight" so a concurrent init can observe the reservation.
 let connectDelayMs = 0;
+// When true, the NEXT connect() rejects, simulating an init that fails before
+// the session is created.
+let failNextConnect = false;
 
 function createMockServerFactory(): (client: OmopHubClient) => McpServer {
   return vi.fn(() => {
@@ -111,6 +114,10 @@ function createMockServerFactory(): (client: OmopHubClient) => McpServer {
       // Mirrors the SDK: connect() chains onto the existing onclose handler
       // rather than replacing it, so app cleanup still runs.
       connect: vi.fn((transport: MockTransport) => {
+        if (failNextConnect) {
+          failNextConnect = false;
+          return Promise.reject(new Error('connect failed'));
+        }
         const previous = transport.onclose;
         transport.onclose = () => {
           previous?.();
@@ -159,6 +166,7 @@ describe('HTTP transport session lifecycle', () => {
   afterEach(async () => {
     holdInit = false;
     connectDelayMs = 0;
+    failNextConnect = false;
     for (const transport of [...liveTransports]) await transport.close();
     liveTransports.clear();
     serverCloses.length = 0;
@@ -461,6 +469,61 @@ describe('HTTP transport session lifecycle', () => {
       expect([a.status, b.status].sort()).toEqual([200, 503]);
       await settle(30);
       expect(liveTransports.size).toBe(1);
+    } finally {
+      delete process.env.OMOPHUB_MAX_SESSIONS;
+    }
+  });
+
+  it('evicts an idle session to admit a new one at capacity', async () => {
+    process.env.OMOPHUB_MAX_SESSIONS = '1';
+    try {
+      const started = await startServer();
+      server = started.server;
+
+      // Session 1, idle (its init response closed → not streaming → evictable).
+      await initializeSession(started.url);
+      await settle(30);
+      const firstId = [...liveTransports][0]?.sessionId;
+
+      // A second init at cap=1 evicts the idle session and is admitted.
+      const res = await fetch(started.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: INIT_PAYLOAD,
+      });
+      expect(res.status).toBe(200);
+      await settle(30);
+      expect(liveTransports.size).toBe(1);
+      // The survivor is the new session; the idle one was evicted.
+      expect([...liveTransports][0]?.sessionId).not.toBe(firstId);
+    } finally {
+      delete process.env.OMOPHUB_MAX_SESSIONS;
+    }
+  });
+
+  it('releases the reservation when an init fails before creating a session', async () => {
+    process.env.OMOPHUB_MAX_SESSIONS = '1';
+    failNextConnect = true;
+    try {
+      const started = await startServer();
+      server = started.server;
+
+      // First init fails during connect → no session created, 500 returned.
+      const res1 = await fetch(started.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: INIT_PAYLOAD,
+      });
+      expect(res1.status).toBe(500);
+
+      // If the reservation leaked, pendingAdmissions would still be 1 and this
+      // second init would be wrongly rejected with 503 at cap=1. It must succeed.
+      const res2 = await fetch(started.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: INIT_PAYLOAD,
+      });
+      expect(res2.status).toBe(200);
     } finally {
       delete process.env.OMOPHUB_MAX_SESSIONS;
     }
