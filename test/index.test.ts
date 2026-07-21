@@ -29,7 +29,14 @@ vi.mock('../src/utils/logger.js', () => ({
 }));
 
 import { startHealthServer } from '../src/health.js';
-import { main, parseArgs, resolveHealthPort, resolvePort, resolveTransport } from '../src/index.js';
+import {
+  formatError,
+  main,
+  parseArgs,
+  resolveHealthPort,
+  resolvePort,
+  resolveTransport,
+} from '../src/index.js';
 import { createServer } from '../src/server.js';
 import { startHttpTransport } from '../src/transports/http.js';
 import { logger } from '../src/utils/logger.js';
@@ -110,6 +117,76 @@ describe('parseArgs', () => {
     expect(args.apiKey).toBeUndefined();
     expect(args.baseUrl).toBeUndefined();
     expect(args.healthPort).toBeUndefined();
+  });
+});
+
+describe('formatError', () => {
+  it('uses the stack for an Error', () => {
+    const err = new Error('boom');
+    expect(formatError(err)).toBe(err.stack);
+  });
+
+  it('falls back to the message when an Error has no stack', () => {
+    const err = new Error('no stack here');
+    err.stack = undefined;
+    expect(formatError(err)).toBe('no stack here');
+  });
+
+  it('stringifies a non-Error throw without touching .stack', () => {
+    expect(formatError('plain string thrown')).toBe('plain string thrown');
+    expect(formatError(42)).toBe('42');
+    expect(formatError({ code: 'X' })).toBe('[object Object]');
+  });
+
+  it('does not throw on null/undefined (the case that crashed the handler)', () => {
+    expect(() => formatError(null)).not.toThrow();
+    expect(formatError(null)).toBe('null');
+    expect(formatError(undefined)).toBe('undefined');
+  });
+
+  it('does not throw on a value that cannot be coerced to a string', () => {
+    // A null-prototype object has no toString / Symbol.toPrimitive, so
+    // String(value) throws "Cannot convert object to primitive value".
+    const uncoercible = Object.create(null) as unknown;
+    expect(() => formatError(uncoercible)).not.toThrow();
+    expect(typeof formatError(uncoercible)).toBe('string');
+  });
+
+  it('does not throw when the value’s own toString throws', () => {
+    const nasty = {
+      toString() {
+        throw new Error('boom from toString');
+      },
+    };
+    expect(() => formatError(nasty)).not.toThrow();
+    expect(formatError(nasty)).toBe('[unrepresentable error value]');
+  });
+
+  it('coerces a non-string Error.stack so the result is always a string', () => {
+    const err = new Error('the message');
+    (err as unknown as { stack: unknown }).stack = 12345; // corrupted to a number
+    expect(typeof formatError(err)).toBe('string');
+    expect(formatError(err)).toBe('12345');
+  });
+
+  it('does not produce a JSON.stringify hazard for a BigInt Error.stack', () => {
+    const err = new Error('the message');
+    (err as unknown as { stack: unknown }).stack = 10n; // BigInt: JSON.stringify would throw
+    const out = formatError(err);
+    expect(typeof out).toBe('string');
+    // The whole point: the returned string is safe to JSON.stringify downstream.
+    expect(() => JSON.stringify({ error: out })).not.toThrow();
+  });
+
+  it('falls back when an Error.stack getter throws', () => {
+    const err = new Error('the message');
+    Object.defineProperty(err, 'stack', {
+      get() {
+        throw new Error('nope');
+      },
+    });
+    expect(() => formatError(err)).not.toThrow();
+    expect(formatError(err)).toBe('[unrepresentable error value]');
   });
 });
 
