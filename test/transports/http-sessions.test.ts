@@ -98,6 +98,10 @@ const INIT_PAYLOAD = JSON.stringify({
 
 const serverCloses: Array<() => void> = [];
 
+// When > 0, the mock server's connect() resolves after this delay, keeping an
+// init "in flight" so a concurrent init can observe the reservation.
+let connectDelayMs = 0;
+
 function createMockServerFactory(): (client: OmopHubClient) => McpServer {
   return vi.fn(() => {
     const close = vi.fn();
@@ -111,7 +115,9 @@ function createMockServerFactory(): (client: OmopHubClient) => McpServer {
           previous?.();
           close();
         };
-        return Promise.resolve();
+        return connectDelayMs > 0
+          ? new Promise<void>((resolve) => setTimeout(resolve, connectDelayMs))
+          : Promise.resolve();
       }),
     };
   }) as unknown as (client: OmopHubClient) => McpServer;
@@ -151,6 +157,7 @@ describe('HTTP transport session lifecycle', () => {
 
   afterEach(async () => {
     holdInit = false;
+    connectDelayMs = 0;
     for (const transport of [...liveTransports]) await transport.close();
     liveTransports.clear();
     serverCloses.length = 0;
@@ -341,21 +348,23 @@ describe('HTTP transport session lifecycle', () => {
           streamController.enqueue(enc('{"jsonrpc":"2.0",'));
         },
       });
-      const pending = fetch(started.url, {
+      const result = await fetch(started.url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'mcp-session-id': sessionId as string },
         body,
         duplex: 'half',
-      } as RequestInit & { duplex: 'half' }).catch(() => {
-        /* server may 408 or reset the in-flight upload */
-      });
+      } as RequestInit & { duplex: 'half' }).catch((e: Error) => e);
 
-      await settle(250); // > 150ms timeout + margin
+      // The client receives the documented 408 — not a bare connection reset
+      // (which is what happens if req.destroy() runs before the response flushes).
+      expect(result).toBeInstanceOf(Response);
+      if (result instanceof Response) expect(result.status).toBe(408);
 
-      // The timeout aborted the upload and released openStreams, so the now-idle
-      // session is reapable. Without the timeout it would stay pinned forever.
+      await settle(50);
+
+      // The timeout also released openStreams, so the now-idle session is
+      // reapable. Without the timeout it would stay pinned forever.
       expect(sweepIdleSessions(Date.now() + 31 * 60 * 1000)).toBe(1);
-      await pending;
     } finally {
       delete process.env.OMOPHUB_REQUEST_BODY_TIMEOUT_MS;
     }
@@ -392,6 +401,40 @@ describe('HTTP transport session lifecycle', () => {
 
       controller.abort();
       await stream;
+    } finally {
+      delete process.env.OMOPHUB_MAX_SESSIONS;
+    }
+  });
+
+  it('holds the hard cap under concurrent initializes', async () => {
+    process.env.OMOPHUB_MAX_SESSIONS = '1';
+    // Keep each init in flight (async connect) so the two genuinely overlap:
+    // the first reserves its slot, the second checks while it's still pending.
+    connectDelayMs = 100;
+    try {
+      const started = await startServer();
+      server = started.server;
+
+      // Two initializes fired at once against cap=1. Without the reservation
+      // counter both pass the pre-check (which runs before async init inserts
+      // the session) and overshoot the cap.
+      const [a, b] = await Promise.all([
+        fetch(started.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: INIT_PAYLOAD,
+        }),
+        fetch(started.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: INIT_PAYLOAD,
+        }),
+      ]);
+
+      // Exactly one admitted, one rejected — the cap stays hard.
+      expect([a.status, b.status].sort()).toEqual([200, 503]);
+      await settle(30);
+      expect(liveTransports.size).toBe(1);
     } finally {
       delete process.env.OMOPHUB_MAX_SESSIONS;
     }

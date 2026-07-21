@@ -44,6 +44,11 @@ interface Session {
 // would disconnect working clients.
 const sessions = new Map<string, Session>();
 
+// Inits that passed the admission cap but haven't been inserted into `sessions`
+// yet (initialization is async). Counted against the cap so a burst of
+// concurrent initializes can't all pass the pre-check and overshoot it.
+let pendingAdmissions = 0;
+
 const MAX_BODY_SIZE = 1_048_576; // 1 MB
 const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 min without a request
 const SESSION_SWEEP_INTERVAL_MS = 60 * 1000;
@@ -252,7 +257,23 @@ export async function startHttpTransport(
       let bodyTimedOut = false;
       const bodyTimer = setTimeout(() => {
         bodyTimedOut = true;
-        req.destroy(); // makes the for-await below throw; caught just below
+        // req and res share a socket, so destroying req first would reset the
+        // connection and the client would never see the 408. Write the response
+        // and tear down the request only AFTER it has flushed. Destroying req is
+        // what makes the for-await below throw (caught as a timeout, not an error).
+        if (!res.headersSent) {
+          res.writeHead(408, { 'Content-Type': 'application/json' });
+          res.end(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              error: { code: -32000, message: 'Request body timeout' },
+              id: null,
+            }),
+            () => req.destroy(),
+          );
+        } else {
+          req.destroy();
+        }
       }, getRequestBodyTimeoutMs());
       try {
         for await (const chunk of req) {
@@ -280,19 +301,7 @@ export async function startHttpTransport(
       } finally {
         clearTimeout(bodyTimer);
       }
-      if (bodyTimedOut) {
-        if (!res.headersSent) {
-          res.writeHead(408, { 'Content-Type': 'application/json' });
-          res.end(
-            JSON.stringify({
-              jsonrpc: '2.0',
-              error: { code: -32000, message: 'Request body timeout' },
-              id: null,
-            }),
-          );
-        }
-        return;
-      }
+      if (bodyTimedOut) return; // the 408 was already written in the timeout callback
       if (aborted) return;
       const body = Buffer.concat(chunks).toString();
       let parsedBody: unknown;
@@ -341,15 +350,18 @@ export async function startHttpTransport(
 
       // New session (initialize request)
       if (!sessionId && isInitializeRequest(parsedBody)) {
-        // Hard admission cap. Try to free a slot; if the map is still full
-        // (every session is streaming and none can be safely evicted), reject
-        // rather than admit — otherwise a client holding many long-lived
-        // streams could drive unbounded session/transport growth.
-        if (sessions.size >= getMaxSessions()) {
+        // Hard admission cap. The effective count includes in-flight inits
+        // (pendingAdmissions) that haven't been inserted yet, so concurrent
+        // initializes can't all pass this pre-check and overshoot the cap. Try
+        // to free a slot; if still full (every session is streaming and none
+        // can be safely evicted), reject rather than admit — otherwise a client
+        // holding many long-lived streams could drive unbounded growth.
+        if (sessions.size + pendingAdmissions >= getMaxSessions()) {
           evictOldestSession();
-          if (sessions.size >= getMaxSessions()) {
+          if (sessions.size + pendingAdmissions >= getMaxSessions()) {
             logger.warn('Rejecting new session — server at capacity', {
               activeSessions: sessions.size,
+              pendingAdmissions,
               maxSessions: getMaxSessions(),
             });
             res.writeHead(503, { 'Content-Type': 'application/json', 'Retry-After': '5' });
@@ -364,34 +376,38 @@ export async function startHttpTransport(
           }
         }
 
-        const transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: () => randomUUID(),
-          onsessioninitialized: (id) => {
-            const session: Session = { transport, lastSeenAt: Date.now(), openStreams: 0 };
-            sessions.set(id, session);
-            // Track the initialize response (this `res`) so a slow or streaming
-            // init can't be reaped while it's still in flight.
-            trackStream(session, res);
-            logger.info('MCP session created', { sessionId: id, activeSessions: sessions.size });
-          },
-        });
-
-        // Assigned before connect() — the SDK chains rather than replaces this,
-        // so both this cleanup and the McpServer shutdown run on close.
-        transport.onclose = () => {
-          if (transport.sessionId) {
-            sessions.delete(transport.sessionId);
-            logger.info('MCP session closed', {
-              sessionId: transport.sessionId,
-              activeSessions: sessions.size,
-            });
-          }
-        };
-
-        const server = serverFactory(defaultClient);
-        await server.connect(transport);
-
+        // Reserve the slot for the whole (async) init — released in `finally`
+        // once the session is in the map (or the init failed). Incremented
+        // synchronously here, before the first await, so a concurrent init sees
+        // it in its own pre-check above.
+        pendingAdmissions++;
         try {
+          const transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: () => randomUUID(),
+            onsessioninitialized: (id) => {
+              const session: Session = { transport, lastSeenAt: Date.now(), openStreams: 0 };
+              sessions.set(id, session);
+              // Track the initialize response (this `res`) so a slow or streaming
+              // init can't be reaped while it's still in flight.
+              trackStream(session, res);
+              logger.info('MCP session created', { sessionId: id, activeSessions: sessions.size });
+            },
+          });
+
+          // Assigned before connect() — the SDK chains rather than replaces this,
+          // so both this cleanup and the McpServer shutdown run on close.
+          transport.onclose = () => {
+            if (transport.sessionId) {
+              sessions.delete(transport.sessionId);
+              logger.info('MCP session closed', {
+                sessionId: transport.sessionId,
+                activeSessions: sessions.size,
+              });
+            }
+          };
+
+          const server = serverFactory(defaultClient);
+          await server.connect(transport);
           await transport.handleRequest(req, res, parsedBody);
         } catch (error) {
           logger.error('MCP transport error (init)', { error: String(error) });
@@ -399,6 +415,8 @@ export async function startHttpTransport(
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON_RPC_INTERNAL_ERROR);
           }
+        } finally {
+          pendingAdmissions--;
         }
         return;
       }

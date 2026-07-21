@@ -154,22 +154,40 @@ export function formatError(value: unknown): string {
   return String(value);
 }
 
-let fatalScheduled = false;
+let shuttingDown = false;
+let pendingFatalWrites = 0;
+let exited = false;
 let runningServer: Server | undefined;
 
-/** Writes one fatal diagnostic line directly to stderr, matching the logger's
- *  format, and invokes `onFlush` once it has actually drained to the OS — so
- *  the last line isn't truncated by the exit that follows. */
-function writeFatalLine(message: string, value: unknown, onFlush: () => void): void {
+function exitNow(): void {
+  if (exited) return;
+  exited = true;
+  process.exit(1);
+}
+
+/** Exit once shutdown has started AND every queued fatal write has flushed, so
+ *  a diagnostic from a second simultaneous fatal event isn't truncated by the
+ *  first write's completion triggering the exit. */
+function exitWhenDrained(): void {
+  if (shuttingDown && pendingFatalWrites === 0) exitNow();
+}
+
+/** Writes one fatal diagnostic line to stderr (an async pipe under Docker),
+ *  matching the logger's format, and tracks it as pending so the process
+ *  doesn't exit before it drains to the OS. */
+function writeFatalLine(message: string, value: unknown): void {
   const line = `[${new Date().toISOString()}] ERROR ${message} ${JSON.stringify({
     error: formatError(value),
   })}\n`;
+  pendingFatalWrites++;
+  const done = (): void => {
+    pendingFatalWrites--;
+    exitWhenDrained();
+  };
   try {
-    // The callback fires when this write flushes; ordering guarantees any
-    // earlier buffered writes have flushed by then too.
-    process.stderr.write(line, onFlush);
+    process.stderr.write(line, done);
   } catch {
-    onFlush();
+    done();
   }
 }
 
@@ -184,12 +202,12 @@ function writeFatalLine(message: string, value: unknown, onFlush: () => void): v
  * in the HTTP transport and never reach here, so anything that does is a
  * genuine unknown.
  *
- * Shutdown, in order: (1) stop the HTTP server accepting NEW connections — we
- * shouldn't take on work in a state we've declared unsafe; (2) emit the
- * diagnostic and exit only once it has flushed to stderr (an async pipe under
- * Docker, where an immediate `process.exit()` would truncate it); (3) a
- * referenced 1s fallback timer guarantees termination even if the flush
- * callback never fires.
+ * Shutdown (once, on the first fatal event): stop the HTTP server accepting
+ * new connections AND drop existing ones — otherwise a client on a kept-alive
+ * connection could still be served in a state we've declared unsafe. Then emit
+ * the diagnostic; the process exits once every fatal write has flushed to
+ * stderr (so simultaneous fatal events aren't lost), or after a 1s fallback if
+ * a write callback never fires.
  *
  * NOTE: this assumes the container runs under a restart policy that restarts
  * on a non-zero exit — Docker's `always` or `unless-stopped` both work; they
@@ -199,31 +217,22 @@ function writeFatalLine(message: string, value: unknown, onFlush: () => void): v
  */
 function fatalExit(message: string, value: unknown): void {
   process.exitCode = 1;
-  if (fatalScheduled) {
-    // A second fatal signal while shutting down: still record it, but the
-    // exit is already queued — don't stop the server or stack timers again.
-    writeFatalLine(message, value, () => {});
-    return;
-  }
-  fatalScheduled = true;
+  const first = !shuttingDown;
+  shuttingDown = true;
 
-  // (1) Stop accepting new work. close() rejects new connections immediately
-  // and lets in-flight ones finish; it can't block our exit below.
-  try {
-    runningServer?.close();
-  } catch {
-    // already closed / never started — nothing to do
+  if (first) {
+    try {
+      runningServer?.close(); // refuse new connections
+      runningServer?.closeAllConnections(); // and drop in-flight/kept-alive ones
+    } catch {
+      // already closed / never started — nothing to do
+    }
+    setTimeout(exitNow, 1000); // hard fallback if a write never drains
   }
 
-  // (2) + (3) Exit once the diagnostic has flushed, or after the fallback.
-  let exited = false;
-  const exit = (): void => {
-    if (exited) return;
-    exited = true;
-    process.exit(1);
-  };
-  writeFatalLine(message, value, exit);
-  setTimeout(exit, 1000);
+  // Always record the diagnostic — including a second simultaneous fatal
+  // event; the exit waits until all such writes have flushed.
+  writeFatalLine(message, value);
 }
 
 export function installProcessSafetyNets(): void {
