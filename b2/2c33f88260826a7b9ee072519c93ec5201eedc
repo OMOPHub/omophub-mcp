@@ -1,0 +1,22 @@
+test/transports/http-sessions.test.ts
+  s_b7c44b9c47ccad::t_8d84a7c5b9c0ef 520
+  s_b7c44b9c47ccad::t_2db60e78f8f042 105-107,117-120
+  s_b7c44b9c47ccad::t_8a357b93e56d1b 169
+  s_b7c44b9c47ccad::t_0abcd7e7aa1ef1 477-519,521-531
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "b22c33f88260826a7b9ee072519c93ec5201eedc",
+  "prompts": {},
+  "sessions": {
+    "s_b7c44b9c47ccad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d1bc244a-c989-422f-a9a3-1f6399a27a04",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
