@@ -475,6 +475,16 @@ export async function startHttpTransport(
   sweepTimer.unref();
   httpServer.on('close', () => {
     clearInterval(sweepTimer);
+    // Close active sessions on shutdown so their transports and McpServer
+    // instances don't leak if the server is closed without a process exit
+    // (e.g. a graceful restart within the same process, or tests). Snapshot
+    // first — transport.close() fires onclose, which deletes from `sessions`.
+    for (const session of [...sessions.values()]) {
+      void Promise.resolve(session.transport.close()).catch(() => {
+        // best-effort cleanup during shutdown
+      });
+    }
+    sessions.clear();
   });
 
   await new Promise<void>((resolve) => {

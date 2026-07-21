@@ -204,6 +204,27 @@ describe('HTTP transport session lifecycle', () => {
     expect(liveTransports.size).toBe(1);
   });
 
+  it('closes active sessions when the HTTP server shuts down', async () => {
+    const started = await startServer();
+    server = started.server;
+
+    await initializeSession(started.url);
+    await settle(30);
+    expect(liveTransports.size).toBe(1);
+    expect(serverCloses[0]).not.toHaveBeenCalled(); // McpServer still live
+
+    // Graceful shutdown, without the test's manual transport cleanup.
+    const closed = new Promise<void>((resolve) => started.server.close(() => resolve()));
+    started.server.closeAllConnections(); // drop idle keep-alive so close() completes
+    await closed;
+    server = undefined; // already closed — don't double-close in afterEach
+
+    // Shutdown closed the session transport and released its McpServer, rather
+    // than leaving them resident.
+    expect(liveTransports.size).toBe(0);
+    expect(serverCloses[0]).toHaveBeenCalledTimes(1);
+  });
+
   it('does not reap a session kept alive by ongoing requests', async () => {
     const started = await startServer();
     server = started.server;

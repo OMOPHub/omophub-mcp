@@ -127,6 +127,8 @@ export async function main(): Promise<void> {
     const transport = new StdioServerTransport();
     logger.info('Starting OMOPHub MCP server (stdio transport)');
     await server.connect(transport);
+    // Kept so the fatal path can stop processing stdin before exiting.
+    stdioTransport = transport;
 
     const healthPort = resolveHealthPort(args.healthPort);
     if (healthPort !== undefined) {
@@ -170,6 +172,9 @@ let shuttingDown = false;
 let pendingFatalWrites = 0;
 let exited = false;
 let runningServer: Server | undefined;
+// In stdio mode there is no HTTP server; keep the transport so the fatal path
+// can stop reading/processing stdin messages during the shutdown window.
+let stdioTransport: StdioServerTransport | undefined;
 
 function exitNow(): void {
   if (exited) return;
@@ -234,8 +239,11 @@ function fatalExit(message: string, value: unknown): void {
 
   if (first) {
     try {
-      runningServer?.close(); // refuse new connections
-      runningServer?.closeAllConnections(); // and drop in-flight/kept-alive ones
+      // http mode: refuse new connections and drop in-flight/kept-alive ones.
+      runningServer?.close();
+      runningServer?.closeAllConnections();
+      // stdio mode: stop reading/processing further messages from stdin.
+      void stdioTransport?.close();
     } catch {
       // already closed / never started — nothing to do
     }
