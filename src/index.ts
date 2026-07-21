@@ -146,12 +146,19 @@ function isRunDirectly(): boolean {
 
 const isDirectRun = isRunDirectly();
 
-/** Normalizes any thrown/rejected value to a loggable string. Handles the
- *  cases `.stack`/`.message` can't: a non-Error throw (`throw 'boom'`) or,
- *  worse, `throw null`, where reading `.stack` would itself throw. */
+/** Normalizes any thrown/rejected value to a loggable string, without ever
+ *  throwing itself — this runs on the fatal shutdown path, so a value that
+ *  can't be coerced (a null-prototype object, or one whose `toString` /
+ *  `Symbol.toPrimitive` throws) must not take out the diagnostic. Also handles
+ *  a non-Error throw (`throw 'boom'`) and `throw null` (where `.stack` would
+ *  throw). */
 export function formatError(value: unknown): string {
-  if (value instanceof Error) return value.stack ?? value.message;
-  return String(value);
+  try {
+    if (value instanceof Error) return value.stack ?? value.message;
+    return String(value);
+  } catch {
+    return '[unrepresentable error value]';
+  }
 }
 
 let shuttingDown = false;

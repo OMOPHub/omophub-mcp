@@ -77,6 +77,7 @@ vi.mock('../../src/utils/logger.js', () => ({
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { OmopHubClient } from '../../src/client/api.js';
 import {
+  envPositiveInt,
   pickEvictableSessionId,
   startHttpTransport,
   sweepIdleSessions,
@@ -406,6 +407,31 @@ describe('HTTP transport session lifecycle', () => {
     }
   });
 
+  it('rejects an oversized body with 408-style delivery: a real 413, not a reset', async () => {
+    const started = await startServer();
+    server = started.server;
+    await initializeSession(started.url);
+    const sessionId = [...liveTransports][0]?.sessionId;
+    await settle(30);
+
+    // > 1 MB body. The server must write the 413 before destroying the shared
+    // socket, or the client sees a connection reset instead.
+    const oversized = JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/list',
+      params: { padding: 'x'.repeat(1_100_000) },
+    });
+    const result = await fetch(started.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'mcp-session-id': sessionId as string },
+      body: oversized,
+    }).catch((e: Error) => e);
+
+    expect(result).toBeInstanceOf(Response);
+    if (result instanceof Response) expect(result.status).toBe(413);
+  });
+
   it('holds the hard cap under concurrent initializes', async () => {
     process.env.OMOPHUB_MAX_SESSIONS = '1';
     // Keep each init in flight (async connect) so the two genuinely overlap:
@@ -606,5 +632,41 @@ describe('trackStream', () => {
     const res = fakeRes({ writableEnded: true });
     track(session, res);
     expect(session.openStreams).toBe(0);
+  });
+});
+
+describe('envPositiveInt', () => {
+  const NAME = 'OMOPHUB_TEST_TUNING';
+  afterEach(() => {
+    delete process.env[NAME];
+  });
+
+  it('returns the parsed value for a valid positive integer', () => {
+    process.env[NAME] = '250';
+    expect(envPositiveInt(NAME, 10)).toBe(250);
+  });
+
+  it('trims surrounding whitespace (Number semantics)', () => {
+    process.env[NAME] = '  50  ';
+    expect(envPositiveInt(NAME, 10)).toBe(50);
+  });
+
+  it('falls back when unset or empty', () => {
+    expect(envPositiveInt(NAME, 10)).toBe(10);
+    process.env[NAME] = '';
+    expect(envPositiveInt(NAME, 10)).toBe(10);
+  });
+
+  it('rejects a partially-numeric typo whole, rather than coercing it', () => {
+    // parseInt("100abc") would silently yield 100; Number("100abc") is NaN.
+    process.env[NAME] = '100abc';
+    expect(envPositiveInt(NAME, 10)).toBe(10);
+  });
+
+  it('rejects non-integer, zero, and negative values', () => {
+    for (const bad of ['100.5', '0', '-5', 'abc', 'NaN', 'Infinity']) {
+      process.env[NAME] = bad;
+      expect(envPositiveInt(NAME, 10)).toBe(10);
+    }
   });
 });

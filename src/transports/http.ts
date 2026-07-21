@@ -58,11 +58,22 @@ const SESSION_SWEEP_INTERVAL_MS = 60 * 1000;
 const DEFAULT_MAX_SESSIONS = 1000; // hard cap on concurrent sessions
 const DEFAULT_REQUEST_BODY_TIMEOUT_MS = 30_000; // max time to receive a POST body
 
-function envPositiveInt(name: string, fallback: number): number {
+const warnedInvalidEnv = new Set<string>();
+
+/** Reads a positive-integer tuning value from the environment. Uses `Number`
+ *  (not `parseInt`) so a malformed value like "100abc" or "1e3x" is rejected
+ *  whole rather than silently coerced to a partial number; on rejection it
+ *  warns once and uses the documented fallback. Exported for testing. */
+export function envPositiveInt(name: string, fallback: number): number {
   const raw = process.env[name];
-  if (!raw) return fallback;
-  const n = Number.parseInt(raw, 10);
-  return Number.isFinite(n) && n > 0 ? n : fallback;
+  if (raw === undefined || raw === '') return fallback;
+  const n = Number(raw);
+  if (Number.isSafeInteger(n) && n > 0) return n;
+  if (!warnedInvalidEnv.has(name)) {
+    warnedInvalidEnv.add(name);
+    logger.warn(`Ignoring invalid ${name}="${raw}"; using default ${fallback}`);
+  }
+  return fallback;
 }
 const getMaxSessions = (): number => envPositiveInt('OMOPHUB_MAX_SESSIONS', DEFAULT_MAX_SESSIONS);
 const getRequestBodyTimeoutMs = (): number =>
@@ -280,7 +291,10 @@ export async function startHttpTransport(
           const buf = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
           totalBytes += buf.length;
           if (totalBytes > MAX_BODY_SIZE) {
-            req.destroy();
+            // Same socket-sharing concern as the timeout path: req and res share
+            // a socket, so destroying req before the response flushes would reset
+            // the connection and the client would never see the 413. Write the
+            // response, then tear down the request from the flush callback.
             res.writeHead(413, { 'Content-Type': 'application/json' });
             res.end(
               JSON.stringify({
@@ -288,6 +302,7 @@ export async function startHttpTransport(
                 error: { code: -32000, message: 'Payload too large' },
                 id: null,
               }),
+              () => req.destroy(),
             );
             aborted = true;
             break;

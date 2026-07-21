@@ -143,6 +143,24 @@ describe('formatError', () => {
     expect(formatError(null)).toBe('null');
     expect(formatError(undefined)).toBe('undefined');
   });
+
+  it('does not throw on a value that cannot be coerced to a string', () => {
+    // A null-prototype object has no toString / Symbol.toPrimitive, so
+    // String(value) throws "Cannot convert object to primitive value".
+    const uncoercible = Object.create(null) as unknown;
+    expect(() => formatError(uncoercible)).not.toThrow();
+    expect(typeof formatError(uncoercible)).toBe('string');
+  });
+
+  it('does not throw when the value’s own toString throws', () => {
+    const nasty = {
+      toString() {
+        throw new Error('boom from toString');
+      },
+    };
+    expect(() => formatError(nasty)).not.toThrow();
+    expect(formatError(nasty)).toBe('[unrepresentable error value]');
+  });
 });
 
 describe('resolveHealthPort', () => {
