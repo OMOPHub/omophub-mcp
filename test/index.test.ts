@@ -161,6 +161,33 @@ describe('formatError', () => {
     expect(() => formatError(nasty)).not.toThrow();
     expect(formatError(nasty)).toBe('[unrepresentable error value]');
   });
+
+  it('coerces a non-string Error.stack so the result is always a string', () => {
+    const err = new Error('the message');
+    (err as unknown as { stack: unknown }).stack = 12345; // corrupted to a number
+    expect(typeof formatError(err)).toBe('string');
+    expect(formatError(err)).toBe('12345');
+  });
+
+  it('does not produce a JSON.stringify hazard for a BigInt Error.stack', () => {
+    const err = new Error('the message');
+    (err as unknown as { stack: unknown }).stack = 10n; // BigInt: JSON.stringify would throw
+    const out = formatError(err);
+    expect(typeof out).toBe('string');
+    // The whole point: the returned string is safe to JSON.stringify downstream.
+    expect(() => JSON.stringify({ error: out })).not.toThrow();
+  });
+
+  it('falls back when an Error.stack getter throws', () => {
+    const err = new Error('the message');
+    Object.defineProperty(err, 'stack', {
+      get() {
+        throw new Error('nope');
+      },
+    });
+    expect(() => formatError(err)).not.toThrow();
+    expect(formatError(err)).toBe('[unrepresentable error value]');
+  });
 });
 
 describe('resolveHealthPort', () => {

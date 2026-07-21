@@ -154,7 +154,12 @@ const isDirectRun = isRunDirectly();
  *  throw). */
 export function formatError(value: unknown): string {
   try {
-    if (value instanceof Error) return value.stack ?? value.message;
+    // String(...) the selected property too: an Error can carry a non-string
+    // `stack`/`message` (reassigned, or a getter), and returning that non-string
+    // would only defer the failure to the caller's JSON.stringify (which throws
+    // on e.g. a BigInt or circular value). Coercing here keeps the fallback
+    // effective for those malformed Errors as well.
+    if (value instanceof Error) return String(value.stack ?? value.message);
     return String(value);
   } catch {
     return '[unrepresentable error value]';

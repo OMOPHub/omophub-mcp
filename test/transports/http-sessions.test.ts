@@ -466,6 +466,48 @@ describe('HTTP transport session lifecycle', () => {
     }
   });
 
+  it('releases the admission reservation when a streaming init is inserted', async () => {
+    process.env.OMOPHUB_MAX_SESSIONS = '2';
+    holdInit = true; // init responses stay open → handleRequest never returns
+    try {
+      const started = await startServer();
+      server = started.server;
+
+      // First streaming init: session inserted, its response held open.
+      const c1 = new AbortController();
+      const p1 = fetch(started.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: INIT_PAYLOAD,
+        signal: c1.signal,
+      }).catch(() => {});
+      await settle(50);
+      expect(liveTransports.size).toBe(1);
+
+      // Second streaming init. If the reservation weren't released on insertion,
+      // the first session would count twice (sessions.size 1 + pending 1 = 2),
+      // hitting the cap of 2 and forcing a 503 with only one real session.
+      const c2 = new AbortController();
+      const p2 = fetch(started.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: INIT_PAYLOAD,
+        signal: c2.signal,
+      }).catch(() => {});
+      await settle(50);
+
+      // Second init is admitted — the cap reflects real sessions, not double-counts.
+      expect(liveTransports.size).toBe(2);
+
+      c1.abort();
+      c2.abort();
+      await Promise.all([p1, p2]);
+    } finally {
+      delete process.env.OMOPHUB_MAX_SESSIONS;
+      holdInit = false;
+    }
+  });
+
   it('rejects a POST whose session is closed while its body is uploading', async () => {
     const started = await startServer();
     server = started.server;

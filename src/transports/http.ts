@@ -391,17 +391,26 @@ export async function startHttpTransport(
           }
         }
 
-        // Reserve the slot for the whole (async) init — released in `finally`
-        // once the session is in the map (or the init failed). Incremented
-        // synchronously here, before the first await, so a concurrent init sees
-        // it in its own pre-check above.
+        // Reserve a slot for the async init. Incremented synchronously here,
+        // before the first await, so a concurrent init sees it in its own
+        // pre-check above. The reservation is released the moment the session
+        // is inserted into `sessions` (it now counts toward `sessions.size`);
+        // otherwise it would be double-counted for the whole lifetime of a
+        // streaming init, whose `handleRequest` doesn't return until the stream
+        // closes. If the init never inserts a session (failure), the `finally`
+        // releases it instead.
         pendingAdmissions++;
+        let admitted = false;
         try {
           const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: () => randomUUID(),
             onsessioninitialized: (id) => {
               const session: Session = { transport, lastSeenAt: Date.now(), openStreams: 0 };
               sessions.set(id, session);
+              if (!admitted) {
+                admitted = true;
+                pendingAdmissions--; // reservation fulfilled — now counted in sessions.size
+              }
               // Track the initialize response (this `res`) so a slow or streaming
               // init can't be reaped while it's still in flight.
               trackStream(session, res);
@@ -431,7 +440,10 @@ export async function startHttpTransport(
             res.end(JSON_RPC_INTERNAL_ERROR);
           }
         } finally {
-          pendingAdmissions--;
+          // Only release here if the init never inserted a session (it failed
+          // before onsessioninitialized fired); otherwise it was already
+          // released at insertion.
+          if (!admitted) pendingAdmissions--;
         }
         return;
       }
