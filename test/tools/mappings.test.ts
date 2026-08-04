@@ -146,6 +146,50 @@ describe('map_concept', () => {
       );
     });
 
+    // Regression: when the server sends no meta.pagination (a response cached
+    // before the API gained it), has_more used to default to false. Combined with
+    // a real data.total_mappings that produced a self-contradictory response —
+    // "1500 total, 2 returned, nothing more to fetch" — and a client that trusts
+    // has_more stops 1498 rows short.
+    it('derives has_more from the total when meta.pagination is absent', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.request.mockResolvedValueOnce({
+        success: true,
+        data: { ...mappingsResponse.data, total_mappings: 1500 },
+        // deliberately no meta.pagination
+      });
+
+      registerMappingTools(server as never, client as never);
+      const handler = server.tools.get('map_concept')!;
+
+      const result = await handler({ concept_id: 201826 });
+
+      const json = JSON.parse(result.content[1].text as string);
+      expect(json.total_mappings).toBe(1500);
+      expect(json.has_more).toBe(true);
+      expect(json.returned_count).toBeLessThan(1500);
+
+      // And the text must say so too, not just the JSON.
+      expect(result.content[0].text as string).toContain('1500');
+    });
+
+    it('reports has_more false when the total matches what was returned', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      const rows = mappingsResponse.data.mappings.length;
+      client.request.mockResolvedValueOnce({
+        success: true,
+        data: { ...mappingsResponse.data, total_mappings: rows },
+      });
+
+      registerMappingTools(server as never, client as never);
+      const handler = server.tools.get('map_concept')!;
+
+      const json = JSON.parse((await handler({ concept_id: 201826 })).content[1].text as string);
+      expect(json.has_more).toBe(false);
+    });
+
     // The point of the whole change: a partial page must announce itself. Showing
     // 100 rows under a bare header reads as the complete set to the model
     // consuming this, which is how an incomplete code list gets built.

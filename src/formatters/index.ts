@@ -146,7 +146,17 @@ export function formatMappings(
   // pagination block at all (an older API build).
   const pagination = response.meta?.pagination;
   const totalMappings = pagination?.total_items ?? data.total_mappings ?? mappings.length;
-  const hasMore = pagination?.has_next ?? false;
+
+  // In the fallback path `has_more` must be DERIVED, not defaulted to false.
+  // Defaulting produced a self-contradictory response — `total_mappings: 1500`
+  // alongside `returned_count: 100` and `has_more: false` — which tells a client
+  // both that more exist and that it should stop. It stops, and the code list is
+  // short by 1,400 entries with nothing indicating it.
+  //
+  // This is reachable today: responses cached before the API gained pagination
+  // carry no meta.pagination, and `total_mappings` is a declared field on
+  // MappingsResponse, so a server can report the true total without the block.
+  const hasMore = pagination?.has_next ?? totalMappings > mappings.length;
 
   const header = `Mappings for **${source?.concept_name || `Concept ${conceptId}`}** (${source?.vocabulary_id || 'unknown'} → targets):`;
 

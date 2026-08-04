@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { OmopHubClient } from '../client/api.js';
 import { resolveClient } from '../client/resolve.js';
-import type { Concept, RawHierarchyResponse } from '../client/types.js';
+import type { Concept, PaginationMeta, RawHierarchyResponse } from '../client/types.js';
 import { formatErrorForMcp } from '../utils/errors.js';
 
 interface RelationshipItem {
@@ -134,6 +134,8 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
 
         let hierarchy: RawHierarchyResponse | null = null;
         let relationshipsData: RelationshipsData | null = null;
+        let mappingsPagination: PaginationMeta | null = null;
+        let mappingsTruncated = false;
 
         let idx = 1;
         if (hierarchyReq) {
@@ -145,7 +147,15 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
         if (mappingsReq) {
           const r = settled[idx];
           if (r.status === 'fulfilled') {
-            relationshipsData = (r.value as { data: RelationshipsData }).data;
+            const res = r.value as {
+              data: RelationshipsData;
+              meta?: { pagination?: PaginationMeta };
+            };
+            relationshipsData = res.data;
+            // Keep the pagination block. Discarding it is what let this tool
+            // render a truncated page under a header that counted only the rows
+            // it happened to receive.
+            mappingsPagination = res.meta?.pagination ?? null;
           }
         }
 
@@ -247,8 +257,27 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
             ? mappingRels.filter((r) => vocabFilter.includes(r.concept_2?.vocabulary_id ?? ''))
             : mappingRels;
 
-          if (filtered.length > 0) {
-            const mapLines = [`## Cross-Vocabulary Mappings (${filtered.length})`];
+          // The header used to count only the rows this one page happened to
+          // contain, so a concept with 309 mappings rendered as
+          // "Cross-Vocabulary Mappings (200)" — a truncated set presented as a
+          // complete one. total_items is the server's count for the SAME filtered
+          // query (relationship_ids + vocabulary_ids), so it is the right
+          // denominator.
+          //
+          // This tool deliberately does NOT page to exhaustion: it is an overview
+          // that runs three requests in parallel, and a concept with thousands of
+          // mappings would turn it into a long serial crawl returning far more
+          // than an overview should. Instead it reports honestly that it is
+          // partial and names the tool that can finish the job.
+          const fetchedCount = filtered.length;
+          const totalAvailable = mappingsPagination?.total_items ?? fetchedCount;
+          mappingsTruncated = mappingsPagination?.has_next ?? totalAvailable > fetchedCount;
+
+          if (fetchedCount > 0) {
+            const countLabel = mappingsTruncated
+              ? `${fetchedCount} of ${totalAvailable}`
+              : String(fetchedCount);
+            const mapLines = [`## Cross-Vocabulary Mappings (${countLabel})`];
             for (const r of filtered.slice(0, 15)) {
               const c2 = r.concept_2;
               if (c2) {
@@ -257,7 +286,15 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
                 );
               }
             }
-            if (filtered.length > 15) mapLines.push(`... and ${filtered.length - 15} more`);
+            if (fetchedCount > 15) {
+              mapLines.push(`... and ${fetchedCount - 15} more on this page`);
+            }
+            if (mappingsTruncated) {
+              mapLines.push(
+                `\n_Partial: this overview fetched ${fetchedCount} of ${totalAvailable} mappings. ` +
+                  `Raise mappings_page_size (max 200), or use map_concept with page/page_size for the complete set._`,
+              );
+            }
             sections.push(mapLines.join('\n'));
           } else {
             const isStandard = concept.standard_concept === 'S';
@@ -269,7 +306,17 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
         }
 
         const text = sections.join('\n\n');
-        const jsonData = { concept, hierarchy, relationships: relationshipsData };
+        // mappings_truncated / mappings_pagination are the machine-readable half
+        // of the partial-result marker above. Without them a consumer reading only
+        // the JSON block sees an array of relationships with no way to tell it is
+        // one page of several.
+        const jsonData = {
+          concept,
+          hierarchy,
+          relationships: relationshipsData,
+          mappings_truncated: mappingsTruncated,
+          mappings_pagination: mappingsPagination,
+        };
 
         return {
           content: [
