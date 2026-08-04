@@ -1,0 +1,30 @@
+test/tools/mappings.test.ts
+  s_9573770d1bcd98::t_146ffbd26ad70e 149-192
+test/tools/explore.test.ts
+  s_9573770d1bcd98::t_8debb8a08007f3 179-243
+src/tools/explore.ts
+  s_9573770d1bcd98::t_8efc27cf603eaf 150-158
+  s_9573770d1bcd98::t_f7deff4d66ad4a 260-280,289-297
+  s_9573770d1bcd98::t_471661ae509372 309-319
+  s_9573770d1bcd98::t_e3ab547e24729c 5
+  s_9573770d1bcd98::t_0f62c04d78f15f 138
+  s_9573770d1bcd98::t_1cc3b9ffb718be 137
+src/formatters/index.ts
+  s_9573770d1bcd98::t_e577d766f61329 149-159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "3bc6c15ec32d3cedea5e846bd6733e07ebd27cbc",
+  "prompts": {},
+  "sessions": {
+    "s_9573770d1bcd98": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bbf1df99-2040-4e2b-8f4b-ad9163de7d83",
+        "model": "claude-opus-5"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
