@@ -17,7 +17,21 @@ function conceptLine(c: Concept | SearchResult, index?: number): string {
       : c.standard_concept === 'C'
         ? ' [Classification]'
         : '';
-  return `${prefix}**${c.concept_name}** (ID: ${c.concept_id})\n   ${c.vocabulary_id} | ${c.domain_id} | Code: ${c.concept_code}${std}`;
+
+  // Validity was dropped entirely: the API returns valid_start_date,
+  // valid_end_date and invalid_reason on every concept and this line rendered
+  // none of them. For code-list work that is the difference between a usable
+  // list and a wrong one — a deprecated NDC looked identical to a live one.
+  //
+  // invalid_reason is called out separately from the date range because it is
+  // the actionable flag ('D' deleted, 'U' updated/replaced): a concept can carry
+  // a plausible-looking date range and still be one you must not ship.
+  const validity = c.valid_start_date
+    ? ` | Valid: ${c.valid_start_date} → ${c.valid_end_date ?? '?'}`
+    : '';
+  const invalid = c.invalid_reason ? ` [INVALID: ${c.invalid_reason}]` : '';
+
+  return `${prefix}**${c.concept_name}** (ID: ${c.concept_id})\n   ${c.vocabulary_id} | ${c.domain_id} | Code: ${c.concept_code}${std}${validity}${invalid}`;
 }
 
 export function formatConceptList(
@@ -57,6 +71,12 @@ export function formatConceptList(
         concept_code: r.concept_code,
         concept_class_id: r.concept_class_id,
         standard_concept: r.standard_concept,
+        // The API returns these on every concept; this projection used to drop
+        // them, so a consumer building a code list from the JSON block had no way
+        // to tell a live code from a deprecated one.
+        valid_start_date: r.valid_start_date,
+        valid_end_date: r.valid_end_date,
+        invalid_reason: r.invalid_reason ?? null,
       })),
       total,
       page,

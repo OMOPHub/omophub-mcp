@@ -58,8 +58,15 @@ export function registerSearchTools(server: McpServer, client: OmopHubClient): v
           page_size: page_size ?? 10,
         };
 
-        // Map PRD param names to actual API params
-        if (vocabulary_ids) params.vocabularies = vocabulary_ids;
+        // GET /v1/search/concepts validates `vocabulary_ids`. This sent
+        // `vocabularies`, which the API does not recognise — and unknown query
+        // params are ignored rather than rejected, so the filter silently did
+        // nothing and the search ranged over every vocabulary. A user asking for
+        // NDC got RxNorm, dm+d, VANDF, NDFRT and others, with zero NDC rows.
+        //
+        // semantic_search and get_hierarchy already send `vocabulary_ids`; this
+        // tool was the only one out of step.
+        if (vocabulary_ids) params.vocabulary_ids = vocabulary_ids;
         if (domain_ids) params.domain_ids = domain_ids;
         if (standard_concept) params.standard_concept = standard_concept;
 

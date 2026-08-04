@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-08-04
+
+Both issues reported by a user building NDC code lists with `search_concepts`. Both
+were in this layer; the API was returning correct data in each case.
+
+### Fixed
+
+- **`search_concepts` ignored `vocabulary_ids` entirely.** The tool sent the filter as `vocabularies`, which `GET /v1/search/concepts` does not recognise — and unknown query params are ignored rather than rejected, so the request silently ran unfiltered across every vocabulary. A search restricted to NDC came back as RxNorm, dm+d, VANDF, NDFRT, Nebraska Lexicon and others, **with no NDC rows at all**, while reporting success. `semantic_search` and `get_hierarchy` already sent `vocabulary_ids` correctly; this tool was the only one out of step. An existing test asserted the wrong name and so locked the bug in — it has been corrected and paired with a test that fails if `vocabularies` is ever sent again.
+- **`search_concepts` dropped concept validity.** The API returns `valid_start_date`, `valid_end_date` and `invalid_reason` on every concept; the formatter's projection discarded all three, so a deprecated code was indistinguishable from a live one. Results now show `Valid: <start> → <end>` and an explicit `[INVALID: <reason>]` marker in the text block, and carry all three fields in the JSON block. This matters most for exactly the case reported: a drug code list that silently includes retired NDCs is wrong in a way nothing in the output reveals.
+
 ## [1.6.0] - 2026-08-04
 
 ### Fixed

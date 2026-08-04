@@ -16,7 +16,7 @@ describe('search_concepts', () => {
     vi.unstubAllGlobals();
   });
 
-  it('constructs URL with vocabularies query param', async () => {
+  it('constructs URL with vocabulary_ids query param', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => searchResponse,
@@ -27,7 +27,7 @@ describe('search_concepts', () => {
       '/search/concepts',
       {
         query: 'diabetes',
-        vocabularies: 'SNOMED,ICD10CM',
+        vocabulary_ids: 'SNOMED,ICD10CM',
         page_size: 10,
       },
       'search_concepts',
@@ -35,7 +35,7 @@ describe('search_concepts', () => {
 
     const [url] = mockFetch.mock.calls[0] as [string];
     const parsed = new URL(url);
-    expect(parsed.searchParams.get('vocabularies')).toBe('SNOMED,ICD10CM');
+    expect(parsed.searchParams.get('vocabulary_ids')).toBe('SNOMED,ICD10CM');
     expect(parsed.searchParams.get('query')).toBe('diabetes');
     expect(parsed.searchParams.get('page_size')).toBe('10');
   });
@@ -124,10 +124,14 @@ describe('search_concepts', () => {
         page_size: 20,
       });
 
+      // Regression: this asserted `vocabularies`, which is not a parameter the
+      // API recognises. Unknown query params are ignored rather than rejected, so
+      // the filter silently did nothing — a search for NDC returned RxNorm, dm+d,
+      // VANDF and others with no NDC rows at all. The test locked the bug in.
       expect(client.request).toHaveBeenCalledWith(
         '/search/concepts',
         expect.objectContaining({
-          vocabularies: 'SNOMED,ICD10CM',
+          vocabulary_ids: 'SNOMED,ICD10CM',
           domain_ids: 'Condition',
           standard_concept: 'S',
           page: 2,
@@ -135,6 +139,71 @@ describe('search_concepts', () => {
         }),
         'search_concepts',
       );
+    });
+
+    it('never sends the unrecognised `vocabularies` param', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.request.mockResolvedValueOnce(searchResponse);
+
+      registerSearchTools(server as never, client as never);
+      const handler = server.tools.get('search_concepts')!;
+
+      await handler({ query: 'rosuvastatin', vocabulary_ids: 'NDC' });
+
+      const sentParams = client.request.mock.calls[0][1] as Record<string, unknown>;
+      expect(sentParams).not.toHaveProperty('vocabularies');
+      expect(sentParams.vocabulary_ids).toBe('NDC');
+    });
+
+    // Wojtek's second report: validity was returned by the API and discarded
+    // here, so a deprecated code was indistinguishable from a live one.
+    it('surfaces validity dates and invalid_reason', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.request.mockResolvedValueOnce({
+        success: true,
+        data: [
+          {
+            concept_id: 1,
+            concept_name: 'live code',
+            vocabulary_id: 'NDC',
+            domain_id: 'Drug',
+            concept_class_id: '11-digit NDC',
+            standard_concept: null,
+            concept_code: '00000000001',
+            valid_start_date: '2009-01-01',
+            valid_end_date: '2099-12-31',
+            invalid_reason: null,
+          },
+          {
+            concept_id: 2,
+            concept_name: 'retired code',
+            vocabulary_id: 'NDC',
+            domain_id: 'Drug',
+            concept_class_id: '11-digit NDC',
+            standard_concept: null,
+            concept_code: '00000000002',
+            valid_start_date: '2009-01-01',
+            valid_end_date: '2018-06-30',
+            invalid_reason: 'D',
+          },
+        ],
+      });
+
+      registerSearchTools(server as never, client as never);
+      const handler = server.tools.get('search_concepts')!;
+
+      const result = await handler({ query: 'x', vocabulary_ids: 'NDC' });
+
+      const text = result.content[0].text as string;
+      expect(text).toContain('2099-12-31');
+      expect(text).toContain('INVALID: D');
+
+      const json = JSON.parse(result.content[1].text as string);
+      expect(json.results[0].valid_end_date).toBe('2099-12-31');
+      expect(json.results[0].invalid_reason).toBeNull();
+      expect(json.results[1].invalid_reason).toBe('D');
     });
 
     it('uses default pagination values', async () => {
