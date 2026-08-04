@@ -1,0 +1,37 @@
+docker-build.sh
+  s_9573770d1bcd98::t_39c2c12b885bb0 23
+README.md
+  s_9573770d1bcd98::t_a168f615720ba8 219
+  s_9573770d1bcd98::t_255727ec622b88 255-264
+Dockerfile
+  s_9573770d1bcd98::t_baa16580c0f179 24-29,32
+CHANGELOG.md
+  h_70ae365dc0c3d1 9-10,12,16,45,65
+.github/workflows/build-image.yml
+  s_9573770d1bcd98::t_8063633a9637f0 101-107
+test/tools/explore.test.ts
+  s_9573770d1bcd98::t_6930cb686c85ef 183-185
+server.json
+  s_9573770d1bcd98::t_35ae18433b91a4 9,14,29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "0c2b41d9f82736343db542e213321ccdcef8202d",
+  "prompts": {},
+  "humans": {
+    "h_70ae365dc0c3d1": {
+      "author": "alex-omophub <sdk@omophub.com>"
+    }
+  },
+  "sessions": {
+    "s_9573770d1bcd98": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bbf1df99-2040-4e2b-8f4b-ad9163de7d83",
+        "model": "claude-opus-5"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
