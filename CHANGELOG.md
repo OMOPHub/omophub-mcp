@@ -4,30 +4,17 @@
 
 ## [1.6.0] - 2026-08-04
 
-Reported by a user building an NDC code list: the API appeared to cap results at
-100. It does not — the caps were here, in the MCP layer, and several of them were
-below what the API would serve. The theme of this release is that a tool must not
-return a partial answer that reads like a complete one.
-
 ### Fixed
 
-- **`map_concept` returned at most 100 mappings with no way to get the rest, and no indication any were missing.** It now accepts `page` and `page_size` (1-200, default 100). Requires the corresponding API fix, which adds pagination to `GET /v1/concepts/{id}/mappings` — that endpoint previously applied an unparameterised `LIMIT 100` in SQL with no total and no `has_next`. A concept with 1,500 mappings yielded 100 of them and nothing said so, which for anyone building a code list is a wrong answer wearing the costume of a right one.
-- **`map_concept` output now states when it is showing a partial set.** The text block appends `Showing 100 of 1500 mappings (page 1 of 15). Call again with page=2 for the rest.`, and the JSON gains `returned_count`, `page`, `page_size`, `total_pages` and `has_more`; `total_mappings` now carries the true total rather than the length of the current page. The text matters as much as the JSON — this output is read by a model deciding whether it has finished, and rows under a bare header read as the whole set.
+- **`map_concept` returned at most 100 mappings with no way to get the rest, and no indication any were missing.** It now accepts `page` and `page_size` (1-200, default 100). Requires the corresponding API fix, which adds pagination to `GET /v1/concepts/{id}/mappings` - that endpoint previously applied an unparameterised `LIMIT 100` in SQL with no total and no `has_next`. A concept with 1,500 mappings yielded 100 of them and nothing said so, which for anyone building a code list is a wrong answer wearing the costume of a right one.
+- **`map_concept` output now states when it is showing a partial set.** The text block appends `Showing 100 of 1500 mappings (page 1 of 15). Call again with page=2 for the rest.`, and the JSON gains `returned_count`, `page`, `page_size`, `total_pages` and `has_more`; `total_mappings` now carries the true total rather than the length of the current page. The text matters as much as the JSON - this output is read by a model deciding whether it has finished, and rows under a bare header read as the whole set.
 - **`explore_concept` could report "no mappings found" for a concept that has mappings.** It fetched the first 100 relationships of *every* type and narrowed to `Maps to`/`Mapped from` afterwards in JS, so a concept whose first 100 relationships were hierarchy links lost its mappings to truncation. Filtering now happens server-side via `relationship_ids`, and `target_vocabularies` is passed as `vocabulary_ids` instead of being applied after the fact.
-- **`hierarchy` advertised a `max_results` ceiling the server would not honour.** It accepted up to 500 and defaulted to 500, but the value is sent as `page_size` on a GET and the API clamps that to 200 — so a request for 500 nodes returned 200, and the tool's own truncation notice reported the clamped figure, understating what was missing. Now 1-200, default 200.
+- **`hierarchy` advertised a `max_results` ceiling the server would not honour.** It accepted up to 500 and defaulted to 500, but the value is sent as `page_size` on a GET and the API clamps that to 200 - so a request for 500 nodes returned 200, and the tool's own truncation notice reported the clamped figure, understating what was missing. Now 1-200, default 200.
 
 ### Changed
 
-- Tool `page_size` ceilings now match what the API will actually serve, rather than sitting arbitrarily below it: `find_similar` 100 → 1000 (a POST body param, so the GET clamp does not apply), `search_concepts` 50 → 200, `semantic_search` 50 → 100 (that route validates stricter than the clamp). Declaring a ceiling above the server's is its own bug — the caller asks for N and silently receives fewer.
+- Tool `page_size` ceilings now match what the API will actually serve, rather than sitting arbitrarily below it: `find_similar` 100 → 1000 (a POST body param, so the GET clamp does not apply), `search_concepts` 50 → 200, `semantic_search` 50 → 100 (that route validates stricter than the clamp). Declaring a ceiling above the server's is its own bug - the caller asks for N and silently receives fewer.
 - `explore_concept` gains `mappings_page_size` (1-200, default 100), previously hardcoded at 100 with no caller control.
-
-### Security
-
-- **Three transitive advisories cleared; `npm audit` is now 0.** All arrive through `@modelcontextprotocol/sdk` and all were pinned to vulnerable versions **in `package-lock.json`**, which is what `npm ci` — and therefore CI and the Docker image — installs. The local `node_modules` had drifted to newer versions, so the tree on a developer machine looked healthier than the one actually shipped.
-  - `ip-address` 10.2.0 → **10.4.0** (GHSA-mwp4-54f8-5fhr, GHSA-4xrf-jv44-h6hh, GHSA-22jq-vg5j-6vgg — leading-zero octet, CIDR-suffix and IPv4-mapped/NAT64 misclassification, each allowing SSRF and trust-boundary bypass). Reached via `express-rate-limit`, which uses it to classify client addresses, so a misclassification is a rate-limit evasion path on the hosted server.
-  - `hono` 4.12.27 → **4.13.0** (GHSA-8j4g-w8fx-2239, ReDoS in CORS middleware via `Access-Control-Request-Headers`).
-  - `fast-uri` 3.1.4 → **3.1.5** (GHSA-7p8r-x3mc-p8w7, host confusion via backslash authority introducer).
-- Fixed with **range floors** in `overrides` rather than exact pins, so a future `npm audit fix` can move them without desyncing `npm ci`. The `fast-uri` floor is deliberately bounded `>=3.1.5 <4.0.0`: its only consumer (`ajv@8.20.0`) declares `^3.0.1`, and an unbounded floor resolves to 4.x — an out-of-range major that nothing has validated against ajv's `$ref` resolution. 3.1.5 is patched and in range, so the major buys nothing.
 
 ### Notes
 
@@ -55,7 +42,7 @@ return a partial answer that reads like a complete one.
 
 ### Changed
 
-- The `semantic_search` tool now calls the canonical API path `GET /v1/search/semantic` instead of `GET /v1/concepts/semantic-search`. The legacy path remains a permanent server-side alias, so older MCP installations continue to work — no breaking change. Hosted clients at [mcp.omophub.com](https://mcp.omophub.com) get the new path automatically.
+- The `semantic_search` tool now calls the canonical API path `GET /v1/search/semantic` instead of `GET /v1/concepts/semantic-search`. The legacy path remains a permanent server-side alias, so older MCP installations continue to work - no breaking change. Hosted clients at [mcp.omophub.com](https://mcp.omophub.com) get the new path automatically.
 
 ## [1.5.0] - 2026-05-25
 
@@ -75,7 +62,7 @@ return a partial answer that reads like a complete one.
 
 ### Added
 
-- **FHIR-to-OMOP Concept Resolver** — 2 new tools for translating FHIR coded values into OMOP standard concepts:
+- **FHIR-to-OMOP Concept Resolver** - 2 new tools for translating FHIR coded values into OMOP standard concepts:
   - `fhir_resolve`: Resolve a single FHIR Coding (system URI + code) to its OMOP standard concept, CDM target table, and optional Phoebe recommendations. Supports text-only input via semantic search fallback.
   - `fhir_resolve_codeable_concept`: Resolve a FHIR CodeableConcept with multiple codings. Picks the best match per OHDSI vocabulary preference (SNOMED > RxNorm > LOINC > CVX > ICD-10). Falls back to the `text` field via semantic search.
 

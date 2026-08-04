@@ -180,9 +180,9 @@ describe('explore_concept', () => {
     const server = createMockServer();
     const client = createMockClient();
 
-    client.request.mockResolvedValueOnce(conceptResponse).mockResolvedValueOnce(
-      relationshipsResponse,
-    );
+    client.request
+      .mockResolvedValueOnce(conceptResponse)
+      .mockResolvedValueOnce(relationshipsResponse);
 
     registerExploreTools(server as never, client as never);
     const handler = server.tools.get('explore_concept')!;

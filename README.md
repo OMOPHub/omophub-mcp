@@ -216,7 +216,7 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transpor
 | `search_concepts` | Search for medical concepts by name or clinical term across all vocabularies |
 | `get_concept` | Get detailed info about a specific OMOP concept by `concept_id` |
 | `get_concept_by_code` | Look up a concept using a vocabulary-specific code (e.g., ICD-10 `E11.9`) |
-| `map_concept` | Map a concept to equivalent concepts in other vocabularies |
+| `map_concept` | Map a concept to equivalent concepts in other vocabularies (paginated — see note below) |
 | `get_hierarchy` | Navigate concept hierarchy - ancestors, descendants, or both |
 | `list_vocabularies` | List available medical vocabularies with statistics |
 | `semantic_search` | Search using natural language with neural embeddings (understands clinical meaning) |
@@ -251,6 +251,16 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transpor
 
 **Build a concept set →** `search_concepts` → `get_hierarchy` → `map_concept`
 > "Help me build a concept set for Type 2 diabetes including all descendants"
+
+> **Completeness matters here.** `map_concept` returns one page at a time
+> (`page_size` 1-200, default 100). A widely-used drug ingredient can have well over
+> a thousand NDC mappings, so a single call is a sample, not the answer. Check
+> `has_more` in the response and keep incrementing `page` until it is `false` —
+> otherwise the concept set looks complete while silently missing codes.
+>
+> Use `find_similar_concepts` for exploration, not for this: it is ranked embedding
+> similarity, so it has no notion of set membership and cannot be exhaustive no
+> matter how large `page_size` is.
 
 **Validate a code →** `get_concept_by_code` → `map_concept`
 > "Is ICD-10 code E11.9 valid? What does it map to in SNOMED?"

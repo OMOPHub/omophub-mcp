@@ -21,9 +21,15 @@ ENV MCP_PORT=3100
 
 EXPOSE 3100
 
+# Passed in by the build workflow rather than hardcoded: this label sat at 1.5.3
+# through the 1.6.0 bump because nothing links it to package.json, so an image
+# could report a version it was not built from. docker-build.sh and
+# .github/workflows/build-image.yml read the version from package.json.
+ARG IMAGE_VERSION=dev
+
 LABEL org.opencontainers.image.title="omophub-mcp" \
       org.opencontainers.image.description="MCP server for OHDSI OMOP standardized medical vocabularies" \
-      org.opencontainers.image.version="1.5.3" \
+      org.opencontainers.image.version="${IMAGE_VERSION}" \
       org.opencontainers.image.source="https://github.com/OMOPHub/omophub-mcp"
 
 ENTRYPOINT ["/nodejs/bin/node", "dist/index.js"]
