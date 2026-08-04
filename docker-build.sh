@@ -20,6 +20,7 @@ echo "Building ${IMAGE}:${VERSION} for ${PLATFORMS}"
 # To build locally for current platform only, use: docker build -t ${IMAGE}:${VERSION} .
 docker buildx build \
   --platform "${PLATFORMS}" \
+  --build-arg "IMAGE_VERSION=${VERSION}" \
   -t "${IMAGE}:${VERSION}" \
   -t "${IMAGE}:latest" \
   --push \

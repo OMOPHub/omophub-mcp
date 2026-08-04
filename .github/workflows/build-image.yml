@@ -98,7 +98,13 @@ jobs:
           EXTRA_TAG: ${{ steps.tags.outputs.extra_tag }}
         run: |
           echo "Building ${SERVICE_NAME}..."
-          BUILD_ARGS=( -t "$SHA_TAG" -t "$LATEST_TAG" )
+          # Sourced from package.json so the image's
+          # org.opencontainers.image.version label cannot drift from the release
+          # it was built from — it was hardcoded in the Dockerfile and sat a
+          # version behind.
+          IMAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "Version: ${IMAGE_VERSION}"
+          BUILD_ARGS=( --build-arg "IMAGE_VERSION=${IMAGE_VERSION}" -t "$SHA_TAG" -t "$LATEST_TAG" )
           if [ -n "$EXTRA_TAG" ]; then
             BUILD_ARGS+=( -t "$EXTRA_TAG" )
           fi

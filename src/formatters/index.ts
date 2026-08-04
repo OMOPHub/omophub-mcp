@@ -139,7 +139,34 @@ export function formatMappings(
   }
 
   const source = data.source_concept;
+
+  // Pagination comes from meta, not data: /concepts/{id}/mappings keeps `data` as
+  // { mappings: [...] } for backwards compatibility and reports paging in
+  // meta.pagination. Fall back to the page length only when the server sent no
+  // pagination block at all (an older API build).
+  const pagination = response.meta?.pagination;
+  const totalMappings = pagination?.total_items ?? data.total_mappings ?? mappings.length;
+
+  // In the fallback path `has_more` must be DERIVED, not defaulted to false.
+  // Defaulting produced a self-contradictory response — `total_mappings: 1500`
+  // alongside `returned_count: 100` and `has_more: false` — which tells a client
+  // both that more exist and that it should stop. It stops, and the code list is
+  // short by 1,400 entries with nothing indicating it.
+  //
+  // This is reachable today: responses cached before the API gained pagination
+  // carry no meta.pagination, and `total_mappings` is a declared field on
+  // MappingsResponse, so a server can report the true total without the block.
+  const hasMore = pagination?.has_next ?? totalMappings > mappings.length;
+
   const header = `Mappings for **${source?.concept_name || `Concept ${conceptId}`}** (${source?.vocabulary_id || 'unknown'} → targets):`;
+
+  // State the shortfall in the TEXT block, not just the JSON. This tool is read by
+  // a model deciding whether it has finished; showing 100 rows under a bare
+  // "Mappings for X" header reads as the complete set, which is how an incomplete
+  // code list gets built from a technically-correct response.
+  const truncationNotice = hasMore
+    ? `\n\n_Showing ${mappings.length} of ${totalMappings} mappings (page ${pagination?.page ?? 1} of ${pagination?.total_pages ?? '?'}). Call again with page=${(pagination?.page ?? 1) + 1} for the rest._`
+    : '';
 
   const normalized = mappings.map(normalizeMapping);
 
@@ -151,12 +178,17 @@ export function formatMappings(
   });
 
   return {
-    text: `${header}\n\n${lines.join('\n\n')}`,
+    text: `${header}\n\n${lines.join('\n\n')}${truncationNotice}`,
     json: JSON.stringify({
       source_concept_id: conceptId,
       source_concept_name: source?.concept_name,
       mapped: true,
-      total_mappings: data.total_mappings ?? mappings.length,
+      total_mappings: totalMappings,
+      returned_count: mappings.length,
+      page: pagination?.page ?? 1,
+      page_size: pagination?.page_size ?? mappings.length,
+      total_pages: pagination?.total_pages ?? 1,
+      has_more: hasMore,
       mappings: normalized.map((m) => ({
         concept_id: m.concept_id,
         concept_name: m.concept_name,

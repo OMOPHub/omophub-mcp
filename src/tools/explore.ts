@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { OmopHubClient } from '../client/api.js';
 import { resolveClient } from '../client/resolve.js';
-import type { Concept, RawHierarchyResponse } from '../client/types.js';
+import type { Concept, PaginationMeta, RawHierarchyResponse } from '../client/types.js';
 import { formatErrorForMcp } from '../utils/errors.js';
 
 interface RelationshipItem {
@@ -50,9 +50,27 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
         .describe(
           "Comma-separated vocabulary IDs to filter mappings. Examples: 'ICD10CM', 'SNOMED'.",
         ),
+      // Was hardcoded at 100 with no caller control. 200 is the API's effective
+      // ceiling for GET requests (paginationLimitsMiddleware clamps page_size to
+      // CACHE_LIMITS.MAX_PAGE_SIZE), so asking for more would silently return 200.
+      mappings_page_size: z
+        .number()
+        .min(1)
+        .max(200)
+        .default(100)
+        .describe(
+          'Maximum mappings to fetch (1-200, default 100). This is an overview tool — for a complete code list use map_concept and page through it.',
+        ),
     },
     async (
-      { concept_id, include_hierarchy, include_mappings, hierarchy_levels, target_vocabularies },
+      {
+        concept_id,
+        include_hierarchy,
+        include_mappings,
+        hierarchy_levels,
+        target_vocabularies,
+        mappings_page_size,
+      },
       extra,
     ) => {
       try {
@@ -76,13 +94,29 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
           requests.push(hierarchyReq);
         }
 
-        // 3. Optionally fetch mappings via relationships endpoint
-        // (The /mappings endpoint has a schema resolution bug — using /relationships instead)
+        // 3. Optionally fetch mappings via the relationships endpoint.
+        //
+        // /relationships rather than /mappings is a deliberate choice, not a
+        // workaround: /mappings covers only the 'Maps to' direction, while an
+        // explore view wants 'Mapped from' too. (The schema-resolution bug that
+        // originally motivated this has since been fixed, so either endpoint
+        // works now — this one is simply the better fit.)
+        //
+        // Filter SERVER-side. This previously fetched the first 100 relationships
+        // of every type and narrowed to mappings in JS afterwards, so a concept
+        // whose first 100 relationships happened to be hierarchy links reported
+        // "no mappings found" even when mappings existed.
         let mappingsReq: Promise<unknown> | null = null;
         if (include_mappings !== false) {
+          const mappingParams: Record<string, string | number> = {
+            relationship_ids: 'Maps to,Mapped from',
+            page_size: mappings_page_size ?? 100,
+          };
+          if (target_vocabularies) mappingParams.vocabulary_ids = target_vocabularies;
+
           mappingsReq = rc.request<RelationshipsData>(
             `/concepts/${concept_id}/relationships`,
-            { page_size: 100 },
+            mappingParams,
             'explore_concept',
           );
           requests.push(mappingsReq);
@@ -100,6 +134,8 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
 
         let hierarchy: RawHierarchyResponse | null = null;
         let relationshipsData: RelationshipsData | null = null;
+        let mappingsPagination: PaginationMeta | null = null;
+        let mappingsTruncated = false;
 
         let idx = 1;
         if (hierarchyReq) {
@@ -111,7 +147,15 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
         if (mappingsReq) {
           const r = settled[idx];
           if (r.status === 'fulfilled') {
-            relationshipsData = (r.value as { data: RelationshipsData }).data;
+            const res = r.value as {
+              data: RelationshipsData;
+              meta?: { pagination?: PaginationMeta };
+            };
+            relationshipsData = res.data;
+            // Keep the pagination block. Discarding it is what let this tool
+            // render a truncated page under a header that counted only the rows
+            // it happened to receive.
+            mappingsPagination = res.meta?.pagination ?? null;
           }
         }
 
@@ -192,12 +236,16 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
         if (relationshipsData) {
           const allRels = relationshipsData.relationships ?? [];
 
-          // Filter for mapping relationships
+          // Belt-and-braces: the request already asked the server for only these
+          // relationship types, so this should be a no-op. Kept because it is
+          // cheap and the failure mode if the server ever ignores the filter is
+          // mappings silently mixed with hierarchy links.
           const mappingRels = allRels.filter(
             (r) => r.relationship_id === 'Maps to' || r.relationship_id === 'Mapped from',
           );
 
-          // Optionally filter by target vocabularies
+          // Likewise redundant with the server-side vocabulary_ids filter above,
+          // and likewise kept as a guard.
           const vocabFilter = target_vocabularies
             ? target_vocabularies
                 .split(',')
@@ -209,8 +257,27 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
             ? mappingRels.filter((r) => vocabFilter.includes(r.concept_2?.vocabulary_id ?? ''))
             : mappingRels;
 
-          if (filtered.length > 0) {
-            const mapLines = [`## Cross-Vocabulary Mappings (${filtered.length})`];
+          // The header used to count only the rows this one page happened to
+          // contain, so a concept with 309 mappings rendered as
+          // "Cross-Vocabulary Mappings (200)" — a truncated set presented as a
+          // complete one. total_items is the server's count for the SAME filtered
+          // query (relationship_ids + vocabulary_ids), so it is the right
+          // denominator.
+          //
+          // This tool deliberately does NOT page to exhaustion: it is an overview
+          // that runs three requests in parallel, and a concept with thousands of
+          // mappings would turn it into a long serial crawl returning far more
+          // than an overview should. Instead it reports honestly that it is
+          // partial and names the tool that can finish the job.
+          const fetchedCount = filtered.length;
+          const totalAvailable = mappingsPagination?.total_items ?? fetchedCount;
+          mappingsTruncated = mappingsPagination?.has_next ?? totalAvailable > fetchedCount;
+
+          if (fetchedCount > 0) {
+            const countLabel = mappingsTruncated
+              ? `${fetchedCount} of ${totalAvailable}`
+              : String(fetchedCount);
+            const mapLines = [`## Cross-Vocabulary Mappings (${countLabel})`];
             for (const r of filtered.slice(0, 15)) {
               const c2 = r.concept_2;
               if (c2) {
@@ -219,7 +286,15 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
                 );
               }
             }
-            if (filtered.length > 15) mapLines.push(`... and ${filtered.length - 15} more`);
+            if (fetchedCount > 15) {
+              mapLines.push(`... and ${fetchedCount - 15} more on this page`);
+            }
+            if (mappingsTruncated) {
+              mapLines.push(
+                `\n_Partial: this overview fetched ${fetchedCount} of ${totalAvailable} mappings. ` +
+                  `Raise mappings_page_size (max 200), or use map_concept with page/page_size for the complete set._`,
+              );
+            }
             sections.push(mapLines.join('\n'));
           } else {
             const isStandard = concept.standard_concept === 'S';
@@ -231,7 +306,17 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
         }
 
         const text = sections.join('\n\n');
-        const jsonData = { concept, hierarchy, relationships: relationshipsData };
+        // mappings_truncated / mappings_pagination are the machine-readable half
+        // of the partial-result marker above. Without them a consumer reading only
+        // the JSON block sees an array of relationships with no way to tell it is
+        // one page of several.
+        const jsonData = {
+          concept,
+          hierarchy,
+          relationships: relationshipsData,
+          mappings_truncated: mappingsTruncated,
+          mappings_pagination: mappingsPagination,
+        };
 
         return {
           content: [

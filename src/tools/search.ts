@@ -38,12 +38,16 @@ export function registerSearchTools(server: McpServer, client: OmopHubClient): v
           "Filter by standard concept status: 'S' for Standard, 'C' for Classification. Omit to search all.",
         ),
       page: z.number().min(1).default(1).describe('Page number (1-based, default 1)'),
+      // 200 is the API's effective ceiling for GET requests: the route validator
+      // allows 1000 but paginationLimitsMiddleware clamps page_size to
+      // CACHE_LIMITS.MAX_PAGE_SIZE. Declaring more than the server will honour
+      // means a caller asks for N and silently receives 200.
       page_size: z
         .number()
         .min(1)
-        .max(50)
+        .max(200)
         .default(10)
-        .describe('Number of results to return (1-50, default 10)'),
+        .describe('Number of results to return (1-200, default 10)'),
     },
     async ({ query, vocabulary_ids, domain_ids, standard_concept, page, page_size }, extra) => {
       try {
