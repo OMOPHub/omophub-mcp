@@ -56,12 +56,20 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
         .max(1)
         .default(0.7)
         .describe('Minimum similarity score (0.0-1.0). Default 0.7.'),
+      // Ceiling matches the API's own cap on POST /v1/search/similar (page_size
+      // 1-1000). It was 100 here, which silently made the MCP the binding
+      // constraint: a caller asking for 500 got a schema rejection even though
+      // the API would have served it. Keep the two in step.
+      //
+      // Note this is ranked similarity, not set membership — raising the ceiling
+      // returns more of a fuzzy ordering, it does not make the result exhaustive.
+      // Building a complete code list is a mappings/hierarchy job, not this tool.
       page_size: z
         .number()
         .min(1)
-        .max(100)
+        .max(1000)
         .default(20)
-        .describe('Number of results (1-100, default 20)'),
+        .describe('Number of results (1-1000, default 20)'),
       vocabulary_ids: z
         .string()
         .max(200)
