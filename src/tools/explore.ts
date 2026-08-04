@@ -50,9 +50,27 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
         .describe(
           "Comma-separated vocabulary IDs to filter mappings. Examples: 'ICD10CM', 'SNOMED'.",
         ),
+      // Was hardcoded at 100 with no caller control. 200 is the API's effective
+      // ceiling for GET requests (paginationLimitsMiddleware clamps page_size to
+      // CACHE_LIMITS.MAX_PAGE_SIZE), so asking for more would silently return 200.
+      mappings_page_size: z
+        .number()
+        .min(1)
+        .max(200)
+        .default(100)
+        .describe(
+          'Maximum mappings to fetch (1-200, default 100). This is an overview tool — for a complete code list use map_concept and page through it.',
+        ),
     },
     async (
-      { concept_id, include_hierarchy, include_mappings, hierarchy_levels, target_vocabularies },
+      {
+        concept_id,
+        include_hierarchy,
+        include_mappings,
+        hierarchy_levels,
+        target_vocabularies,
+        mappings_page_size,
+      },
       extra,
     ) => {
       try {
@@ -76,13 +94,29 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
           requests.push(hierarchyReq);
         }
 
-        // 3. Optionally fetch mappings via relationships endpoint
-        // (The /mappings endpoint has a schema resolution bug — using /relationships instead)
+        // 3. Optionally fetch mappings via the relationships endpoint.
+        //
+        // /relationships rather than /mappings is a deliberate choice, not a
+        // workaround: /mappings covers only the 'Maps to' direction, while an
+        // explore view wants 'Mapped from' too. (The schema-resolution bug that
+        // originally motivated this has since been fixed, so either endpoint
+        // works now — this one is simply the better fit.)
+        //
+        // Filter SERVER-side. This previously fetched the first 100 relationships
+        // of every type and narrowed to mappings in JS afterwards, so a concept
+        // whose first 100 relationships happened to be hierarchy links reported
+        // "no mappings found" even when mappings existed.
         let mappingsReq: Promise<unknown> | null = null;
         if (include_mappings !== false) {
+          const mappingParams: Record<string, string | number> = {
+            relationship_ids: 'Maps to,Mapped from',
+            page_size: mappings_page_size ?? 100,
+          };
+          if (target_vocabularies) mappingParams.vocabulary_ids = target_vocabularies;
+
           mappingsReq = rc.request<RelationshipsData>(
             `/concepts/${concept_id}/relationships`,
-            { page_size: 100 },
+            mappingParams,
             'explore_concept',
           );
           requests.push(mappingsReq);
@@ -192,12 +226,16 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
         if (relationshipsData) {
           const allRels = relationshipsData.relationships ?? [];
 
-          // Filter for mapping relationships
+          // Belt-and-braces: the request already asked the server for only these
+          // relationship types, so this should be a no-op. Kept because it is
+          // cheap and the failure mode if the server ever ignores the filter is
+          // mappings silently mixed with hierarchy links.
           const mappingRels = allRels.filter(
             (r) => r.relationship_id === 'Maps to' || r.relationship_id === 'Mapped from',
           );
 
-          // Optionally filter by target vocabularies
+          // Likewise redundant with the server-side vocabulary_ids filter above,
+          // and likewise kept as a guard.
           const vocabFilter = target_vocabularies
             ? target_vocabularies
                 .split(',')

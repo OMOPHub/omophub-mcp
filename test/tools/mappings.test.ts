@@ -101,7 +101,13 @@ describe('map_concept', () => {
 
       const result = await handler({ concept_id: 201826 });
 
-      expect(client.request).toHaveBeenCalledWith('/concepts/201826/mappings', {}, 'map_concept');
+      // Pagination is always sent. The handler receives the raw args here rather
+      // than Zod-parsed ones, so the ?? defaults in the tool supply page 1 / 100.
+      expect(client.request).toHaveBeenCalledWith(
+        '/concepts/201826/mappings',
+        { page: 1, page_size: 100 },
+        'map_concept',
+      );
       expect(result.content).toHaveLength(2);
       expect(result.isError).toBeUndefined();
     });
@@ -118,9 +124,61 @@ describe('map_concept', () => {
 
       expect(client.request).toHaveBeenCalledWith(
         '/concepts/201826/mappings',
-        { target_vocabulary: 'ICD10CM' },
+        { page: 1, page_size: 100, target_vocabulary: 'ICD10CM' },
         'map_concept',
       );
+    });
+
+    it('passes explicit page and page_size through', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.request.mockResolvedValueOnce(mappingsResponse);
+
+      registerMappingTools(server as never, client as never);
+      const handler = server.tools.get('map_concept')!;
+
+      await handler({ concept_id: 201826, page: 4, page_size: 200 });
+
+      expect(client.request).toHaveBeenCalledWith(
+        '/concepts/201826/mappings',
+        { page: 4, page_size: 200 },
+        'map_concept',
+      );
+    });
+
+    // The point of the whole change: a partial page must announce itself. Showing
+    // 100 rows under a bare header reads as the complete set to the model
+    // consuming this, which is how an incomplete code list gets built.
+    it('surfaces the full total and next page when more mappings exist', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.request.mockResolvedValueOnce({
+        ...mappingsResponse,
+        meta: {
+          pagination: {
+            page: 1,
+            page_size: 100,
+            total_items: 1500,
+            total_pages: 15,
+            has_next: true,
+            has_previous: false,
+          },
+        },
+      });
+
+      registerMappingTools(server as never, client as never);
+      const handler = server.tools.get('map_concept')!;
+
+      const result = await handler({ concept_id: 201826 });
+
+      const text = result.content[0].text as string;
+      expect(text).toContain('1500');
+      expect(text).toContain('page=2');
+
+      const json = JSON.parse(result.content[1].text as string);
+      expect(json.total_mappings).toBe(1500);
+      expect(json.has_more).toBe(true);
+      expect(json.total_pages).toBe(15);
     });
 
     it('handles empty mappings response', async () => {

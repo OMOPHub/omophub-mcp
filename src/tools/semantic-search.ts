@@ -45,12 +45,14 @@ export function registerSemanticSearchTools(server: McpServer, client: OmopHubCl
         .max(1)
         .default(0.5)
         .describe('Minimum similarity score (0.0-1.0). Higher = stricter matching. Default 0.5.'),
+      // 100 matches the semantic route's own validator (isInt min 1, max 100),
+      // which is stricter than the 200 GET clamp that applies elsewhere.
       page_size: z
         .number()
         .min(1)
-        .max(50)
+        .max(100)
         .default(10)
-        .describe('Number of results to return (1-50, default 10)'),
+        .describe('Number of results to return (1-100, default 10)'),
     },
     async (
       { query, vocabulary_ids, domain_ids, standard_concept, threshold, page_size },

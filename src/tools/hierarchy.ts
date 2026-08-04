@@ -10,7 +10,7 @@ import { formatErrorForMcp } from '../utils/errors.js';
 export function registerHierarchyTools(server: McpServer, client: OmopHubClient): void {
   server.tool(
     'get_hierarchy',
-    "Navigate the vocabulary hierarchy for a concept. Use direction='up' for ancestors (broader terms like 'Diabetes mellitus' → 'Metabolic disease'), direction='down' for descendants (narrower terms, essential for building concept sets in phenotype definitions), or direction='both' for full hierarchical context. Results are capped at max_results nodes (default 500). If truncated, the response will indicate total available count so you can narrow with vocabulary_ids or reduce max_levels.",
+    "Navigate the vocabulary hierarchy for a concept. Use direction='up' for ancestors (broader terms like 'Diabetes mellitus' → 'Metabolic disease'), direction='down' for descendants (narrower terms, essential for building concept sets in phenotype definitions), or direction='both' for full hierarchical context. Results are capped at max_results nodes (default 200). If truncated, the response will indicate total available count so you can narrow with vocabulary_ids or reduce max_levels.",
     {
       concept_id: z.number().describe('The OMOP concept_id'),
       direction: z
@@ -23,13 +23,18 @@ export function registerHierarchyTools(server: McpServer, client: OmopHubClient)
         .number()
         .optional()
         .describe("Maximum levels to traverse (default 5 for 'up', 10 for 'down', 5/3 for 'both')"),
+      // Was 1-500 with a default of 500, which the server could never deliver:
+      // max_results is sent as page_size on a GET, and paginationLimitsMiddleware
+      // clamps that to CACHE_LIMITS.MAX_PAGE_SIZE (200). Asking for 500 returned
+      // 200 and the truncation notice below reported the clamped figure, so the
+      // tool understated how much it was missing.
       max_results: z
         .number()
         .min(1)
-        .max(500)
-        .default(500)
+        .max(200)
+        .default(200)
         .describe(
-          'Maximum number of nodes to return (1-500, default 500). Use a smaller value for broad concepts.',
+          'Maximum number of nodes to return (1-200, default 200). Use a smaller value for broad concepts.',
         ),
       vocabulary_ids: z
         .string()
