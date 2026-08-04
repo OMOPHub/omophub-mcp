@@ -1,0 +1,19 @@
+src/tools/similar.ts
+  s_9573770d1bcd98::t_e3912f25e4373c 59-66,70,72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "738d56a9b3c11e88f4237b39985893cc56805e0e",
+  "prompts": {},
+  "sessions": {
+    "s_9573770d1bcd98": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bbf1df99-2040-4e2b-8f4b-ad9163de7d83",
+        "model": "claude-opus-5"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
