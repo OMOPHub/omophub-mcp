@@ -292,6 +292,7 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transpor
 | `OMOPHUB_BASE_URL` | | Custom API base URL (default: `https://api.omophub.com/v1`) |
 | `OMOPHUB_LOG_LEVEL` | | `debug` · `info` · `warn` · `error` (default: `info`) |
 | `OMOPHUB_ANALYTICS_OPTOUT` | | Set to `true` to disable analytics headers |
+| `OMOPHUB_USER_AGENT_SUFFIX` | | Optional deployment identifier appended to `omophub-mcp/<version>` (default: none) |
 | `MCP_TRANSPORT` | | `stdio` (default) or `http` |
 | `MCP_PORT` | | HTTP server port (default: `3100`, only used with `http` transport) |
 | `HEALTH_PORT` | | Port for standalone health endpoint in stdio mode (default: disabled) |

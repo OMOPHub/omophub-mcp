@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [1.6.2] - 2026-08-10
+
+### Added
+
+- `OMOPHUB_USER_AGENT_SUFFIX` can append a deployment identifier to the existing
+  `omophub-mcp/<version>` User-Agent. The default remains unchanged for self-hosted
+  installations.
+
 ## [1.6.1] - 2026-08-04
 
 Both issues reported by a user building NDC code lists with `search_concepts`. Both
