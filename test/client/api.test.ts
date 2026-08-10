@@ -33,6 +33,31 @@ describe('OmopHubClient', () => {
     expect(url).toBe('https://api.test.com/v1/concepts/1');
   });
 
+  it('appends the configured user-agent suffix to GET and POST requests', async () => {
+    vi.stubEnv('OMOPHUB_USER_AGENT_SUFFIX', 'omophub-hosted/1');
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, data: {} }),
+    });
+
+    const client = new OmopHubClient('oh_key', 'https://api.test.com/v1');
+    await client.request('/concepts/1');
+    await client.post('/search/semantic', { query: 'diabetes' });
+
+    for (const [, options] of mockFetch.mock.calls as [string, RequestInit][]) {
+      const headers = options.headers as Record<string, string>;
+      expect(headers['User-Agent']).toMatch(/^omophub-mcp\/\S+ omophub-hosted\/1$/);
+    }
+  });
+
+  it('rejects a user-agent suffix containing newlines', () => {
+    vi.stubEnv('OMOPHUB_USER_AGENT_SUFFIX', 'hosted\r\nX-Injected: true');
+
+    expect(() => new OmopHubClient('oh_key')).toThrow(
+      'OMOPHUB_USER_AGENT_SUFFIX must not contain newlines',
+    );
+  });
+
   it('sends X-MCP-Tool header when toolName is provided', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,

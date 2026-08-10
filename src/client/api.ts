@@ -23,6 +23,7 @@ export class OmopHubClient {
   readonly baseUrl: string;
   private readonly apiKey: string;
   private readonly analyticsOptout: boolean;
+  private readonly userAgent: string;
 
   constructor(apiKey: string | undefined, baseUrl?: string) {
     this.apiKey = apiKey ?? '';
@@ -32,6 +33,12 @@ export class OmopHubClient {
       'https://api.omophub.com/v1'
     ).replace(/\/$/, '');
     this.analyticsOptout = process.env.OMOPHUB_ANALYTICS_OPTOUT === 'true';
+
+    const userAgentSuffix = process.env.OMOPHUB_USER_AGENT_SUFFIX?.trim();
+    if (userAgentSuffix && /[\r\n]/.test(userAgentSuffix)) {
+      throw new Error('OMOPHUB_USER_AGENT_SUFFIX must not contain newlines');
+    }
+    this.userAgent = [`omophub-mcp/${VERSION}`, userAgentSuffix].filter(Boolean).join(' ');
   }
 
   async request<T>(
@@ -51,7 +58,7 @@ export class OmopHubClient {
 
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.apiKey}`,
-      'User-Agent': `omophub-mcp/${VERSION}`,
+      'User-Agent': this.userAgent,
       Accept: 'application/json',
     };
 
@@ -132,7 +139,7 @@ export class OmopHubClient {
 
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.apiKey}`,
-      'User-Agent': `omophub-mcp/${VERSION}`,
+      'User-Agent': this.userAgent,
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
