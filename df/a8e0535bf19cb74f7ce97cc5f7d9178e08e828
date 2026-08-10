@@ -1,0 +1,32 @@
+src/client/api.ts
+  s_f81396f3973f95::t_58d0c91bb67305 26,36-41,61,142
+CHANGELOG.md
+  s_f81396f3973f95::t_d051403ff7b75e 7-12
+  s_f81396f3973f95::t_151470a7f205bb 5-6
+.env.example
+  s_f81396f3973f95::t_7837a1d42b28e1 10-12
+test/client/api.test.ts
+  s_f81396f3973f95::t_0d78a73c50446a 36-60
+package.json
+  s_f81396f3973f95::t_44187f9f1aceb2 3
+server.json
+  s_f81396f3973f95::t_e7a6f2fe5e3ecf 9,14
+README.md
+  s_f81396f3973f95::t_0fbfa36d0e260e 295
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "dfa8e0535bf19cb74f7ce97cc5f7d9178e08e828",
+  "prompts": {},
+  "sessions": {
+    "s_f81396f3973f95": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "51444bbe-e41a-40bc-b37f-4f3ad07c0139",
+        "model": "default"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
