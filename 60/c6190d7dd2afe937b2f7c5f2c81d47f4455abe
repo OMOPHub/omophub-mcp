@@ -1,0 +1,14 @@
+package-lock.json
+  h_70ae365dc0c3d1 3,9,2493-2495
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "60c6190d7dd2afe937b2f7c5f2c81d47f4455abe",
+  "prompts": {},
+  "humans": {
+    "h_70ae365dc0c3d1": {
+      "author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
