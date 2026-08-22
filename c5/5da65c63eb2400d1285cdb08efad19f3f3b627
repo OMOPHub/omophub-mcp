@@ -1,0 +1,14 @@
+README.md
+  h_70ae365dc0c3d1 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "c55da65c63eb2400d1285cdb08efad19f3f3b627",
+  "prompts": {},
+  "humans": {
+    "h_70ae365dc0c3d1": {
+      "author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
