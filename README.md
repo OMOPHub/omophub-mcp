@@ -2,7 +2,7 @@
 
 <p>
   <strong>Medical vocabularies for AI agents.</strong><br/>
-  Search, map, and navigate 10M+ OMOP concepts: SNOMED CT, ICD-10, RxNorm, LOINC, and more. Directly from Claude, Cursor, VS Code, or any MCP-compatible client.
+  Search, map, and navigate 11M+ OMOP concepts: SNOMED CT, ICD-10, RxNorm, LOINC, and more. Directly from Claude, Cursor, VS Code, or any MCP-compatible client.
 </p>
 
 <p>
