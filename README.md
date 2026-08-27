@@ -40,7 +40,7 @@ Claude: Found it - E11.9 (Type 2 diabetes mellitus without complications)
 
 **Use cases:**
 - **Concept lookup** - Find OMOP concept IDs for clinical terms in seconds
-- **Cross-vocabulary mapping** - Map between ICD-10, SNOMED, RxNorm, LOINC, and 100+ vocabularies
+- **Cross-vocabulary mapping** - Map between ICD-10, SNOMED, RxNorm, LOINC, and 120+ vocabularies
 - **Hierarchy navigation** - Explore ancestors and descendants for phenotype definitions
 - **Concept set building** - Let your AI agent assemble complete concept sets for cohort definitions
 - **Code validation** - Verify medical codes and check their standard mappings
