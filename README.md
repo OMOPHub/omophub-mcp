@@ -2,7 +2,7 @@
 
 <p>
   <strong>Medical vocabularies for AI agents.</strong><br/>
-  Search, map, and navigate 10M+ OMOP concepts: SNOMED CT, ICD-10, RxNorm, LOINC, and more. Directly from Claude, Cursor, VS Code, or any MCP-compatible client.
+  Search, map, and navigate 11M+ OMOP concepts: SNOMED CT, ICD-10, RxNorm, LOINC, and more. Directly from Claude, Cursor, VS Code, or any MCP-compatible client.
 </p>
 
 <p>
@@ -40,7 +40,7 @@ Claude: Found it - E11.9 (Type 2 diabetes mellitus without complications)
 
 **Use cases:**
 - **Concept lookup** - Find OMOP concept IDs for clinical terms in seconds
-- **Cross-vocabulary mapping** - Map between ICD-10, SNOMED, RxNorm, LOINC, and 100+ vocabularies
+- **Cross-vocabulary mapping** - Map between ICD-10, SNOMED, RxNorm, LOINC, and 120+ vocabularies
 - **Hierarchy navigation** - Explore ancestors and descendants for phenotype definitions
 - **Concept set building** - Let your AI agent assemble complete concept sets for cohort definitions
 - **Code validation** - Verify medical codes and check their standard mappings
