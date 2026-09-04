@@ -1,0 +1,19 @@
+package.json
+  s_9ab005e8ed5a02::t_0615296cccd8e5 69-70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "dc74a8070125e177fb256789f79ce644a54aff84",
+  "prompts": {},
+  "sessions": {
+    "s_9ab005e8ed5a02": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d52ea98a-98fd-4374-86d5-7cd51df1678c",
+        "model": "claude-opus-5"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
