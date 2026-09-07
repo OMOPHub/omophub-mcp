@@ -1,0 +1,25 @@
+CHANGELOG.md
+  s_0fd210701b7f1e::t_7f77dbced15462 5-27
+server.json
+  s_0fd210701b7f1e::t_7f77dbced15462 9,14
+package.json
+  s_0fd210701b7f1e::t_7f77dbced15462 3
+package-lock.json
+  s_0fd210701b7f1e::t_52bb5f38dcb592 3,9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "8d1d0f7b18ab93a215fe92650d017bd9d7396b9d",
+  "prompts": {},
+  "sessions": {
+    "s_0fd210701b7f1e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07885-99a7-7062-b3c0-03e7f1077c3d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
