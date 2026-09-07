@@ -1,0 +1,14 @@
+src/tools/similar.ts
+  h_70ae365dc0c3d1 218-221
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "dca6a7ab0dee58e2bf8f72718b842730b8a734d6",
+  "prompts": {},
+  "humans": {
+    "h_70ae365dc0c3d1": {
+      "author": "alex-omophub <sdk@omophub.com>"
+    }
+  }
+}
