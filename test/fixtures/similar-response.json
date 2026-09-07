@@ -21,13 +21,17 @@
         "standard_concept": "S",
         "concept_code": "422034002",
         "similarity_score": 0.85,
-        "similarity_explanation": "Related diabetic complication"
+        "explanation": "Related diabetic complication"
       }
     ],
     "search_metadata": {
-      "algorithm_used": "hybrid",
+      "original_query": "Type 2 diabetes mellitus",
+      "algorithm_used": "semantic",
       "similarity_threshold": 0.7,
-      "results_returned": 2
+      "total_candidates": 2,
+      "results_returned": 2,
+      "processing_time_ms": 120,
+      "totals_are_lower_bound": false
     }
   },
   "meta": {
