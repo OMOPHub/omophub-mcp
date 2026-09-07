@@ -2,6 +2,29 @@
 
 ## [Unreleased]
 
+## [1.6.3] - 2026-09-07
+
+### Added
+
+- `find_similar_concepts` now accepts `page`, `concept_class_ids`, and
+  `include_explanations`. Its structured output includes response pagination,
+  and its text tells agents whether another page is available.
+
+### Changed
+
+- The similarity algorithm now defaults to `semantic`, matching the API.
+  `similarity_threshold: 0` is preserved instead of falling back to `0.7`.
+- Similarity output surfaces degraded-algorithm and lower-bound-total metadata,
+  and handles responses that intentionally omit similarity scores.
+- Refreshed dependency locks and constrained patched `fast-uri` and `qs`
+  versions through package overrides.
+
+### Fixed
+
+- Similarity explanations now read the API's documented `explanation` field,
+  while retaining compatibility with the temporary
+  `similarity_explanation` alias.
+
 ## [1.6.2] - 2026-08-10
 
 ### Added

@@ -12,7 +12,15 @@ interface SimilarConcept {
   concept_class_id: string;
   standard_concept: string | null;
   concept_code: string;
-  similarity_score: number;
+  /** Absent when the request set include_scores=false. */
+  similarity_score?: number;
+  /** The field both API docs specify. */
+  explanation?: string;
+  /**
+   * @deprecated Duplicate of `explanation`, emitted by the API for one release.
+   * This tool read only this name while the API emitted only `explanation`, so
+   * explanations silently vanished from every result.
+   */
   similarity_explanation?: string;
 }
 
@@ -22,16 +30,27 @@ interface SimilarResponse {
     original_query?: string;
     algorithm_used: string;
     similarity_threshold: number;
+    /**
+     * How many concepts cleared `similarity_threshold` inside the bounded
+     * retrieval pool - not how many were evaluated.
+     */
     total_candidates?: number;
     results_returned: number;
     processing_time_ms?: number;
+    /**
+     * True when retrieval hit its candidate bound, so the totals count only
+     * what qualified inside the pool searched, not the whole corpus.
+     */
+    totals_are_lower_bound?: boolean;
+    /** Set when a fallback served the request instead of what was asked for. */
+    degraded_from?: string;
   };
 }
 
 export function registerSimilarTools(server: McpServer, client: OmopHubClient): void {
   server.tool(
     'find_similar_concepts',
-    "Find medical concepts similar to a reference concept, name, or natural language query. Supports three algorithms: 'semantic' (neural embeddings — best for meaning), 'lexical' (text matching — best for typos), 'hybrid' (combined — default). Provide exactly ONE of: concept_id, concept_name, or query. Use this to explore related concepts, find alternative codes, or build phenotype concept sets. Tip: For drug vocabularies like RxNorm, use drug class names ('ACE inhibitors', 'beta blockers', 'antihypertensives') rather than symptom descriptions ('medications for high blood pressure') — the embedding model aligns better with clinical terminology than lay language.",
+    "Find medical concepts similar to a reference concept, name, or natural language query. Supports three algorithms: 'semantic' (neural embeddings — best for meaning, and the default), 'lexical' (text matching — best for typos), 'hybrid' (combined). Provide exactly ONE of: concept_id, concept_name, or query. Use this to explore related concepts, find alternative codes, or build phenotype concept sets. Tip: For drug vocabularies like RxNorm, use drug class names ('ACE inhibitors', 'beta blockers', 'antihypertensives') rather than symptom descriptions ('medications for high blood pressure') — the embedding model aligns better with clinical terminology than lay language.",
     {
       concept_id: z.number().optional().describe('Find concepts similar to this OMOP concept ID'),
       concept_name: z
@@ -46,9 +65,9 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
         .describe('Find concepts matching this natural language description'),
       algorithm: z
         .enum(['semantic', 'lexical', 'hybrid'])
-        .default('hybrid')
+        .default('semantic')
         .describe(
-          "Similarity algorithm: 'semantic' (meaning), 'lexical' (text), 'hybrid' (both). Default 'hybrid'.",
+          "Similarity algorithm: 'semantic' (meaning), 'lexical' (text), 'hybrid' (both). Default 'semantic', matching the API.",
         ),
       similarity_threshold: z
         .number()
@@ -82,6 +101,23 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
         .max(200)
         .optional()
         .describe("Comma-separated domain IDs to filter results. Examples: 'Condition', 'Drug'."),
+      concept_class_ids: z
+        .string()
+        .max(200)
+        .optional()
+        .describe(
+          "Comma-separated concept class IDs to filter results. Examples: 'Clinical Finding', 'Ingredient'.",
+        ),
+      // Sized from page_size alone and never from page: every algorithm ranks a
+      // bounded candidate pool, so reachable depth is roughly pool/page_size
+      // pages. Asking beyond it returns an empty page rather than an error.
+      page: z.number().min(1).default(1).describe('Page of results (1-based, default 1)'),
+      // The formatter renders `explanation`, but the API omits it unless asked,
+      // so without this flag the rendering could only ever fire on a fixture.
+      include_explanations: z
+        .boolean()
+        .default(false)
+        .describe('Include a short explanation of why each concept matched. Default false.'),
     },
     async (
       {
@@ -90,9 +126,12 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
         query,
         algorithm,
         similarity_threshold,
+        page,
         page_size,
         vocabulary_ids,
         domain_ids,
+        concept_class_ids,
+        include_explanations,
       },
       extra,
     ) => {
@@ -113,10 +152,17 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
         }
 
         const body: Record<string, unknown> = {
-          algorithm: algorithm ?? 'hybrid',
+          algorithm: algorithm ?? 'semantic',
+          // `??` rather than `||`: 0 is a threshold the API accepts and
+          // honours, and it must not fall through to the default.
           similarity_threshold: similarity_threshold ?? 0.7,
+          page: page ?? 1,
           page_size: page_size ?? 20,
         };
+
+        if (include_explanations !== undefined) {
+          body.include_explanations = include_explanations;
+        }
 
         if (concept_id !== undefined) body.concept_id = concept_id;
         if (concept_name !== undefined) body.concept_name = concept_name;
@@ -131,6 +177,11 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
             .split(',')
             .map((s) => s.trim())
             .filter(Boolean);
+        if (concept_class_ids)
+          body.concept_class_ids = concept_class_ids
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
 
         const response = await rc.post<SimilarResponse>(
           '/search/similar',
@@ -141,6 +192,22 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
         const data = response.data;
         const concepts = data?.similar_concepts ?? [];
         const meta = data?.search_metadata;
+        // Pagination lives in the response envelope, not in `data`. Rebuilding
+        // the output from `similar_concepts` and `search_metadata` alone
+        // dropped it, so a caller given a `page` argument had no way to learn
+        // whether another page existed.
+        const pagination = response.meta?.pagination;
+        // `has_next` is the documented signal to page on; `total_pages` can be a
+        // lower bound when the candidate pool was saturated. Build this before
+        // the empty branch so an empty requested page is not presented as an
+        // empty search.
+        const pageNote = pagination
+          ? `\n\nPage ${pagination.page} of ${pagination.total_pages}${
+              pagination.has_next
+                ? ` — more results available, request page ${pagination.page + 1}.`
+                : ' — no further pages.'
+            }`
+          : '';
 
         if (concepts.length === 0) {
           const source = concept_id ? `concept ${concept_id}` : (concept_name ?? query ?? '');
@@ -148,11 +215,18 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
             content: [
               {
                 type: 'text' as const,
-                text: `No similar concepts found for ${source}. Try lowering the similarity threshold or using a different algorithm.`,
+                text:
+                  pagination && pagination.page > pagination.total_pages
+                    ? `No results on page ${pagination.page} for ${source}. There ${pagination.total_pages === 1 ? 'is' : 'are'} only ${pagination.total_pages} page${pagination.total_pages === 1 ? '' : 's'}; results exist on earlier pages.`
+                    : `No similar concepts found for ${source}. Try lowering the similarity threshold or using a different algorithm.${pageNote}`,
               },
               {
                 type: 'text' as const,
-                text: JSON.stringify({ similar_concepts: [], search_metadata: meta }),
+                text: JSON.stringify({
+                  similar_concepts: [],
+                  search_metadata: meta,
+                  pagination,
+                }),
               },
             ],
           };
@@ -171,23 +245,38 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
               : c.standard_concept === 'C'
                 ? ' [Classification]'
                 : '';
-          const score = Number.isFinite(c.similarity_score) ? c.similarity_score.toFixed(2) : 'N/A';
+          const score =
+            typeof c.similarity_score === 'number' && Number.isFinite(c.similarity_score)
+              ? c.similarity_score.toFixed(2)
+              : 'N/A';
           let line = `${i + 1}. **${c.concept_name}** (ID: ${c.concept_id}) — score: ${score}\n   ${c.vocabulary_id} | ${c.domain_id} | Code: ${c.concept_code}${std}`;
-          if (c.similarity_explanation) {
-            line += `\n   _${c.similarity_explanation}_`;
+          // `explanation` is the documented name; the alias is read only so
+          // that an older API deployment still renders.
+          const explanation = c.explanation ?? c.similarity_explanation;
+          if (explanation) {
+            line += `\n   _${explanation}_`;
           }
           return line;
         });
 
-        const algoLabel = meta?.algorithm_used ?? algorithm ?? 'hybrid';
-        const text = `Found ${concepts.length} concepts similar to ${source} (${algoLabel} algorithm):\n\n${lines.join('\n\n')}`;
+        const algoLabel = meta?.algorithm_used ?? algorithm ?? 'semantic';
+        // Say so when the algorithm that ran is not the one that was asked
+        // for, rather than presenting the fallback as what was requested.
+        const degraded = meta?.degraded_from
+          ? ` — ${meta.degraded_from} was requested but only its ${algoLabel} half could run`
+          : '';
+        const text = `Found ${concepts.length} concepts similar to ${source} (${algoLabel} algorithm${degraded}):\n\n${lines.join('\n\n')}${pageNote}`;
 
         return {
           content: [
             { type: 'text' as const, text },
             {
               type: 'text' as const,
-              text: JSON.stringify({ similar_concepts: concepts, search_metadata: meta }),
+              text: JSON.stringify({
+                similar_concepts: concepts,
+                search_metadata: meta,
+                pagination,
+              }),
             },
           ],
         };
