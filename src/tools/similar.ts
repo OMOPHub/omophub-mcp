@@ -215,9 +215,10 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
             content: [
               {
                 type: 'text' as const,
-text: pagination && pagination.page > pagination.total_pages
-  ? `No results on page ${pagination.page} for ${source}. There ${pagination.total_pages === 1 ? 'is' : 'are'} only ${pagination.total_pages} page${pagination.total_pages === 1 ? '' : 's'}; results exist on earlier pages.`
-  : `No similar concepts found for ${source}. Try lowering the similarity threshold or using a different algorithm.${pageNote}`,
+                text:
+                  pagination && pagination.page > pagination.total_pages
+                    ? `No results on page ${pagination.page} for ${source}. There ${pagination.total_pages === 1 ? 'is' : 'are'} only ${pagination.total_pages} page${pagination.total_pages === 1 ? '' : 's'}; results exist on earlier pages.`
+                    : `No similar concepts found for ${source}. Try lowering the similarity threshold or using a different algorithm.${pageNote}`,
               },
               {
                 type: 'text' as const,
