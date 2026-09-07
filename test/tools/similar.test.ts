@@ -149,6 +149,41 @@ describe('find_similar_concepts', () => {
     expect(result.isError).toBeUndefined();
   });
 
+  it('surfaces pagination when the requested page is empty', async () => {
+    const server = createMockServer();
+    const client = createMockClient();
+    client.post.mockResolvedValueOnce({
+      success: true,
+      data: {
+        similar_concepts: [],
+        search_metadata: {
+          algorithm_used: 'hybrid',
+          similarity_threshold: 0.7,
+          results_returned: 0,
+        },
+      },
+      meta: {
+        pagination: {
+          page: 2,
+          page_size: 20,
+          total_items: 55,
+          total_pages: 3,
+          has_next: true,
+          has_previous: true,
+        },
+      },
+    });
+
+    registerSimilarTools(server as never, client as never);
+    const handler = server.tools.get('find_similar_concepts')!;
+
+    const result = await handler({ concept_id: 201826, page: 2 });
+
+    expect(result.content[0].text).toContain('Page 2 of 3');
+    expect(result.content[0].text).toContain('request page 3');
+    expect(JSON.parse(result.content[1].text).pagination.has_next).toBe(true);
+  });
+
   it('handles missing similarity_score gracefully', async () => {
     const server = createMockServer();
     const client = createMockClient();

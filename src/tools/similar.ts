@@ -197,6 +197,17 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
         // dropped it, so a caller given a `page` argument had no way to learn
         // whether another page existed.
         const pagination = response.meta?.pagination;
+        // `has_next` is the documented signal to page on; `total_pages` can be a
+        // lower bound when the candidate pool was saturated. Build this before
+        // the empty branch so an empty requested page is not presented as an
+        // empty search.
+        const pageNote = pagination
+          ? `\n\nPage ${pagination.page} of ${pagination.total_pages}${
+              pagination.has_next
+                ? ` — more results available, request page ${pagination.page + 1}.`
+                : ' — no further pages.'
+            }`
+          : '';
 
         if (concepts.length === 0) {
           const source = concept_id ? `concept ${concept_id}` : (concept_name ?? query ?? '');
@@ -204,7 +215,7 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
             content: [
               {
                 type: 'text' as const,
-                text: `No similar concepts found for ${source}. Try lowering the similarity threshold or using a different algorithm.`,
+                text: `No similar concepts found for ${source}. Try lowering the similarity threshold or using a different algorithm.${pageNote}`,
               },
               {
                 type: 'text' as const,
@@ -250,16 +261,6 @@ export function registerSimilarTools(server: McpServer, client: OmopHubClient): 
         // for, rather than presenting the fallback as what was requested.
         const degraded = meta?.degraded_from
           ? ` — ${meta.degraded_from} was requested but only its ${algoLabel} half could run`
-          : '';
-        // State the position in the ranking, and that there is more to ask for.
-        // `has_next` is the documented signal to page on; `total_pages` can be a
-        // lower bound when the candidate pool was saturated.
-        const pageNote = pagination
-          ? `\n\nPage ${pagination.page} of ${pagination.total_pages}${
-              pagination.has_next
-                ? ` — more results available, request page ${pagination.page + 1}.`
-                : ' — no further pages.'
-            }`
           : '';
         const text = `Found ${concepts.length} concepts similar to ${source} (${algoLabel} algorithm${degraded}):\n\n${lines.join('\n\n')}${pageNote}`;
 
