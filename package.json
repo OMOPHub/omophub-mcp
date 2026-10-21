@@ -26,8 +26,9 @@
     "lint:fix": "biome check --write src/ test/",
     "typecheck": "tsc --noEmit",
     "format": "biome format --write src/ test/",
-    "format:check": "biome format --check src/ test/",
-    "prepublishOnly": "npm run build"
+    "format:check": "biome format src/ test/",
+    "prepublishOnly": "npm run build",
+    "audit:dependencies": "npm audit --package-lock-only --include=dev --include=optional --audit-level=low"
   },
   "keywords": [
     "mcp",
@@ -58,23 +59,26 @@
   },
   "homepage": "https://omophub.com",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.26.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "zod": "^4.3.6"
   },
   "overrides": {
     "@hono/node-server": ">=2.0.10",
     "postcss": ">=8.5.18",
-    "hono": ">=4.12.34",
-    "ip-address": ">=10.3.1",
-    "fast-uri": ">=3.1.7 <4.0.0",
-    "qs": ">=6.16.0"
+    "hono": ">=4.13.11 <5.0.0",
+    "ip-address": ">=10.7.1 <11.0.0",
+    "fast-uri": ">=3.1.8 <4.0.0",
+    "qs": ">=6.16.0",
+    "proxy-addr": ">=2.0.8 <3.0.0",
+    "source-map-js": ">=1.2.2 <2.0.0",
+    "vite": ">=8.1.6 <9.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.4",
     "@types/node": "^25.0.3",
-    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/coverage-v8": "^4.1.11",
     "tsx": "^4.19.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.11"
   }
 }
