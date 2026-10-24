@@ -1,4 +1,4 @@
-FROM node:24-alpine AS builder
+FROM node:24.22.1-alpine3.23@sha256:0468540aa58203ff9e40c2aab3907c52644ab818af6176b1c70a026137dc92a2 AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json* ./
@@ -9,7 +9,7 @@ RUN npm run build && \
     rm -rf node_modules && \
     npm ci --omit=dev --ignore-scripts
 
-FROM gcr.io/distroless/nodejs24-debian12:nonroot
+FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:cb606325b7ec4af55462cb0b424a53b452a5b4a894ffe841fcf1048d216fb9f8
 
 WORKDIR /app
 COPY --from=builder /app/package.json ./package.json
