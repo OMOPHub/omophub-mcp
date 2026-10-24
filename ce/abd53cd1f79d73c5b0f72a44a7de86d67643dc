@@ -1,0 +1,23 @@
+Dockerfile
+  s_37e801c2bba21a::t_598c37af7b98ed 1,12
+package-lock.json
+  s_37e801c2bba21a::t_d218ec61a18c7e 13,1302-1304,1308,1311,1313,1326-1328,1948-1950,2621-2623,3284-3286
+package.json
+  s_37e801c2bba21a::t_4ad38018d532bb 63,71,74-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ceabd53cd1f79d73c5b0f72a44a7de86d67643dc",
+  "prompts": {},
+  "sessions": {
+    "s_37e801c2bba21a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a16ec3-4674-77e2-8eed-dab9eb28488c",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
