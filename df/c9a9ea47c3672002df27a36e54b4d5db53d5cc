@@ -1,0 +1,23 @@
+src/transports/oauth.ts
+  s_c7e9bd656f030b::t_bbea7aacdec48c 13-29,76,78,85
+  s_c7e9bd656f030b::t_aa581368f44ae8 45
+test/transports/http.test.ts
+  s_c7e9bd656f030b::t_bbea7aacdec48c 26,38-49
+  s_c7e9bd656f030b::t_19ec06363b17f4 50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dfc9a9ea47c3672002df27a36e54b4d5db53d5cc",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
