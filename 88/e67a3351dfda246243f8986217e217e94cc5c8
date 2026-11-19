@@ -1,0 +1,34 @@
+scripts/build-plugins.py
+  s_a7afb2b350ae4d::t_cc936bffff5125 1-57
+plugins/README.md
+  s_a7afb2b350ae4d::t_cc936bffff5125 1-7
+skills/omophub/SKILL.md
+  s_a7afb2b350ae4d::t_cc936bffff5125 1-14
+package.json
+  s_a7afb2b350ae4d::t_cc936bffff5125 31-32
+plugins/openai/mcp.json
+  s_a7afb2b350ae4d::t_cc936bffff5125 1-22
+plugins/claude/.claude-plugin/plugin.json
+  s_a7afb2b350ae4d::t_cc936bffff5125 1-11
+plugins/openai/plugin.json
+  s_a7afb2b350ae4d::t_cc936bffff5125 1-15,17-19,29-32
+  s_a7afb2b350ae4d::t_8e15afe0ada49c 16,20-28
+plugins/claude/mcp.json
+  s_a7afb2b350ae4d::t_cc936bffff5125 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "88e67a3351dfda246243f8986217e217e94cc5c8",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
