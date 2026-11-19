@@ -1,0 +1,35 @@
+src/client/api.ts
+  s_c7e9bd656f030b::t_1d0335dc058459 10-13,16,20-25,73-74,76-78,95
+src/client/resolve.ts
+  s_c7e9bd656f030b::t_398ce393184715 42-43
+src/transports/oauth.ts
+  s_c7e9bd656f030b::t_e2cbafc1770541 10,52-54,58-107,109-168,171,220
+test/client/resolve.test.ts
+  s_c7e9bd656f030b::t_645e41c3e4fb9c 59-101
+test/transports/http.test.ts
+  s_a7afb2b350ae4d::t_1d512b960cd2c4 56-80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "705d430d4a854ed685cf60edbe7128bb42ebbdee",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    },
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
