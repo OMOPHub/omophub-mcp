@@ -1,0 +1,45 @@
+test/client/api.test.ts
+  s_c7e9bd656f030b::t_47d3064582bf90 3,318-371
+  s_c7e9bd656f030b::t_f1a92bc3b566b7 372
+src/server.ts
+  s_c7e9bd656f030b::t_47d3064582bf90 16,20-23,35,38-39,43
+src/tools/vocabularies.ts
+  s_c7e9bd656f030b::t_47d3064582bf90 33-37
+  s_c7e9bd656f030b::t_869ddc6bfd7857 52,56
+src/tools/hierarchy.ts
+  s_c7e9bd656f030b::t_47d3064582bf90 10-14
+  s_c7e9bd656f030b::t_050fb8ffd6609a 53,114
+test/server.test.ts
+  s_c7e9bd656f030b::t_47d3064582bf90 40-52
+test/resources/index.test.ts
+  s_c7e9bd656f030b::t_47d3064582bf90 50,56,72,111,125,140,164
+src/tools/concepts.ts
+  s_c7e9bd656f030b::t_47d3064582bf90 10-14
+  s_c7e9bd656f030b::t_e01b4f811c9155 25,43,86,106
+src/utils/errors.ts
+  s_c7e9bd656f030b::t_47d3064582bf90 1-42,48,53-78,99-100,114-126,128,131-132,135
+src/client/api.ts
+  s_c7e9bd656f030b::t_47d3064582bf90 8,47,55-56,58-64,70,73,76,80,82,85,87,91-106,108-110
+src/index.ts
+  s_c7e9bd656f030b::t_47d3064582bf90 124-128
+src/resources/index.ts
+  s_c7e9bd656f030b::t_47d3064582bf90 9,36,40,44,48-52,56,83
+test/formatters/index.test.ts
+  s_c7e9bd656f030b::t_47d3064582bf90 216,222,247,253-254
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0c749329b8426aff460815b557c0e38b3f5cf1e0",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
