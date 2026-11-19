@@ -1,0 +1,30 @@
+src/transports/oauth.ts
+  s_a7afb2b350ae4d::t_d1408c7ca4411d 2-9,37-50,73
+test/transports/http.test.ts
+  s_c7e9bd656f030b::t_5b9a3e2f84624e 2,27-31,56-72
+  s_a7afb2b350ae4d::t_d3d5b98d86aa9c 73-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "330302b4bb916390e6068f9d7db49d4b577f766e",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    },
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
