@@ -1,0 +1,67 @@
+plugins/codex/hooks/hooks.json
+  s_c7e9bd656f030b::t_a64b6a75e149f8 12-22
+  s_c7e9bd656f030b::t_2a4990839dd0e2 23-32
+  s_c7e9bd656f030b::t_62f75fb2adeaa1 33-43
+src/utils/check-hierarchy-reply.mjs
+  s_c7e9bd656f030b::t_2a4990839dd0e2 1-4,6-16,23-33
+  s_c7e9bd656f030b::t_62f75fb2adeaa1 18
+  s_c7e9bd656f030b::t_a2d6b385ecd4db 5,17,19-22
+src/tools/hierarchy.ts
+  s_c7e9bd656f030b::t_66df0db7f48f17 18-29,52,59,64,69,72
+  s_a7afb2b350ae4d::t_70ad45988a717c 38,43-45,50
+src/utils/check-prompt.mjs
+  s_c7e9bd656f030b::t_2a4990839dd0e2 1,25,27-29,38-39
+  s_c7e9bd656f030b::t_62f75fb2adeaa1 41-42,44-50,55
+  s_c7e9bd656f030b::t_b595ceb45622fe 33-34,40,51-54,56-58
+  s_c7e9bd656f030b::t_86d7f41faec201 35-37,43
+skills/omophub/SKILL.md
+  s_a7afb2b350ae4d::t_70ad45988a717c 13-14
+  s_c7e9bd656f030b::t_fb1be57a3dfa52 10-12
+src/formatters/index.ts
+  s_a7afb2b350ae4d::t_70ad45988a717c 278-283,295,297-298
+src/utils/check-hierarchy-page.mjs
+  s_c7e9bd656f030b::t_2a4990839dd0e2 1-2,20-30
+  s_c7e9bd656f030b::t_a64b6a75e149f8 3-19,31-36
+src/utils/hierarchy-progress.mjs
+  s_c7e9bd656f030b::t_62f75fb2adeaa1 18,32-33,62
+  s_c7e9bd656f030b::t_2a4990839dd0e2 1-17,19-31,34-61,63-83
+src/utils/check-hierarchy-read.mjs
+  s_c7e9bd656f030b::t_62f75fb2adeaa1 1-8,10-24
+  s_c7e9bd656f030b::t_4321807c01d33c 9
+scripts/build-plugins.py
+  s_c7e9bd656f030b::t_a64b6a75e149f8 22
+  s_c7e9bd656f030b::t_2a4990839dd0e2 23,25
+  s_c7e9bd656f030b::t_62f75fb2adeaa1 24
+plugins/README.md
+  s_c7e9bd656f030b::t_96d009ab4ac7ce 21
+test/tool-contract.test.ts
+  s_c7e9bd656f030b::t_70423a729b9b44 116-121,129-137,144-158
+test/tools/hierarchy-hooks.test.ts
+  s_c7e9bd656f030b::t_6026fd05a177e4 1-82
+test/tools/prompt-guard.test.ts
+  s_c7e9bd656f030b::t_87b689d421e477 43-65,71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0a4dae27b6000a74929a62c132f9f2690b6794c3",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    },
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
