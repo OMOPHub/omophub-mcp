@@ -1,0 +1,27 @@
+plugins/README.md
+  s_c7e9bd656f030b::t_d557a54ae1da84 9
+src/utils/check-prompt.mjs
+  s_c7e9bd656f030b::t_d557a54ae1da84 5-12,14-19,24-26
+  s_c7e9bd656f030b::t_1f33ce92593c5c 13
+skills/omophub/SKILL.md
+  s_c7e9bd656f030b::t_d557a54ae1da84 8-9
+test/tools/prompt-guard.test.ts
+  s_c7e9bd656f030b::t_d557a54ae1da84 14,27-28,30-46
+  s_c7e9bd656f030b::t_1f33ce92593c5c 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9be0b85f77f24012cfe68edc6b64c71b1fa1226c",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
