@@ -1,0 +1,50 @@
+src/tools/mappings.ts
+  s_a7afb2b350ae4d::t_cae021b49fcda9 14,56-58,63
+test/tool-contract.test.ts
+  s_a7afb2b350ae4d::t_cae021b49fcda9 101-119
+test/tools/prompt-guard.test.ts
+  s_c7e9bd656f030b::t_c487dfcea61e20 96-114,145-146
+plugins/codex/hooks/hooks.json
+  s_c7e9bd656f030b::t_6eb8ba905d0960 40-48,75-80
+  s_a7afb2b350ae4d::t_73d0d22280ef18 81,112-120
+  s_c7e9bd656f030b::t_d551eb55fb31fd 82
+scripts/build-plugins.py
+  s_c7e9bd656f030b::t_6eb8ba905d0960 29
+src/utils/check-mapping-result.mjs
+  s_c7e9bd656f030b::t_e4edcc882022ab 73-76,80-87
+  s_a7afb2b350ae4d::t_b5d5165e8715a6 92-105
+  s_a7afb2b350ae4d::t_372e5a3f7d288d 17,46-51,58,72,77-79,88-89
+  s_c7e9bd656f030b::t_6eb8ba905d0960 1-5,25,27-30,32-45,52-57,59-67,108,110-119
+  s_a7afb2b350ae4d::t_73d0d22280ef18 6-16,18-24,26,31,68-71,90-91,106-107,109
+test/tools/mapping-reply.test.ts
+  s_c7e9bd656f030b::t_e4edcc882022ab 73-80
+  s_a7afb2b350ae4d::t_ea267ba9f1b88a 1-72,81-102,104-106
+  s_a7afb2b350ae4d::t_b5d5165e8715a6 103
+src/utils/check-prompt.mjs
+  s_c7e9bd656f030b::t_6eb8ba905d0960 51-52,63-68,131,169
+  s_c7e9bd656f030b::t_c487dfcea61e20 50,53-62,69-71,168,170-171
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d305cc44a7225eb6ed0f27f5a73b505e4ba9f3cb",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    },
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
