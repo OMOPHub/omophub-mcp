@@ -1,0 +1,39 @@
+src/tools/search.ts
+  s_c7e9bd656f030b::t_8c365a920e789a 8,13,26-30,32,37,39-44,84-87,116,119-138,140-149,151-154,156
+  s_a7afb2b350ae4d::t_064a12d6fd2fcc 31
+  s_a7afb2b350ae4d::t_1ba48298662ebd 56
+  s_c7e9bd656f030b::t_d8af813fe127fd 159-163
+  s_c7e9bd656f030b::t_e65af89cda1035 115,118,150,155
+skills/omophub/SKILL.md
+  s_a7afb2b350ae4d::t_6e03ace712d687 14
+  s_a7afb2b350ae4d::t_1ba48298662ebd 12-13
+src/tools/concepts.ts
+  s_c7e9bd656f030b::t_8c365a920e789a 17-20,52
+  s_a7afb2b350ae4d::t_1ba48298662ebd 41
+test/tools/search.test.ts
+  s_c7e9bd656f030b::t_3e380069195d61 110-191
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8ec4816f451db1c39e5de185b9739c38b330f638",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    },
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
