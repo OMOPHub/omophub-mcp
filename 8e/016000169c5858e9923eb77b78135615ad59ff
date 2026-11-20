@@ -1,0 +1,29 @@
+plugins/README.md
+  s_c7e9bd656f030b::t_ddcc506573e69a 21
+src/utils/check-hierarchy-read.mjs
+  s_c7e9bd656f030b::t_ddcc506573e69a 19
+src/utils/hierarchy-progress.mjs
+  s_c7e9bd656f030b::t_ddcc506573e69a 52
+test/tools/hierarchy-hooks.test.ts
+  s_c7e9bd656f030b::t_ddcc506573e69a 63,69
+  s_c7e9bd656f030b::t_57a81b5dfc6c49 75-86
+src/utils/check-hierarchy-reply.mjs
+  s_c7e9bd656f030b::t_ddcc506573e69a 36
+  s_c7e9bd656f030b::t_8d089ed0a96222 22-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8e016000169c5858e9923eb77b78135615ad59ff",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
