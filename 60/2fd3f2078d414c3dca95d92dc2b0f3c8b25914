@@ -1,0 +1,23 @@
+test/formatters/index.test.ts
+  s_c7e9bd656f030b::t_8a2bd8f63780db 131-166
+src/client/types.ts
+  s_c7e9bd656f030b::t_8a2bd8f63780db 53-56,105,107
+src/formatters/index.ts
+  s_c7e9bd656f030b::t_8a2bd8f63780db 128,130-134,136-138,212
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "602fd3f2078d414c3dca95d92dc2b0f3c8b25914",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
