@@ -1,0 +1,25 @@
+skills/omophub/SKILL.md
+  s_c7e9bd656f030b::t_426daeb4c9c0ed 9
+  s_c7e9bd656f030b::t_edada46765e0c8 8
+  s_c7e9bd656f030b::t_cff2457888e493 16
+src/transports/http.ts
+  s_c7e9bd656f030b::t_5938b57362d97f 213
+test/transports/http.test.ts
+  s_c7e9bd656f030b::t_e05b4b20e047b5 145-154
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1d79da6ec5ca39532a3c11c9202a2b93eba8fc92",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
