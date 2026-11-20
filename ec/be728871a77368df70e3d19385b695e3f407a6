@@ -1,0 +1,23 @@
+plugins/README.md
+  s_a7afb2b350ae4d::t_a46f9b739a330f 21
+src/utils/check-coding.mjs
+  s_a7afb2b350ae4d::t_be0554050ba7fd 1-117
+src/utils/errors.ts
+  s_a7afb2b350ae4d::t_eeaa1b325befe8 27,70-78,99-112
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ecbe728871a77368df70e3d19385b695e3f407a6",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
