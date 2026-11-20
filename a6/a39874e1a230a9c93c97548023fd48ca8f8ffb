@@ -1,0 +1,26 @@
+src/client/types.ts
+  s_c7e9bd656f030b::t_d0ddd9470e69af 14
+test/tools/concepts.test.ts
+  s_c7e9bd656f030b::t_d0ddd9470e69af 88-89,93-115
+  s_c7e9bd656f030b::t_4b8b38800b5ca8 116-117
+src/tools/concepts.ts
+  s_c7e9bd656f030b::t_d0ddd9470e69af 27,38-41,44
+src/formatters/index.ts
+  s_c7e9bd656f030b::t_d0ddd9470e69af 89-92,113,123
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a6a39874e1a230a9c93c97548023fd48ca8f8ffb",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
