@@ -1,0 +1,33 @@
+skills/omophub/SKILL.md
+  s_a7afb2b350ae4d::t_196edcfd21764b 18
+src/tools/concepts.ts
+  s_a7afb2b350ae4d::t_4adb415227b0fa 37,68
+src/utils/check-prompt.mjs
+  s_c7e9bd656f030b::t_d931b109a7d662 30-45,111
+test/tools/prompt-guard.test.ts
+  s_c7e9bd656f030b::t_08ae4d4b5fc406 59-77,109-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f4cae1e51ab6dd74462502a8fe700e01795798d3",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    },
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
