@@ -1,0 +1,20 @@
+plugins/README.md
+  h_ab4fdc3d784201 9
+skills/omophub/SKILL.md
+  h_ab4fdc3d784201 10-11
+src/utils/check-prompt.mjs
+  h_ab4fdc3d784201 17-23,27
+test/tools/prompt-guard.test.ts
+  h_ab4fdc3d784201 43-58,86-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d3276817ac67381305d63462daf7f5ca2aa04f5e",
+  "prompts": {},
+  "humans": {
+    "h_ab4fdc3d784201": {
+      "author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
