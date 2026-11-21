@@ -1,0 +1,29 @@
+plugins/claude/hooks/hooks.json
+  s_c7e9bd656f030b::t_2da2936923252e 9-12,23-26,41-49,58-61
+scripts/build-plugins.py
+  s_c7e9bd656f030b::t_2da2936923252e 41-43
+test/tools/claude-verified-search.test.ts
+  s_c7e9bd656f030b::t_2da2936923252e 1-68
+src/utils/check-prompt.mjs
+  s_c7e9bd656f030b::t_2da2936923252e 1
+src/utils/claude-verified-search.mjs
+  s_c7e9bd656f030b::t_2da2936923252e 1-38
+src/utils/check-verified-search.mjs
+  s_c7e9bd656f030b::t_2da2936923252e 2,6,9-47,55,82,98,106,120,128,133-135
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bc3c64ce46424745aaf726d26d2db92a9c331178",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
