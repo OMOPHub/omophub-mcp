@@ -1,0 +1,31 @@
+src/utils/claude-exact-code.mjs
+  s_a7afb2b350ae4d::t_cff694106e54be 1-75
+src/utils/exact-code.mjs
+  s_a7afb2b350ae4d::t_cff694106e54be 1-16
+src/utils/check-prompt.mjs
+  s_a7afb2b350ae4d::t_cff694106e54be 2,34-35
+scripts/build-plugins.py
+  s_a7afb2b350ae4d::t_cff694106e54be 31,35-42
+src/utils/review-state.mjs
+  s_a7afb2b350ae4d::t_cff694106e54be 6,9,11-12,19-20,29-30
+plugins/claude/hooks/hooks.json
+  s_a7afb2b350ae4d::t_cff694106e54be 1-46
+test/tools/claude-exact-code.test.ts
+  s_a7afb2b350ae4d::t_cff694106e54be 1-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "140a29c5772c5dc693fdf8f9880c5efb4dded5d8",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
