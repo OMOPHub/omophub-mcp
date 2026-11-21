@@ -1,0 +1,30 @@
+plugins/codex/hooks/hooks.json
+  s_c7e9bd656f030b::t_24066c3530d274 102
+src/utils/check-coding.mjs
+  s_c7e9bd656f030b::t_24066c3530d274 46-50
+src/utils/check-mapping-result.mjs
+  s_c7e9bd656f030b::t_24066c3530d274 96
+src/utils/check-prompt.mjs
+  s_c7e9bd656f030b::t_24066c3530d274 120-123
+test/tools/coding-hooks.test.ts
+  s_c7e9bd656f030b::t_24066c3530d274 2,62-97
+  s_c7e9bd656f030b::t_e5dca155768373 98-99
+test/tools/mapping-reply.test.ts
+  s_c7e9bd656f030b::t_24066c3530d274 98-105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "10c57b243c77779296f99e3592e2e1e1d2f72ee0",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
