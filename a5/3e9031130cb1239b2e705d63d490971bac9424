@@ -1,0 +1,21 @@
+src/utils/claude-mapping.mjs
+  s_c7e9bd656f030b::t_8fe2c63172de94 3-28,31,35
+plugins/claude/hooks/hooks.json
+  s_c7e9bd656f030b::t_8fe2c63172de94 112-122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a53e9031130cb1239b2e705d63d490971bac9424",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
