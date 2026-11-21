@@ -1,0 +1,21 @@
+.github/workflows/build-image.yml
+  s_98134d02eadafa::t_a58808e31c6b53 12-15,35,52-53,106-134,136,150
+.dockerignore
+  s_98134d02eadafa::t_a58808e31c6b53 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4de844a38e083eeab4f7f06a94a134b2b3b1cb4a",
+  "prompts": {},
+  "sessions": {
+    "s_98134d02eadafa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1fdd0-6fb2-7792-bfc2-aadbbdcdbcad",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
