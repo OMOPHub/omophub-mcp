@@ -1,0 +1,22 @@
+src/utils/check-mapping-result.mjs
+  s_a7afb2b350ae4d::t_d7195cc1671887 5-8,22-24,79-80,84,96,115
+test/tools/mapping-reply.test.ts
+  s_a7afb2b350ae4d::t_d7195cc1671887 67-69,80-93
+  s_a7afb2b350ae4d::t_792bd9838e9adb 94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e3b559bbce1a019393d2692e5aee995f726c6d7a",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
