@@ -1,0 +1,31 @@
+src/utils/check-coding.mjs
+  s_c7e9bd656f030b::t_a5dd2c7759b7c8 1,6-7
+test/tools/claude-coding.test.ts
+  s_c7e9bd656f030b::t_a5dd2c7759b7c8 1-51
+src/utils/check-prompt.mjs
+  s_c7e9bd656f030b::t_a5dd2c7759b7c8 2,8
+plugins/claude/hooks/hooks.json
+  s_c7e9bd656f030b::t_a5dd2c7759b7c8 21-24,43-46,97-105,126-129
+src/utils/claude-coding.mjs
+  s_c7e9bd656f030b::t_a5dd2c7759b7c8 1-10
+src/utils/coding-review.mjs
+  s_c7e9bd656f030b::t_a5dd2c7759b7c8 1-211
+scripts/build-plugins.py
+  s_c7e9bd656f030b::t_a5dd2c7759b7c8 32,47-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3e968d74f3f6c8a364631299318323135d0e86c7",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
