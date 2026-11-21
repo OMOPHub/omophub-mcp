@@ -1,0 +1,54 @@
+src/utils/check-coding.mjs
+  s_a7afb2b350ae4d::t_8574e940962158 37-41,63-65,67,78,82,111
+  s_c7e9bd656f030b::t_66b52f548ff92c 94-95
+skills/omophub/SKILL.md
+  s_c7e9bd656f030b::t_66b52f548ff92c 22
+  s_a7afb2b350ae4d::t_8574e940962158 24
+src/tools/fhir.ts
+  s_a7afb2b350ae4d::t_8574e940962158 53-57
+src/utils/check-prompt.mjs
+  s_c7e9bd656f030b::t_66b52f548ff92c 67-68,70-71
+src/tools/mappings.ts
+  s_c7e9bd656f030b::t_66b52f548ff92c 27-30,44-49,88-96,101,164-166,173-179
+  s_c7e9bd656f030b::t_541cf7425a4fab 32-39
+  s_a7afb2b350ae4d::t_8574e940962158 162-163,167-172,180-182
+test/tools/mappings.test.ts
+  s_c7e9bd656f030b::t_1de898ea9d8286 316-349
+test/tools/mapping-reply.test.ts
+  s_c7e9bd656f030b::t_66b52f548ff92c 9-14
+  s_c7e9bd656f030b::t_1de898ea9d8286 111-131
+test/tools/prompt-guard.test.ts
+  s_c7e9bd656f030b::t_66b52f548ff92c 112-119
+src/utils/check-mapping-result.mjs
+  s_a7afb2b350ae4d::t_8574e940962158 19
+  s_c7e9bd656f030b::t_66b52f548ff92c 17-18,30-49,93-95,130
+test/tools/coding-hooks.test.ts
+  s_c7e9bd656f030b::t_1de898ea9d8286 80,96
+  s_c7e9bd656f030b::t_541cf7425a4fab 92-95
+test/tools/fhir.test.ts
+  s_a7afb2b350ae4d::t_22cf54fd480cb3 146-148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bef53db2d7e8a8b47ca23c1a53fb6bdf4c753fdb",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    },
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
