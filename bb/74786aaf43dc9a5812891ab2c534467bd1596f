@@ -1,0 +1,23 @@
+test/tools/coding-hooks.test.ts
+  s_c7e9bd656f030b::t_65a3a0f3eceac4 107-136
+src/utils/check-coding.mjs
+  s_c7e9bd656f030b::t_65a3a0f3eceac4 82-85,91-103
+src/utils/check-prompt.mjs
+  s_c7e9bd656f030b::t_65a3a0f3eceac4 135
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bb74786aaf43dc9a5812891ab2c534467bd1596f",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
