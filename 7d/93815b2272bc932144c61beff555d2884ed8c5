@@ -1,0 +1,35 @@
+plugins/claude/hooks/hooks.json
+  s_a7afb2b350ae4d::t_074c0b8e85d269 13-16,31-34,58-66,79-82
+src/utils/check-mapping-result.mjs
+  s_a7afb2b350ae4d::t_074c0b8e85d269 1,5
+src/utils/claude-verified-search.mjs
+  s_a7afb2b350ae4d::t_074c0b8e85d269 2,4-10
+src/utils/claude-review.mjs
+  s_a7afb2b350ae4d::t_074c0b8e85d269 1-41
+src/utils/mapping-review.mjs
+  s_a7afb2b350ae4d::t_074c0b8e85d269 1-192
+scripts/build-plugins.py
+  s_a7afb2b350ae4d::t_074c0b8e85d269 26,41,43-44
+src/utils/check-prompt.mjs
+  s_a7afb2b350ae4d::t_074c0b8e85d269 2,4
+src/utils/claude-mapping.mjs
+  s_a7afb2b350ae4d::t_074c0b8e85d269 1-11
+test/tools/claude-mapping.test.ts
+  s_a7afb2b350ae4d::t_074c0b8e85d269 1-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7d93815b2272bc932144c61beff555d2884ed8c5",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
