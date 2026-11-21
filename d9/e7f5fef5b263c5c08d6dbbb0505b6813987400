@@ -1,0 +1,19 @@
+package-lock.json
+  s_a72c3eca1ef633::t_43c044f99b7927 696-698,704,1912-1914
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d9e7f5fef5b263c5c08d6dbbb0505b6813987400",
+  "prompts": {},
+  "sessions": {
+    "s_a72c3eca1ef633": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1fdd0-6fb2-7792-bfc2-aadbbdcdbcad",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
