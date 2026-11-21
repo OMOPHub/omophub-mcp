@@ -1,0 +1,29 @@
+test/tools/hierarchy-hooks.test.ts
+  s_a7afb2b350ae4d::t_c7f6e40b5af232 75-90
+src/utils/check-mapping-result.mjs
+  s_a7afb2b350ae4d::t_c7f6e40b5af232 9-26,102,122,132
+src/utils/check-hierarchy-page.mjs
+  s_a7afb2b350ae4d::t_c7f6e40b5af232 23
+src/utils/check-hierarchy-read.mjs
+  s_a7afb2b350ae4d::t_c7f6e40b5af232 20
+test/tools/mapping-reply.test.ts
+  s_a7afb2b350ae4d::t_c7f6e40b5af232 103-117
+src/utils/check-hierarchy-reply.mjs
+  s_a7afb2b350ae4d::t_c7f6e40b5af232 35-39,45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fd55403a0c0fa60393cb0b904cb8e7b009d3de3b",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
