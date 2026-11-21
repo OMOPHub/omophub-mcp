@@ -9,6 +9,10 @@ name: Build & Push MCP Image (VM)
 on:
   workflow_dispatch:
     inputs:
+      verify_only:
+        description: 'Build and check Artifact Registry publisher access without pushing tags'
+        type: boolean
+        default: false
       image_tag:
         description: 'Additional tag to apply alongside :latest and :<short_sha>'
         required: false
@@ -28,7 +32,7 @@ on:
 # accepted limitation for a manual workflow; ordering of `:latest` among the
 # runs that do execute is still correct, which is the point of the lock.
 concurrency:
-  group: build-image-publish
+  group: ${{ inputs.verify_only && format('build-image-verify-{0}', github.run_id) || 'build-image-publish' }}
   cancel-in-progress: false
 
 env:
@@ -45,6 +49,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Validate extra image tag
         # The `image_tag` workflow_dispatch input is free-form and ends up
@@ -61,19 +67,6 @@ jobs:
             echo "Invalid image_tag: must match Docker tag spec [A-Za-z0-9_][A-Za-z0-9._-]{0,127}" >&2
             exit 1
           fi
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v3
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v3
-        with:
-          project_id: ${{ env.GCP_PROJECT_ID }}
-
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker "$ARTIFACT_REGISTRY" --quiet
 
       - name: Set image tags
         id: tags
@@ -110,7 +103,37 @@ jobs:
           fi
           docker build "${BUILD_ARGS[@]}" .
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "$ARTIFACT_REGISTRY" --quiet
+
+      - name: Verify Artifact Registry access
+        if: inputs.verify_only
+        shell: bash
+        env:
+          LATEST_TAG: ${{ steps.tags.outputs.latest_tag }}
+        run: |
+          docker manifest inspect "$LATEST_TAG" > /dev/null
+          # Check permission to upload to this repository without modifying any tags.
+          repository_url="https://artifactregistry.googleapis.com/v1/projects/${GCP_PROJECT_ID}/locations/${GCP_REGION}/repositories/${REPOSITORY}"
+          permission="artifactregistry.repositories.uploadArtifacts"
+          gcloud auth print-access-token |
+            sed 's/^/Authorization: Bearer /' |
+            curl --fail --silent --show-error --header @- \
+              --json "{\"permissions\":[\"${permission}\"]}" "${repository_url}:testIamPermissions" |
+            jq --exit-status --arg permission "$permission" '(.permissions // []) | index($permission) != null'
+
       - name: Push Docker image
+        if: ${{ !inputs.verify_only }}
         env:
           SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
           LATEST_TAG: ${{ steps.tags.outputs.latest_tag }}
@@ -124,6 +147,7 @@ jobs:
           fi
 
       - name: Summary
+        if: ${{ !inputs.verify_only }}
         # Values come in via env rather than inline ${{ }} interpolation so
         # nothing is spliced into the shell source. EXTRA_TAG is additionally
         # regex-validated by the "Validate extra image tag" step above.
