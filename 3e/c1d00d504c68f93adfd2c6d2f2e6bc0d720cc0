@@ -1,0 +1,30 @@
+test/tools/claude-record-input.test.ts
+  s_a7afb2b350ae4d::t_042610d14eee00 1-30
+scripts/build-plugins.py
+  s_a7afb2b350ae4d::t_042610d14eee00 50
+src/utils/record-fields.mjs
+  s_a7afb2b350ae4d::t_042610d14eee00 1-3
+src/utils/claude-record-input.mjs
+  s_a7afb2b350ae4d::t_042610d14eee00 1-14
+plugins/claude/hooks/hooks.json
+  s_a7afb2b350ae4d::t_042610d14eee00 8-9
+  s_a7afb2b350ae4d::t_ff103af183c6b0 6-7
+src/utils/check-prompt.mjs
+  s_a7afb2b350ae4d::t_042610d14eee00 7,28,67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3ec1d00d504c68f93adfd2c6d2f2e6bc0d720cc0",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
