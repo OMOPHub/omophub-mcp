@@ -1,0 +1,34 @@
+src/tools/search.ts
+  s_a7afb2b350ae4d::t_8301e2b15e7ac4 10,41
+src/tools/contract.ts
+  s_a7afb2b350ae4d::t_8301e2b15e7ac4 10-14
+src/tools/fhir.ts
+  s_a7afb2b350ae4d::t_8301e2b15e7ac4 7,128,131
+test/tool-contract.test.ts
+  s_a7afb2b350ae4d::t_8301e2b15e7ac4 101-106,110-113,117-120,122-126,130-133
+  s_c7e9bd656f030b::t_752d15f47ca115 107-109,114-116,121,127-129,134-137
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2aa0f19c5a9095569bee07dbfd6fd08325f0fcfb",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    },
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
