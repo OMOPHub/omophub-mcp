@@ -1,0 +1,11 @@
+{
+  "name": "omophub",
+  "description": "Look up OMOP concepts, map vocabulary codes and explore hierarchies.",
+  "version": "0.1.0",
+  "author": {
+    "name": "OMOPHub"
+  },
+  "homepage": "https://omophub.com",
+  "repository": "https://github.com/OMOPHub/omophub-mcp",
+  "license": "MIT"
+}
