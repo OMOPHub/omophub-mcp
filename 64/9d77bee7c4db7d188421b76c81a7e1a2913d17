@@ -1,0 +1,54 @@
+src/tools/hierarchy.ts
+  s_c7e9bd656f030b::t_8d8d31a3967047 39
+src/index.ts
+  s_c7e9bd656f030b::t_043727dc8926be 126
+test/tools/prompt-guard.test.ts
+  s_c7e9bd656f030b::t_4c10a4c5567e61 15-16,150
+src/server.ts
+  s_c7e9bd656f030b::t_043727dc8926be 20
+src/utils/claude-exact-code.mjs
+  s_c7e9bd656f030b::t_c29319572a84a6 1,9,12-33,36,38-42,65-71,74-75,81-92
+src/utils/hierarchy-review.mjs
+  s_c7e9bd656f030b::t_8d8d31a3967047 5,11,38-39,88-96,101,103,156-158,164
+  s_c7e9bd656f030b::t_759e765593ef8d 53-58,159-163
+test/tool-contract.test.ts
+  s_c7e9bd656f030b::t_4c10a4c5567e61 101-111
+plugins/claude/hooks/hooks.json
+  s_c7e9bd656f030b::t_c29319572a84a6 114-121
+  s_c7e9bd656f030b::t_3df38e34b0faf5 113
+src/utils/record-fields.mjs
+  s_c7e9bd656f030b::t_4c10a4c5567e61 7-12,24-26
+test/server.test.ts
+  s_c7e9bd656f030b::t_043727dc8926be 55,62,73,81
+plugins/codex/.codex-plugin/plugin.json
+  s_c7e9bd656f030b::t_c29319572a84a6 11-12
+test/tools/hierarchy-hooks.test.ts
+  s_c7e9bd656f030b::t_759e765593ef8d 55-61,64,157-187
+test/tools/claude-exact-code.test.ts
+  s_c7e9bd656f030b::t_c29319572a84a6 38-46,52-55,68-108
+.env.example
+  s_c7e9bd656f030b::t_043727dc8926be 1
+plugins/README.md
+  s_c7e9bd656f030b::t_043727dc8926be 3
+src/utils/hierarchy-progress.mjs
+  s_c7e9bd656f030b::t_8d8d31a3967047 27,32-35,39-40,49,69
+  s_c7e9bd656f030b::t_759e765593ef8d 28-31,36-38,51-57
+src/utils/terminology-scope.mjs
+  s_c7e9bd656f030b::t_4c10a4c5567e61 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "649d77bee7c4db7d188421b76c81a7e1a2913d17",
+  "prompts": {},
+  "sessions": {
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
