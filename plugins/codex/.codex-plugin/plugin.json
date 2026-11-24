@@ -1,0 +1,28 @@
+{
+  "name": "omophub",
+  "description": "Look up OMOP concepts, map vocabulary codes and explore hierarchies.",
+  "version": "0.1.0",
+  "author": {
+    "name": "OMOPHub"
+  },
+  "homepage": "https://omophub.com",
+  "repository": "https://github.com/OMOPHub/omophub-mcp",
+  "license": "MIT",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "OMOPHub",
+    "shortDescription": "Find OMOP concepts and map vocabulary codes",
+    "websiteURL": "https://omophub.com",
+    "privacyPolicyURL": "https://omophub.com/privacy-policy",
+    "termsOfServiceURL": "https://omophub.com/terms",
+    "logo": "./assets/icon.png",
+    "developerName": "OMOPHub",
+    "longDescription": "Search OMOP concepts, verify standard status and map codes across vocabularies available to the connected account. Explore ancestors and descendants when building concept sets.",
+    "composerIcon": "./assets/icon.png",
+    "supportURL": "https://omophub.com/contact",
+    "defaultPrompt": [
+      "Find the OMOP concept for LOINC 718-7.",
+      "Show the standard mappings for ICD10CM E11.9."
+    ]
+  }
+}

@@ -11,7 +11,7 @@ describe('explore_concept', () => {
     const client = createMockClient();
     registerExploreTools(server as never, client as never);
 
-    expect(server.tool).toHaveBeenCalledTimes(1);
+    expect(server.registerTool).toHaveBeenCalledTimes(1);
     expect(server.tools.has('explore_concept')).toBe(true);
   });
 

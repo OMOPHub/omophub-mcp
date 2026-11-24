@@ -8,6 +8,7 @@ import { OmopHubClient } from './client/api.js';
 import { startHealthServer } from './health.js';
 import { createServer } from './server.js';
 import { startHttpTransport } from './transports/http.js';
+import { httpOAuthFromEnv } from './transports/oauth.js';
 import { resolveApiKey } from './utils/auth.js';
 import { logger } from './utils/logger.js';
 
@@ -98,8 +99,8 @@ export function resolvePort(cliPort?: number): number {
 export async function main(): Promise<void> {
   const args = parseArgs(process.argv);
 
-  const apiKey = resolveApiKey(args.apiKey);
   const transportType = resolveTransport(args.transport);
+  const apiKey = transportType === 'stdio' ? resolveApiKey(args.apiKey) : undefined;
 
   if (!apiKey && transportType === 'stdio') {
     logger.error(
@@ -109,19 +110,18 @@ export async function main(): Promise<void> {
     process.exit(1);
   }
 
-  if (!apiKey) {
-    logger.info(
-      'No default API key — hosted mode: all requests must include Authorization: Bearer header',
-    );
-  }
-
   const defaultClient = new OmopHubClient(apiKey, args.baseUrl);
 
   if (transportType === 'http') {
     const port = resolvePort(args.port);
     logger.info('Starting OMOPHub MCP server (http transport)');
     // Kept so the fatal path can stop accepting new work before exiting.
-    runningServer = await startHttpTransport(createServer, defaultClient, port);
+    runningServer = await startHttpTransport(
+      (client) => createServer(client, 'http'),
+      defaultClient,
+      port,
+      { oauth: httpOAuthFromEnv() },
+    );
   } else {
     const server = createServer(defaultClient);
     const transport = new StdioServerTransport();

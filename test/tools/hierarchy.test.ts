@@ -96,7 +96,7 @@ describe('get_hierarchy', () => {
       const client = createMockClient();
       registerHierarchyTools(server as never, client as never);
 
-      expect(server.tool).toHaveBeenCalledOnce();
+      expect(server.registerTool).toHaveBeenCalledOnce();
       expect(server.tools.has('get_hierarchy')).toBe(true);
     });
 
@@ -108,11 +108,11 @@ describe('get_hierarchy', () => {
       registerHierarchyTools(server as never, client as never);
       const handler = server.tools.get('get_hierarchy')!;
 
-      await handler({ concept_id: 201826, direction: 'up', max_results: 500 });
+      await handler({ concept_id: 201826, direction: 'up', max_results: 200 });
 
       expect(client.request).toHaveBeenCalledWith(
         '/concepts/201826/ancestors',
-        expect.objectContaining({ page_size: 500 }),
+        expect.objectContaining({ page_size: 200 }),
         'get_hierarchy',
       );
     });
@@ -142,11 +142,11 @@ describe('get_hierarchy', () => {
       registerHierarchyTools(server as never, client as never);
       const handler = server.tools.get('get_hierarchy')!;
 
-      await handler({ concept_id: 201826, direction: 'both', max_results: 500 });
+      await handler({ concept_id: 201826, direction: 'both', max_results: 200 });
 
       expect(client.request).toHaveBeenCalledWith(
         '/concepts/201826/hierarchy',
-        expect.objectContaining({ page_size: 500 }),
+        expect.objectContaining({ max_results: 200 }),
         'get_hierarchy',
       );
     });
@@ -159,7 +159,7 @@ describe('get_hierarchy', () => {
       registerHierarchyTools(server as never, client as never);
       const handler = server.tools.get('get_hierarchy')!;
 
-      await handler({ concept_id: 201826, max_results: 500 });
+      await handler({ concept_id: 201826, max_results: 200 });
 
       expect(client.request).toHaveBeenCalledWith(
         '/concepts/201826/hierarchy',
@@ -200,11 +200,11 @@ describe('get_hierarchy', () => {
       const handler = server.tools.get('get_hierarchy')!;
 
       // First call — cache miss
-      await handler({ concept_id: 201826, direction: 'up', max_results: 500 });
+      await handler({ concept_id: 201826, direction: 'up', max_results: 200 });
       expect(client.request).toHaveBeenCalledOnce();
 
       // Second call — cache hit
-      const result = await handler({ concept_id: 201826, direction: 'up', max_results: 500 });
+      const result = await handler({ concept_id: 201826, direction: 'up', max_results: 200 });
       expect(client.request).toHaveBeenCalledOnce(); // no second call
       expect(result.content).toHaveLength(2);
     });
@@ -217,7 +217,7 @@ describe('get_hierarchy', () => {
       registerHierarchyTools(server as never, client as never);
       const handler = server.tools.get('get_hierarchy')!;
 
-      const result = await handler({ concept_id: 999, direction: 'both', max_results: 500 });
+      const result = await handler({ concept_id: 999, direction: 'both', max_results: 200 });
 
       expect(result.isError).toBe(true);
       expect(result.content).toHaveLength(2);

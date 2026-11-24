@@ -67,7 +67,7 @@ describe('get_concept / get_concept_by_code', () => {
       const client = createMockClient();
       registerConceptTools(server as never, client as never);
 
-      expect(server.tool).toHaveBeenCalledTimes(2);
+      expect(server.registerTool).toHaveBeenCalledTimes(2);
       expect(server.tools.has('get_concept')).toBe(true);
       expect(server.tools.has('get_concept_by_code')).toBe(true);
     });
@@ -85,7 +85,34 @@ describe('get_concept / get_concept_by_code', () => {
       expect(client.request).toHaveBeenCalledWith('/concepts/201826', undefined, 'get_concept');
       expect(result.content).toHaveLength(2);
       expect(result.isError).toBeUndefined();
+      expect(result.structuredContent).toEqual(conceptResponse.data);
+      expect(result.content[0].text).not.toContain('Vocabulary release');
       expect(conceptCache.has('concept:201826')).toBe(true);
+    });
+
+    it('reports the API vocabulary release on live and cached concept lookups', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      const release = 'v5.0.20250101';
+      client.request.mockResolvedValueOnce({
+        ...conceptResponse,
+        meta: { vocab_release: release },
+      });
+      registerConceptTools(server as never, client as never);
+      const handler = server.tools.get('get_concept')!;
+
+      for (const result of [
+        await handler({ concept_id: 201826 }),
+        await handler({ concept_id: 201826 }),
+      ]) {
+        expect(result.structuredContent).toEqual({
+          ...conceptResponse.data,
+          vocab_release: release,
+        });
+        expect(result.content[0].text).toContain(`| Vocabulary release | ${release} |`);
+        expect(JSON.parse(result.content[1].text)).toEqual(result.structuredContent);
+      }
+      expect(client.request).toHaveBeenCalledTimes(1);
     });
 
     it('returns cached data without API call on cache hit', async () => {

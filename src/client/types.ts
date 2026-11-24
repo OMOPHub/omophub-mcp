@@ -11,6 +11,7 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
   meta?: {
+    vocab_release?: string;
     pagination?: PaginationMeta;
     execution_time_ms?: number;
     version?: string;
@@ -49,6 +50,10 @@ export interface Mapping {
   // API response format (target/source split)
   target_concept_id?: number;
   target_concept_name?: string;
+  target_vocabulary_id?: string;
+  target_concept_code?: string;
+  target_domain_id?: string;
+  target_standard_concept?: string | null;
   source_concept_id?: number;
   source_concept_name?: string;
   confidence?: number;
@@ -61,6 +66,7 @@ export interface HierarchyNode extends Concept {
 }
 
 export interface HierarchyResponse {
+  truncated?: boolean;
   concept: Concept;
   ancestors?: HierarchyNode[];
   descendants?: HierarchyNode[];
@@ -78,6 +84,7 @@ export interface RawHierarchyResponse {
   total_ancestors?: number;
   total_descendants?: number;
   hierarchy_summary?: {
+    truncated?: boolean;
     total_ancestors?: number;
     total_descendants?: number;
   };
@@ -95,7 +102,7 @@ export interface Vocabulary {
 }
 
 export interface MappingsResponse {
-  source_concept: Concept;
+  source_concept?: Concept;
   mappings: Mapping[];
-  total_mappings: number;
+  total_mappings?: number;
 }

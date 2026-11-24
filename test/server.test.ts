@@ -37,6 +37,19 @@ describe('createServer', () => {
     vi.clearAllMocks();
   });
 
+  it('disables result caches at every HTTP tool and resource entry point', () => {
+    const client = new OmopHubClient(undefined);
+    createServer(client, 'http');
+    for (const register of [
+      registerConceptTools,
+      registerHierarchyTools,
+      registerVocabularyTools,
+      registerResources,
+    ]) {
+      expect(register).toHaveBeenCalledWith(expect.anything(), client, null);
+    }
+  });
+
   it('returns an McpServer instance', () => {
     const client = new OmopHubClient('test-api-key');
     const server = createServer(client);

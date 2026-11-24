@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "omophub": {
+      "url": "https://mcp.omophub.com/mcp",
+      "scopes": [
+        "vocabulary:read"
+      ]
+    }
+  }
+}

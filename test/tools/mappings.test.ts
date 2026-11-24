@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OmopHubClient } from '../../src/client/api.js';
 import { registerMappingTools } from '../../src/tools/mappings.js';
+import { OmopHubApiError } from '../../src/utils/errors.js';
 import mappingsResponse from '../fixtures/mappings-response.json';
 import { createMockClient, createMockServer } from '../helpers/mock-server.js';
 
@@ -87,7 +88,7 @@ describe('map_concept', () => {
       const client = createMockClient();
       registerMappingTools(server as never, client as never);
 
-      expect(server.tool).toHaveBeenCalledOnce();
+      expect(server.registerTool).toHaveBeenCalledOnce();
       expect(server.tools.has('map_concept')).toBe(true);
     });
 
@@ -249,6 +250,134 @@ describe('map_concept', () => {
       expect(result.content[0].text).toContain('No mappings found');
     });
 
+    const codeArgs = {
+      vocabulary_id: 'SNOMED',
+      concept_code: '44054006',
+      target_vocabularies: 'ICD10CM',
+    };
+
+    it('resolves a unique exact source before requesting its mappings', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.request
+        .mockResolvedValueOnce({ success: true, data: [mappingsResponse.data.source_concept] })
+        .mockResolvedValueOnce(mappingsResponse);
+      registerMappingTools(server as never, client as never);
+      const result = await server.tools.get('map_concept')!(codeArgs);
+      expect(client.request.mock.calls).toEqual([
+        ['/concepts/by-code/SNOMED/44054006', undefined, 'get_concept_by_code'],
+        [
+          '/concepts/201826/mappings',
+          { page: 1, page_size: 100, target_vocabulary: 'ICD10CM' },
+          'map_concept',
+        ],
+      ]);
+      expect(result.structuredContent.source_concept_id).toBe(201826);
+      expect(result.structuredContent.mappings).toHaveLength(2);
+    });
+
+    it.each([
+      { success: false, data: mappingsResponse.data.source_concept },
+      { success: true, data: [] },
+      { success: true, data: Array(2).fill(mappingsResponse.data.source_concept) },
+      {
+        success: true,
+        data: { ...mappingsResponse.data.source_concept, concept_code: 'different' },
+      },
+    ])('stops before the mapping read for an unresolved source', async (lookup) => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.request.mockResolvedValueOnce(lookup);
+      registerMappingTools(server as never, client as never);
+      const result = await server.tools.get('map_concept')!(codeArgs);
+      expect(client.request).toHaveBeenCalledTimes(1);
+      expect(result.isError).toBe(true);
+      expect(result.structuredContent).toBeUndefined();
+    });
+
+    it.each([
+      { success: false, data: mappingsResponse.data },
+      { success: true, data: {} },
+      { success: true, data: { ...mappingsResponse.data, source_concept: { concept_id: 42 } } },
+    ])('withholds all targets when the mapping read cannot verify them', async (response) => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.request
+        .mockResolvedValueOnce({ success: true, data: mappingsResponse.data.source_concept })
+        .mockResolvedValueOnce(response);
+      registerMappingTools(server as never, client as never);
+      const result = await server.tools.get('map_concept')!(codeArgs);
+      expect(result.isError).toBe(true);
+      expect(result.structuredContent).toBeUndefined();
+      expect(result.content[0].text).toBe('OMOPHub could not verify the mapping.');
+      expect(JSON.parse(result.content[1].text)).toEqual({ error_code: 'UNVERIFIED_MAPPING' });
+    });
+
+    it('returns a partial source only after a verified lookup and a monthly limit on mappings', async () => {
+      const server = createMockServer();
+      const client = createMockClient();
+      registerMappingTools(server as never, client as never);
+      const handler = server.tools.get('map_concept')!;
+      const args = { ...codeArgs, on_monthly_limit: 'return_source' };
+      const resetsAt = '2027-02-01T00:00:00.000Z';
+      const error = new OmopHubApiError(429, 'quota', '/mappings', {
+        code: 'monthly_limit_exceeded',
+        resetsAt,
+      });
+      const lookup = { success: true, data: [mappingsResponse.data.source_concept] };
+      client.request.mockResolvedValueOnce(lookup).mockRejectedValueOnce(error);
+      const partial = await handler(args);
+      expect(partial.isError).toBeFalsy();
+      expect(partial.structuredContent).toMatchObject({
+        source_concept_id: 201826,
+        mapped: null,
+        mappings: [],
+        mapping_error: { status: 429, error_code: 'MONTHLY_LIMIT_EXCEEDED', resets_at: resetsAt },
+        message: `OMOPHub could not verify the mapping. Monthly API call limit reached. The allowance resets at ${resetsAt}.`,
+      });
+      client.request.mockRejectedValueOnce(error);
+      expect((await handler(args)).isError).toBe(true);
+      client.request.mockRejectedValueOnce(error);
+      expect(
+        (await handler({ concept_id: 201826, on_monthly_limit: 'return_source' })).isError,
+      ).toBe(true);
+      client.request
+        .mockResolvedValueOnce(lookup)
+        .mockRejectedValueOnce(new OmopHubApiError(429, 'burst', '/mappings'));
+      expect((await handler(args)).isError).toBe(true);
+    });
+
+    it.each([
+      new OmopHubApiError(404, 'Unverified target 123456', '/concepts/201826/mappings'),
+      new OmopHubApiError(429, 'Monthly limit', '/concepts/201826/mappings', {
+        code: 'monthly_limit_exceeded',
+        resetsAt: '2026-12-01T00:00:00.000Z',
+      }),
+    ])('withholds a target when the source succeeds and the mapping request fails', async (error) => {
+      const server = createMockServer();
+      const client = createMockClient();
+      client.request
+        .mockResolvedValueOnce({ success: true, data: mappingsResponse.data.source_concept })
+        .mockRejectedValueOnce(error);
+      registerMappingTools(server as never, client as never);
+      const result = await server.tools.get('map_concept')!(codeArgs);
+      expect(client.request).toHaveBeenCalledTimes(2);
+      expect(result.isError).toBe(true);
+      expect(result.structuredContent).toBeUndefined();
+      expect(result.content[0].text).toMatch(/^OMOPHub could not verify the mapping/);
+      expect(JSON.stringify(result.content)).not.toContain('123456');
+      const details = JSON.parse(result.content[1].text);
+      if (error.status === 429) {
+        expect(details).toEqual({
+          error_code: 'MONTHLY_LIMIT_EXCEEDED',
+          resets_at: error.info.resetsAt,
+          retryable: false,
+        });
+      } else {
+        expect(details).toEqual({ error_code: 'NOT_FOUND' });
+      }
+    });
+
     it('returns error content on failure', async () => {
       const server = createMockServer();
       const client = createMockClient();
@@ -261,6 +390,9 @@ describe('map_concept', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content).toHaveLength(2);
+      expect(result.content[0].text).toMatch(/^OMOPHub could not verify the mapping/);
+      expect(result.structuredContent).toBeUndefined();
+      expect(JSON.parse(result.content[1].text as string)).not.toHaveProperty('mappings');
     });
   });
 });

@@ -1,5 +1,6 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
@@ -7,20 +8,13 @@ import type { OmopHubClient } from '../client/api.js';
 import { handleHealthRequest } from '../health.js';
 import { logger } from '../utils/logger.js';
 
-const CORS_HEADERS: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, mcp-session-id, Authorization',
-  'Access-Control-Expose-Headers': 'mcp-session-id',
-};
+import { createHttpIngressPolicy } from './http-ingress.js';
+import { type HttpOAuth, HttpOAuthError } from './oauth.js';
 
-function setCorsHeaders(res: ServerResponse): void {
-  for (const [key, value] of Object.entries(CORS_HEADERS)) {
-    res.setHeader(key, value);
-  }
-}
+type SessionOwner = { kind: 'api-key'; fingerprint: string } | { kind: 'oauth'; grant: string };
 
 interface Session {
+  owner: SessionOwner;
   transport: StreamableHTTPServerTransport;
   lastSeenAt: number;
   // Count of currently-open long-lived responses (the GET SSE stream, or a
@@ -170,6 +164,76 @@ const JSON_RPC_INTERNAL_ERROR = JSON.stringify({
   id: null,
 });
 
+// Streamable HTTP clients use the SDK's 404/-32001 response to reinitialize a lost session.
+function rejectInvalidSession(res: ServerResponse, sessionId: string | undefined): void {
+  if (res.headersSent) return;
+  const error = sessionId
+    ? { code: -32001, message: 'Session not found' }
+    : { code: -32000, message: 'Bad Request: No valid session ID provided' };
+  res.writeHead(sessionId ? 404 : 400, {
+    'Cache-Control': 'no-store',
+    'Content-Type': 'application/json',
+  });
+  res.end(JSON.stringify({ jsonrpc: '2.0', error, id: null }));
+}
+
+function rejectCredential(res: ServerResponse, oauth: HttpOAuth | undefined, status: number): void {
+  const challenge = oauth?.challenge ?? 'Bearer';
+  if (status === 401) res.setHeader('WWW-Authenticate', challenge);
+  if (status === 403)
+    res.setHeader(
+      'WWW-Authenticate',
+      `${challenge}, error="insufficient_scope", scope="vocabulary:read"`,
+    );
+  res.writeHead(status, { 'Cache-Control': 'no-store', 'Content-Type': 'application/json' });
+  const message =
+    status === 503
+      ? 'Authorization service unavailable'
+      : status === 403
+        ? 'Insufficient scope'
+        : 'OMOPHub terminology access is unavailable. Connect or reconnect OMOPHub in this client and approve access, then retry the lookup.';
+  res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32000, message }, id: null }));
+}
+
+// A session records its owner. Each read still presents its own credential to the API.
+async function authorizeRequest(
+  req: IncomingMessage & { auth?: AuthInfo },
+  res: ServerResponse,
+  oauth: HttpOAuth | undefined,
+  pathname: string,
+  token: string,
+  session: Session | undefined,
+): Promise<SessionOwner | undefined> {
+  try {
+    if (token.startsWith('oh_')) {
+      if (token.length === 3) throw new HttpOAuthError(401);
+      const fingerprint = createHash('sha256').update(token).digest('hex');
+      if (
+        session &&
+        (session.owner.kind !== 'api-key' || session.owner.fingerprint !== fingerprint)
+      )
+        throw new HttpOAuthError(401);
+      // The vocabulary API validates this caller's key and enforces its quota at read time.
+      req.auth = {
+        token,
+        clientId: fingerprint,
+        scopes: [],
+        extra: { upstreamAccessToken: token },
+      };
+      return { kind: 'api-key', fingerprint };
+    }
+    const owner = session?.owner;
+    if (!oauth || pathname !== '/mcp' || (owner && owner.kind !== 'oauth'))
+      throw new HttpOAuthError(401);
+    const { grant, auth } = await oauth.authorize(token, owner?.grant);
+    req.auth = auth;
+    return { kind: 'oauth', grant };
+  } catch (error) {
+    rejectCredential(res, oauth, error instanceof HttpOAuthError ? error.status : 503);
+    return undefined;
+  }
+}
+
 /**
  * Starts an HTTP server with per-session MCP transports on /
  * and a health endpoint on /health.
@@ -178,7 +242,10 @@ export async function startHttpTransport(
   serverFactory: (client: OmopHubClient) => McpServer,
   defaultClient: OmopHubClient,
   port: number,
+  { oauth, host }: { oauth?: HttpOAuth; host?: string } = {},
 ): Promise<Server> {
+  const bindHost = host?.trim() || process.env.MCP_HOST?.trim() || '127.0.0.1';
+  const allowIngress = createHttpIngressPolicy(oauth?.metadata.resource);
   const httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
     // The handler is async; an unhandled rejection here (e.g. the request
     // stream aborting mid-body with ECONNRESET) would terminate the process.
@@ -203,7 +270,7 @@ export async function startHttpTransport(
   });
 
   async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    setCorsHeaders(res);
+    if (!allowIngress(req, res)) return;
 
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
@@ -214,15 +281,38 @@ export async function startHttpTransport(
     if (handleHealthRequest(req, res)) return;
 
     const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+    if (
+      oauth &&
+      req.method === 'GET' &&
+      (pathname === oauth.metadataPath || pathname === '/.well-known/oauth-protected-resource')
+    ) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(oauth.metadata));
+      return;
+    }
     if (pathname === '/' || pathname === '/mcp') {
       const rawSessionId = req.headers['mcp-session-id'];
       const sessionId = Array.isArray(rawSessionId) ? rawSessionId[0] : rawSessionId;
 
+      const session = sessionId ? sessions.get(sessionId) : undefined;
+      const headers = req.headersDistinct.authorization;
+      const token =
+        headers?.length === 1
+          ? /^Bearer +([A-Za-z0-9._~+/-]+=*)$/i.exec(headers[0])?.[1]
+          : undefined;
+      if (!token) return rejectCredential(res, oauth, 401);
+
+      // Check key ownership before an upload can keep a session alive. For OAuth POSTs,
+      // wait until dispatch to verify the grant so revocation during upload takes effect.
+      let owner: SessionOwner | undefined;
+      if (req.method !== 'POST' || token.startsWith('oh_') || !oauth) {
+        owner = await authorizeRequest(req, res, oauth, pathname, token, session);
+        if (!owner) return;
+      }
+
       // GET (SSE stream) and DELETE (session close) carry no body — route directly
       if (req.method === 'GET' || req.method === 'DELETE') {
-        if (sessionId && sessions.has(sessionId)) {
-          const session = sessions.get(sessionId);
-          if (!session) return;
+        if (sessionId && session && sessions.get(sessionId) === session) {
           touchSession(sessionId);
           // A GET opens the long-lived SSE stream; track it so the idle sweep
           // won't reap a client that's connected but quietly receiving pushes.
@@ -237,26 +327,14 @@ export async function startHttpTransport(
             }
           }
         } else {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(
-            JSON.stringify({
-              jsonrpc: '2.0',
-              error: { code: -32000, message: 'Bad Request: No valid session ID provided' },
-              id: null,
-            }),
-          );
+          rejectInvalidSession(res, sessionId);
         }
         return;
       }
 
-      // POST. If it targets a known session, mark it active BEFORE reading the
-      // (possibly slow or trickled) body — otherwise a concurrent sweep could
-      // reap the session mid-upload. trackStream keeps it alive for the whole
-      // request/response and refreshes the idle clock when the response closes.
-      const postSession = sessionId ? sessions.get(sessionId) : undefined;
-      if (postSession && sessionId) {
+      if (session && sessionId && owner?.kind === 'api-key') {
         touchSession(sessionId);
-        trackStream(postSession, res);
+        trackStream(session, res);
       }
 
       // POST — read body with a size limit AND a total-time limit. The time
@@ -334,25 +412,23 @@ export async function startHttpTransport(
         return;
       }
 
+      // A disconnect may have happened while the request body was arriving.
+      owner ??= await authorizeRequest(req, res, oauth, pathname, token, session);
+      if (!owner) return;
       // Existing session — marked active before the body was read. Re-validate:
       // the session may have been closed (DELETE, or its transport erroring)
       // while we awaited the body, in which case dispatching to it is wrong.
-      if (postSession) {
-        if (!sessionId || sessions.get(sessionId) !== postSession) {
-          if (!res.headersSent) {
-            res.writeHead(404, { 'Content-Type': 'application/json' });
-            res.end(
-              JSON.stringify({
-                jsonrpc: '2.0',
-                error: { code: -32001, message: 'Session no longer exists' },
-                id: null,
-              }),
-            );
-          }
+      if (session) {
+        if (!sessionId || sessions.get(sessionId) !== session) {
+          rejectInvalidSession(res, sessionId);
           return;
         }
+        if (session.owner.kind === 'oauth') {
+          touchSession(sessionId);
+          trackStream(session, res);
+        }
         try {
-          await postSession.transport.handleRequest(req, res, parsedBody);
+          await session.transport.handleRequest(req, res, parsedBody);
         } catch (error) {
           logger.error('MCP transport error', { error: String(error), sessionId });
           if (!res.headersSent) {
@@ -402,10 +478,16 @@ export async function startHttpTransport(
         pendingAdmissions++;
         let admitted = false;
         try {
+          const sessionOwner = owner;
           const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: () => randomUUID(),
             onsessioninitialized: (id) => {
-              const session: Session = { transport, lastSeenAt: Date.now(), openStreams: 0 };
+              const session: Session = {
+                owner: sessionOwner,
+                transport,
+                lastSeenAt: Date.now(),
+                openStreams: 0,
+              };
               sessions.set(id, session);
               if (!admitted) {
                 admitted = true;
@@ -449,14 +531,7 @@ export async function startHttpTransport(
       }
 
       // Invalid request — no session and not an initialize
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          error: { code: -32000, message: 'Bad Request: No valid session ID provided' },
-          id: null,
-        }),
-      );
+      rejectInvalidSession(res, sessionId);
       return;
     }
 
@@ -487,10 +562,15 @@ export async function startHttpTransport(
     sessions.clear();
   });
 
-  await new Promise<void>((resolve) => {
-    httpServer.listen(port, () => {
-      logger.info(`OMOPHub MCP server listening on http://localhost:${String(port)}`);
-      logger.info(`Health endpoint at http://localhost:${String(port)}/health`);
+  await new Promise<void>((resolve, reject) => {
+    const onListenError = (error: Error) => {
+      clearInterval(sweepTimer);
+      reject(error);
+    };
+    httpServer.once('error', onListenError);
+    httpServer.listen({ port, host: bindHost }, () => {
+      httpServer.off('error', onListenError);
+      logger.info('OMOPHub MCP HTTP listener ready', { address: httpServer.address() });
       resolve();
     });
   });

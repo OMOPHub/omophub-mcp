@@ -69,7 +69,7 @@ describe('list_vocabularies', () => {
       const client = createMockClient();
       registerVocabularyTools(server as never, client as never);
 
-      expect(server.tool).toHaveBeenCalledOnce();
+      expect(server.registerTool).toHaveBeenCalledOnce();
       expect(server.tools.has('list_vocabularies')).toBe(true);
     });
 

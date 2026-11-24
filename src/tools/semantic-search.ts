@@ -4,6 +4,13 @@ import type { OmopHubClient } from '../client/api.js';
 import { resolveClient } from '../client/resolve.js';
 import type { SearchResult } from '../client/types.js';
 import { formatErrorForMcp } from '../utils/errors.js';
+import {
+  conceptOutput,
+  containsRecordFields,
+  formattedResult,
+  readAnnotations,
+  recordInputError,
+} from './contract.js';
 
 interface SemanticResult extends SearchResult {
   similarity_score: number;
@@ -11,53 +18,60 @@ interface SemanticResult extends SearchResult {
 }
 
 export function registerSemanticSearchTools(server: McpServer, client: OmopHubClient): void {
-  server.tool(
+  server.registerTool(
     'semantic_search',
-    "Search for medical concepts using natural language with neural embeddings. Unlike keyword search, semantic search understands clinical meaning — 'heart attack' finds 'Myocardial infarction', 'high blood sugar' finds 'Hyperglycemia'. Returns concepts ranked by similarity score. Use this when the user describes symptoms, conditions, or treatments in everyday language rather than exact medical terminology.",
     {
-      query: z
-        .string()
-        .trim()
-        .min(1)
-        .max(500)
-        .describe('Natural language description of the medical concept to find'),
-      vocabulary_ids: z
-        .string()
-        .max(200)
-        .optional()
-        .describe(
-          "Comma-separated vocabulary IDs to filter by. Examples: 'SNOMED', 'ICD10CM', 'RxNorm'.",
-        ),
-      domain_ids: z
-        .string()
-        .max(200)
-        .optional()
-        .describe(
-          "Comma-separated domain IDs to filter by. Examples: 'Condition', 'Drug', 'Measurement'.",
-        ),
-      standard_concept: z
-        .enum(['S', 'C'])
-        .optional()
-        .describe("Filter by standard concept status: 'S' for Standard, 'C' for Classification."),
-      threshold: z
-        .number()
-        .min(0)
-        .max(1)
-        .default(0.5)
-        .describe('Minimum similarity score (0.0-1.0). Higher = stricter matching. Default 0.5.'),
-      // 100 matches the semantic route's own validator (isInt min 1, max 100),
-      // which is stricter than the 200 GET clamp that applies elsewhere.
-      page_size: z
-        .number()
-        .min(1)
-        .max(100)
-        .default(10)
-        .describe('Number of results to return (1-100, default 10)'),
+      title: 'Search terminology by meaning',
+      annotations: readAnnotations,
+      outputSchema: z.looseObject({ results: z.array(conceptOutput), query: z.string() }),
+      description:
+        "Search for medical concepts using natural language with neural embeddings. Unlike keyword search, semantic search understands clinical meaning — 'heart attack' finds 'Myocardial infarction', 'high blood sugar' finds 'Hyperglycemia'. Returns concepts ranked by similarity score. Use this when the user describes symptoms, conditions, or treatments in everyday language rather than exact medical terminology.",
+      inputSchema: {
+        query: z
+          .string()
+          .trim()
+          .min(1)
+          .max(500)
+          .describe('Natural language description of the medical concept to find'),
+        vocabulary_ids: z
+          .string()
+          .max(200)
+          .optional()
+          .describe(
+            "Comma-separated vocabulary IDs to filter by. Examples: 'SNOMED', 'ICD10CM', 'RxNorm'.",
+          ),
+        domain_ids: z
+          .string()
+          .max(200)
+          .optional()
+          .describe(
+            "Comma-separated domain IDs to filter by. Examples: 'Condition', 'Drug', 'Measurement'.",
+          ),
+        standard_concept: z
+          .enum(['S', 'C'])
+          .optional()
+          .describe("Filter by standard concept status: 'S' for Standard, 'C' for Classification."),
+        threshold: z
+          .number()
+          .min(0)
+          .max(1)
+          .default(0.5)
+          .describe('Minimum similarity score (0.0-1.0). Higher = stricter matching. Default 0.5.'),
+        // 100 matches the semantic route's own validator (isInt min 1, max 100),
+        // which is stricter than the 200 GET clamp that applies elsewhere.
+        page_size: z
+          .number()
+          .min(1)
+          .max(100)
+          .default(10)
+          .describe('Number of results to return (1-100, default 10)'),
+      },
     },
     async (
       { query, vocabulary_ids, domain_ids, standard_concept, threshold, page_size },
       extra,
     ) => {
+      if (containsRecordFields([query, vocabulary_ids, domain_ids])) return recordInputError();
       try {
         const rc = resolveClient(extra, client);
         const params: Record<string, string | number | boolean | undefined> = {
@@ -80,6 +94,7 @@ export function registerSemanticSearchTools(server: McpServer, client: OmopHubCl
 
         if (results.length === 0) {
           return {
+            structuredContent: { results: [], query, threshold },
             content: [
               {
                 type: 'text' as const,
@@ -104,6 +119,7 @@ export function registerSemanticSearchTools(server: McpServer, client: OmopHubCl
         const text = `Found ${results.length} semantic matches for "${query}":\n\n${lines.join('\n\n')}`;
 
         return {
+          structuredContent: { results, query, threshold },
           content: [
             { type: 'text' as const, text },
             { type: 'text' as const, text: JSON.stringify({ results, query, threshold }) },
@@ -111,13 +127,7 @@ export function registerSemanticSearchTools(server: McpServer, client: OmopHubCl
         };
       } catch (error) {
         const { text, json } = formatErrorForMcp(error, 'semantic_search');
-        return {
-          content: [
-            { type: 'text' as const, text },
-            { type: 'text' as const, text: json },
-          ],
-          isError: true,
-        };
+        return formattedResult(text, json, true);
       }
     },
   );

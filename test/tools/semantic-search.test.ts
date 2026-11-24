@@ -9,7 +9,7 @@ describe('semantic_search', () => {
     const client = createMockClient();
     registerSemanticSearchTools(server as never, client as never);
 
-    expect(server.tool).toHaveBeenCalledTimes(1);
+    expect(server.registerTool).toHaveBeenCalledTimes(1);
     expect(server.tools.has('semantic_search')).toBe(true);
   });
 

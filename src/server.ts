@@ -13,10 +13,14 @@ import {
   registerSimilarTools,
   registerVocabularyTools,
 } from './tools/index.js';
+import { conceptCache, hierarchyCache, vocabularyCache } from './utils/cache.js';
 import { logger } from './utils/logger.js';
 import { VERSION } from './version.js';
 
-export function createServer(client: OmopHubClient): McpServer {
+export function createServer(
+  client: OmopHubClient,
+  transport: 'stdio' | 'http' = 'stdio',
+): McpServer {
   const server = new McpServer({
     name: 'omophub',
     version: VERSION,
@@ -28,15 +32,15 @@ export function createServer(client: OmopHubClient): McpServer {
   registerSearchTools(server, client);
   registerSemanticSearchTools(server, client);
   registerSimilarTools(server, client);
-  registerConceptTools(server, client);
+  registerConceptTools(server, client, transport === 'stdio' ? conceptCache : null);
   registerExploreTools(server, client);
   registerMappingTools(server, client);
-  registerHierarchyTools(server, client);
-  registerVocabularyTools(server, client);
+  registerHierarchyTools(server, client, transport === 'stdio' ? hierarchyCache : null);
+  registerVocabularyTools(server, client, transport === 'stdio' ? vocabularyCache : null);
   registerFhirTools(server, client);
 
   // Register resources and prompts
-  registerResources(server, client);
+  registerResources(server, client, transport === 'stdio' ? vocabularyCache : null);
   registerPrompts(server);
 
   logger.info('OMOPHub MCP server initialized', {

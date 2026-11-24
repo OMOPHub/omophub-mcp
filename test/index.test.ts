@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies before importing
+vi.mock('../src/client/api.js', { spy: true });
+
 vi.mock('../src/server.js', () => ({
   createServer: vi.fn(() => ({
     connect: vi.fn().mockResolvedValue(undefined),
@@ -28,6 +30,7 @@ vi.mock('../src/utils/logger.js', () => ({
   },
 }));
 
+import { OmopHubClient } from '../src/client/api.js';
 import { startHealthServer } from '../src/health.js';
 import {
   formatError,
@@ -358,13 +361,13 @@ describe('main', () => {
 
     await main();
 
+    expect(OmopHubClient).toHaveBeenCalledWith('oh_test_key', undefined);
     expect(createServer).toHaveBeenCalled();
     expect(logger.info).toHaveBeenCalledWith('Starting OMOPHub MCP server (stdio transport)');
     expect(startHttpTransport).not.toHaveBeenCalled();
   });
 
-  it('starts server with http transport when specified', async () => {
-    process.env.OMOPHUB_API_KEY = 'oh_test_key';
+  it('starts HTTP without a server-side API key', async () => {
     process.argv = ['node', 'script', '--transport=http'];
 
     await main();
@@ -373,22 +376,45 @@ describe('main', () => {
     expect(startHttpTransport).toHaveBeenCalled();
   });
 
+  it('keeps operator credentials out of the HTTP client even when supplied at startup', async () => {
+    process.env.OMOPHUB_API_KEY = 'oh_operator_fixture';
+    process.argv = ['node', 'script', '--transport=http', '--api-key=oh_cli_fixture'];
+
+    await main();
+
+    expect(OmopHubClient).toHaveBeenCalledWith(undefined, undefined);
+    expect(startHttpTransport).toHaveBeenCalled();
+  });
+
+  it('rejects partial OAuth configuration before starting HTTP', async () => {
+    process.argv = ['node', 'script', '--transport=http'];
+    vi.stubEnv('OMOPHUB_OAUTH_ISSUER', 'https://issuer.example.test/api/auth');
+    try {
+      await expect(main()).rejects.toThrow('Incomplete OMOPHub HTTP OAuth configuration');
+      expect(startHttpTransport).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('passes custom port to http transport', async () => {
-    process.env.OMOPHUB_API_KEY = 'oh_test_key';
     process.argv = ['node', 'script', '--transport=http', '--port=4000'];
 
     await main();
 
-    expect(startHttpTransport).toHaveBeenCalledWith(expect.anything(), expect.anything(), 4000);
+    expect(startHttpTransport).toHaveBeenCalledWith(expect.anything(), expect.anything(), 4000, {
+      oauth: undefined,
+    });
   });
 
   it('uses default port 3100 for http transport', async () => {
-    process.env.OMOPHUB_API_KEY = 'oh_test_key';
     process.argv = ['node', 'script', '--transport=http'];
 
     await main();
 
-    expect(startHttpTransport).toHaveBeenCalledWith(expect.anything(), expect.anything(), 3100);
+    expect(startHttpTransport).toHaveBeenCalledWith(expect.anything(), expect.anything(), 3100, {
+      oauth: undefined,
+    });
   });
 
   it('exits with code 1 when API key is missing in stdio mode', async () => {
@@ -423,7 +449,6 @@ describe('main', () => {
   });
 
   it('does not start standalone health server in http mode', async () => {
-    process.env.OMOPHUB_API_KEY = 'oh_test_key';
     process.argv = ['node', 'script', '--transport=http', '--health-port=8080'];
 
     await main();

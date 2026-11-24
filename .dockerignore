@@ -8,3 +8,5 @@ test/
 .cursor
 coverage
 **/gha-creds-*.json
+.mcpregistry_*_token
+.mcp.json
