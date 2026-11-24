@@ -123,7 +123,7 @@ export async function main(): Promise<void> {
       { oauth: httpOAuthFromEnv() },
     );
   } else {
-    const server = createServer(defaultClient);
+    const server = createServer(defaultClient, 'stdio');
     const transport = new StdioServerTransport();
     logger.info('Starting OMOPHub MCP server (stdio transport)');
     await server.connect(transport);

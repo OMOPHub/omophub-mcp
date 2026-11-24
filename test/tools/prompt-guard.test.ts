@@ -12,6 +12,8 @@ describe('Codex UserPromptSubmit', () => {
     }),
     JSON.stringify({ prompt: 'Resolve {"resourceType":"Patient","id":"example-fixture"}' }),
     JSON.stringify({ prompt: 'MRN: example-fixture. Which medicine should I take?' }),
+    JSON.stringify({ prompt: 'Map {"resourceType":"Procedure","id":"fixture"}' }),
+    JSON.stringify({ prompt: 'Search OMOPHub for patientId: synthetic' }),
     '{}',
     'unreadable event',
   ])('blocks record input or an unreadable event with a fixed clarification', (input) => {
@@ -145,6 +147,7 @@ describe('Codex UserPromptSubmit', () => {
   it.each([
     'Look up the medication with SNOMED code fixture-drug-01 in OMOPHub.',
     'Which medication code represents aspirin in RxNorm?',
+    'Suggest a medication for mapping ATC to RxNorm.',
     'Can you recommend a vocabulary for coding medications?',
     'List existing synonyms for concept 201826.',
     'Add a synonym to my notes after looking up concept 123.',

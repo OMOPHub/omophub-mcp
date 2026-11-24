@@ -35,15 +35,24 @@ it('permits one lookup with the literal vocabulary and code within the selected 
     'deny',
   );
   expect(call(tool, args)).toEqual({});
-  expect(hook('PostToolUse', { tool_name: tool }).hookSpecificOutput.additionalContext).toContain(
-    'full name',
-  );
+  const rows = [
+    { ...args, concept_id: 123, concept_name: 'First name' },
+    { ...args, concept_id: 456, concept_name: 'Second name' },
+  ];
+  const reply = 'Source concept 123: First name\nSource concept 456: Second name';
+  expect(
+    hook('PostToolUse', { tool_name: tool, tool_response: JSON.stringify({ concepts: rows }) })
+      .hookSpecificOutput.additionalContext,
+  ).toContain(reply);
   expect(call(tool, args).hookSpecificOutput.permissionDecision).toBe('deny');
   expect(
     call('mcp__plugin_omophub_omophub__get_concept', { concept_id: 123 }).hookSpecificOutput
       .permissionDecision,
   ).toBe('deny');
-  expect(hook('Stop')).toEqual({});
+  expect(hook('Stop', { last_assistant_message: 'Source concept 123: First name' }).decision).toBe(
+    'block',
+  );
+  expect(hook('Stop', { last_assistant_message: reply })).toEqual({});
   expect(call(tool, args)).toEqual({});
 });
 
@@ -55,4 +64,45 @@ it('reminds Claude to call the tool on a premature reply and clears state on a n
   ).toEqual({});
   expect(hook('Stop')).toEqual({});
   expect(hook('UserPromptSubmit', { prompt: 'Look up LOINC 0012-3.' })).toEqual({});
+});
+
+it.each([
+  ['PostToolUse', { tool_response: { isError: true } }],
+  ['PostToolUseFailure', { error: 'Lookup failed' }],
+  ['PostToolUse', { tool_response: 'unparseable response' }],
+  [
+    'PostToolUse',
+    {
+      tool_response: {
+        structuredContent: {
+          concepts: [{ ...args, concept_code: 'other', concept_id: 42, concept_name: 'Other' }],
+        },
+      },
+    },
+  ],
+  ['missing', {}],
+] as const)('requires an unverified answer after %s without verified rows', (event, payload) => {
+  hook('UserPromptSubmit', { prompt: 'Look up LOINC 0012-3 in OMOPHub.' });
+  call(tool, args);
+  if (event !== 'missing') hook(event, { tool_name: tool, ...payload });
+  expect(hook('Stop', { last_assistant_message: 'Source concept 42: Example' }).decision).toBe(
+    'block',
+  );
+  expect(
+    hook('Stop', {
+      last_assistant_message:
+        'The OMOPHub lookup did not verify a source concept for LOINC 0012-3.',
+    }),
+  ).toEqual({});
+});
+
+it('distinguishes a completed empty result from a failed read', () => {
+  hook('UserPromptSubmit', { prompt: 'Look up LOINC 0012-3 in OMOPHub.' });
+  call(tool, args);
+  hook('PostToolUse', { tool_name: tool, tool_response: { structuredContent: { concepts: [] } } });
+  expect(
+    hook('Stop', {
+      last_assistant_message: 'OMOPHub returned no matching concept for LOINC 0012-3.',
+    }),
+  ).toEqual({});
 });

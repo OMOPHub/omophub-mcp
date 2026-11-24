@@ -17,10 +17,7 @@ import { conceptCache, hierarchyCache, vocabularyCache } from './utils/cache.js'
 import { logger } from './utils/logger.js';
 import { VERSION } from './version.js';
 
-export function createServer(
-  client: OmopHubClient,
-  transport: 'stdio' | 'http' = 'stdio',
-): McpServer {
+export function createServer(client: OmopHubClient, transport: 'stdio' | 'http'): McpServer {
   const server = new McpServer({
     name: 'omophub',
     version: VERSION,

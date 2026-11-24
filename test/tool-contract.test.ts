@@ -98,6 +98,17 @@ it('validates the published inventory and tool results through an SDK client', a
     expect(JSON.stringify(nested)).not.toContain('example-fixture');
     expect(api.post).not.toHaveBeenCalled();
 
+    for (const query of [
+      '{"resourceType":"Procedure","id":"fixture"}',
+      'medicalRecordNumber: fixture',
+    ]) {
+      const result = await client.callTool({ name: 'semantic_search', arguments: { query } });
+      expect(result.isError).toBe(true);
+      expect(JSON.stringify(result.content)).toContain('PHI_NOT_ACCEPTED');
+      expect(api.request).not.toHaveBeenCalled();
+      expect(api.post).not.toHaveBeenCalled();
+    }
+
     const fhirInput = {
       ...coding,
       resource_type: 'Condition',

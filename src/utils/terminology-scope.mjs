@@ -8,7 +8,7 @@ const treatmentScope =
 const personalChoice =
   /\b(?:which|what)\s+(?:medicine|medication|drug|treatment)s?\s+(?:(?:should|can)\s+I|I\s+(?:should|can))\s+(?:take|use|start|choose)\b/i;
 const recommendTreatment =
-  /\b(?:recommend|suggest|prescribe)\s+(?:me\s+)?(?:(?:an?|the|some)\s+)?(?:medicine|medication|drug|treatment)s?\b(?=\s*(?:[.?!]|$|for\b|to\s+(?:take|treat)\b))/i;
+  /\b(?:recommend|suggest|prescribe)\s+(?:me\s+)?(?:(?:an?|the|some)\s+)?(?:medicine|medication|drug|treatment)s?\b(?=\s*(?:[.?!]|$|for\b(?!\s+(?:mapping|coding|indexing)\b)|to\s+(?:take|treat)\b))/i;
 
 // Scope the write guard to a vocabulary destination. Adding a synonym to
 // someone's notes, or asking to list existing synonyms, is a different request.

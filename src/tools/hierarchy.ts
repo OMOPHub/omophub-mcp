@@ -36,7 +36,7 @@ export function registerHierarchyTools(
         descendants: z.array(terminologyRecord).optional(),
       }),
       description:
-        "List descendants of a known OMOP concept using direction='down', or ancestors using 'up'. Use page=1 and the requested page_size. For all pages, repeat this tool with next_page while has_more is true. Read truncated to determine whether the upstream row cap was reached. A combined view cannot establish exhaustive coverage.",
+        "List descendants of a known OMOP concept using direction='down', or ancestors using 'up'. Use page=1 and the requested page_size. While has_more is true, set the next call’s page argument to the returned next_page and keep the same page size and filters. Read truncated to determine whether the upstream row cap was reached. A combined view cannot establish exhaustive coverage.",
       inputSchema: {
         concept_id: numericArgument(z.number()).describe('The OMOP concept_id'),
         direction: z

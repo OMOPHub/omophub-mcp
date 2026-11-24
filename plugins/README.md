@@ -1,6 +1,6 @@
 # OMOPHub terminology pilot
 
-These bundles connect to the hosted medical terminology service using OAuth. The ChatGPT directory package has its own version and README. For self-hosted HTTP and local stdio API-key setup, see the [server README](../README.md).
+These bundles connect to the hosted medical terminology service using OAuth. The ChatGPT directory package has its own version and README. For self-hosted HTTP and local stdio API-key setup, see the [server README](https://github.com/OMOPHub/omophub-mcp#quick-start).
 
 Build from the MCP checkout with `npm run build:plugins` (Python 3). The command writes the native Codex and Claude plugin directories, their local marketplace catalogs, and the OpenAI upload bundle at `build/plugins/omophub-openai.zip`. Validate the Claude bundle with `claude plugin validate --strict build/plugins/claude/omophub`. Pin the reviewed revision when distributing the marketplace.
 

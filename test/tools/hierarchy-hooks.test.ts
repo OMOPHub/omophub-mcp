@@ -52,9 +52,16 @@ describe.each(['Codex', 'Claude Code'])('native %s hierarchy review', (host) => 
       : 'mcp__omophub__get_hierarchy',
     tool_input: { concept_id: 42, direction: 'down' },
   };
-  function page(number: number, ids: number[], truncated?: boolean, size = 2) {
+  function page(
+    number: number,
+    ids: number[],
+    truncated?: boolean,
+    size = 2,
+    filters: Record<string, unknown> = {},
+  ) {
     return hook('hierarchy-page', {
       ...tool,
+      tool_input: { ...tool.tool_input, page: number, page_size: size, ...filters },
       tool_response: {
         structuredContent: {
           concept_id: 42,
@@ -147,7 +154,37 @@ describe.each(['Codex', 'Claude Code'])('native %s hierarchy review', (host) => 
         tool_input: { ...tool.tool_input, page: 2, page_size: 2 },
       }),
     ).toEqual({});
-    expect(hook('hierarchy-reply', { last_assistant_message: 'Quota exhausted' })).toEqual({});
+    const partial =
+      'Incomplete coverage: page 2 could not be verified. Verified descendant OMOP IDs: 71, 72. Overall truncation is unknown.';
+    for (const reply of ['All descendants were listed. Truncated: false', 'Quota exhausted']) {
+      expect(hook('hierarchy-reply', { last_assistant_message: reply })).toMatchObject({
+        decision: 'block',
+        reason: expect.stringContaining(partial),
+      });
+    }
+    expect(hook('hierarchy-reply', { last_assistant_message: partial })).toEqual({});
+  });
+
+  it('inherits the returned page size and guards filters before the follow-up read', () => {
+    hook('prompt', { prompt: 'List descendants of OMOP concept 42. Follow all pages.' });
+    const filters = { max_levels: 3, vocabulary_ids: 'SNOMED' };
+    const hint = page(1, [71, 72], false, 10, filters);
+    expect(hint).toContain('"page_size":10');
+    const args = { ...tool.tool_input, ...filters, page: 2, page_size: 10 };
+    for (const wrong of [{ page_size: 200 }, { max_levels: 4 }, { vocabulary_ids: 'LOINC' }]) {
+      expect(
+        hook('hierarchy-read', { ...tool, tool_input: { ...args, ...wrong } }).hookSpecificOutput
+          .permissionDecision,
+      ).toBe('deny');
+    }
+    expect(hook('hierarchy-read', { ...tool, tool_input: args })).toEqual({});
+    const badResult = page(2, [927], false, 20, filters);
+    expect(badResult).toContain('Incomplete coverage');
+    expect(badResult).not.toContain('927');
+    expect(
+      hook('hierarchy-reply', { last_assistant_message: 'All descendants: 927' }).decision,
+    ).toBe('block');
+    expect(page(2, [73], false, 10, filters)).toContain('Descendant OMOP IDs: 71, 72, 73');
   });
 
   it('withholds a complete summary when the previous page was missed or had a different page size', () => {

@@ -24,6 +24,20 @@ export function nextArguments(state) {
   };
 }
 
+export function sameFilters(args, filters) {
+  return (
+    Number(args.max_levels ?? 10) === Number(filters.max_levels ?? 10) &&
+    (args.vocabulary_ids || '') === (filters.vocabulary_ids || '')
+  );
+}
+
+export function incompleteAnswer(state) {
+  const ids = state.ids.length ? ` Verified descendant OMOP IDs: ${state.ids.join(', ')}.` : '';
+  const truncation =
+    state.truncated === true ? 'A verified page was truncated.' : 'Overall truncation is unknown.';
+  return `Incomplete coverage: page ${state.next} could not be verified.${ids} ${truncation}`;
+}
+
 export function markReplyCorrection(event, state, root) {
   save(event, { ...state, corrections: (state.corrections ?? 0) + 1 }, root);
 }
@@ -32,15 +46,15 @@ export function addPage(event, result, root) {
   const state = readTraversal(event, root);
   const p = result.pagination;
   if (!state || state.seed !== result.concept_id || !p || state.next !== p.page) return;
+  if (!Number.isSafeInteger(p.page_size) || p.page_size < 1) return;
   const args = event.tool_input ?? {};
-  const shape = JSON.stringify([
-    p.page_size,
-    p.total_pages,
-    p.total_items,
-    args.max_levels == null ? 10 : Number(args.max_levels),
-    args.vocabulary_ids || '',
-  ]);
-  if ((state.size && p.page_size !== state.size) || (state.shape && state.shape !== shape)) return;
+  const shape = JSON.stringify([p.page_size, p.total_pages, p.total_items]);
+  if (
+    (state.size && p.page_size !== state.size) ||
+    (state.shape && state.shape !== shape) ||
+    (state.filters && !sameFilters(args, state.filters))
+  )
+    return;
   if (
     typeof p.has_next !== 'boolean' ||
     p.has_next !== result.has_more ||
@@ -52,6 +66,7 @@ export function addPage(event, result, root) {
   if (!ids.every(Number.isSafeInteger)) return;
   state.ids = [...new Set([...state.ids, ...ids.filter((id) => id !== state.seed)])];
   state.shape = shape;
+  state.size = p.page_size;
   state.filters = {
     max_levels: args.max_levels == null ? undefined : Number(args.max_levels),
     vocabulary_ids: args.vocabulary_ids || undefined,
