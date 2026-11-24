@@ -1,0 +1,206 @@
+.dockerignore
+  h_ab4fdc3d784201 11-12
+.env.example
+  h_ab4fdc3d784201 1,18-37
+CHANGELOG.md
+  h_ab4fdc3d784201 5-18
+README.md
+  h_ab4fdc3d784201 137-138,144-146,153-155,189,197-198,295,302-304,314,325,327,363-365
+package-lock.json
+  h_ab4fdc3d784201 3,9,13
+package.json
+  h_ab4fdc3d784201 3,31-32,64
+plugins/README.md
+  h_ab4fdc3d784201 1-25
+plugins/claude/.claude-plugin/plugin.json
+  h_ab4fdc3d784201 1-11
+plugins/claude/README.md
+  h_ab4fdc3d784201 1-21
+plugins/claude/hooks/hooks.json
+  h_ab4fdc3d784201 1-150
+plugins/claude/mcp.json
+  h_ab4fdc3d784201 1-8
+plugins/codex/.codex-plugin/plugin.json
+  h_ab4fdc3d784201 1-28
+plugins/codex/hooks/hooks.json
+  h_ab4fdc3d784201 1-124
+plugins/codex/mcp.json
+  h_ab4fdc3d784201 1-10
+plugins/openai/README.md
+  h_ab4fdc3d784201 1-13
+plugins/openai/mcp.json
+  h_ab4fdc3d784201 1-22
+plugins/openai/plugin.json
+  h_ab4fdc3d784201 1-90
+scripts/build-plugins.py
+  h_ab4fdc3d784201 1-103
+server.json
+  h_ab4fdc3d784201 9,14
+skills/omophub/SKILL.md
+  h_ab4fdc3d784201 1-28
+src/client/api.ts
+  h_ab4fdc3d784201 8,10-11,16,20-25,55,63-64,66-74,76-78,82,85,88,92,94-95,98,100,104-119,121-123
+src/client/resolve.ts
+  h_ab4fdc3d784201 3,5-6,10-15,17-18
+src/client/types.ts
+  h_ab4fdc3d784201 14,53-56,69,87,105,107
+src/formatters/index.ts
+  h_ab4fdc3d784201 89-92,113,123,128,130-138,181,194-201,216,274-299
+src/index.ts
+  h_ab4fdc3d784201 11,103,119-124
+src/resources/index.ts
+  h_ab4fdc3d784201 9,36,40,44,48-52,56,83
+src/server.ts
+  h_ab4fdc3d784201 16,20-23,35,38-39,43
+src/tools/concepts.ts
+  h_ab4fdc3d784201 9-15,17-34,37-44,50-53,56-57,60,65,68-86,89,93,99,107-108,114,122
+src/tools/contract.ts
+  h_ab4fdc3d784201 1-49
+src/tools/explore.ts
+  h_ab4fdc3d784201 7-13,34,37-76,89,180,330,338
+src/tools/fhir.ts
+  h_ab4fdc3d784201 6-13,46-54,63-67,99,102-120,123-125,127-134,137,156,164,169,172-207,210,245,253
+src/tools/hierarchy.ts
+  h_ab4fdc3d784201 9-17,19-24,27-71,73-81,84-85,94,108-109,137,143,146,149
+src/tools/mappings.ts
+  h_ab4fdc3d784201 7-17,20,23-85,87-101,104-131,141,146-153,155,157-160,162-182
+src/tools/search.ts
+  h_ab4fdc3d784201 8-18,21,24-82,84-88,115-116,118-121,123-146,148-156,159-163
+src/tools/semantic-search.ts
+  h_ab4fdc3d784201 7-13,21,24-68,74,97,122,130
+src/tools/similar.ts
+  h_ab4fdc3d784201 6-12,58,61-133,151-154,231-235,237,248,289-293,295,300,306
+src/tools/vocabularies.ts
+  h_ab4fdc3d784201 9-14,39-44,47-63,66,70,74,94,97
+src/transports/http-ingress.ts
+  h_ab4fdc3d784201 1-82
+src/transports/http.ts
+  h_ab4fdc3d784201 1,3,11-12,14,17,167-236,245,247-248,273,284-292,297-312,315,330,335,337,415-417,421-423,426-429,431,481,485-490,534,565-573
+src/transports/oauth.ts
+  h_ab4fdc3d784201 1-227
+src/utils/check-coding.mjs
+  h_ab4fdc3d784201 1-7
+src/utils/check-hierarchy-page.mjs
+  h_ab4fdc3d784201 1-7
+src/utils/check-hierarchy-read.mjs
+  h_ab4fdc3d784201 1-7
+src/utils/check-hierarchy-reply.mjs
+  h_ab4fdc3d784201 1-7
+src/utils/check-mapping-result.mjs
+  h_ab4fdc3d784201 1-6
+src/utils/check-prompt.mjs
+  h_ab4fdc3d784201 1-47
+src/utils/check-search-result.mjs
+  h_ab4fdc3d784201 1-6
+src/utils/check-verified-search.mjs
+  h_ab4fdc3d784201 1-136
+src/utils/claude-coding.mjs
+  h_ab4fdc3d784201 1-10
+src/utils/claude-exact-code.mjs
+  h_ab4fdc3d784201 1-75
+src/utils/claude-hierarchy.mjs
+  h_ab4fdc3d784201 1-26
+src/utils/claude-mapping.mjs
+  h_ab4fdc3d784201 1-36
+src/utils/claude-record-input.mjs
+  h_ab4fdc3d784201 1-11
+src/utils/claude-review.mjs
+  h_ab4fdc3d784201 1-41
+src/utils/claude-verified-search.mjs
+  h_ab4fdc3d784201 1-10
+src/utils/coding-review.mjs
+  h_ab4fdc3d784201 1-211
+src/utils/errors.ts
+  h_ab4fdc3d784201 1-43,49,54-88,99-112,123-124,138-150,152,155-156,159
+src/utils/exact-code.mjs
+  h_ab4fdc3d784201 1-16
+src/utils/hierarchy-progress.mjs
+  h_ab4fdc3d784201 1-70
+src/utils/hierarchy-review.mjs
+  h_ab4fdc3d784201 1-141
+src/utils/mapping-review.mjs
+  h_ab4fdc3d784201 1-192
+src/utils/record-fields.mjs
+  h_ab4fdc3d784201 1-31
+src/utils/review-state.mjs
+  h_ab4fdc3d784201 1-38
+src/utils/terminology-scope.mjs
+  h_ab4fdc3d784201 1-24
+test/client/api.test.ts
+  h_ab4fdc3d784201 3,318-372
+test/client/resolve.test.ts
+  h_ab4fdc3d784201 6-7,11,14,16,20-27,30-34,37-46,49-71,74-77
+test/formatters/index.test.ts
+  h_ab4fdc3d784201 131-169,255,261,286,292-293
+test/helpers/mock-server.ts
+  h_ab4fdc3d784201 12
+test/index.test.ts
+  h_ab4fdc3d784201 4-5,33,364,370,379-399,405-407,415-417
+test/resources/index.test.ts
+  h_ab4fdc3d784201 50,56,72,111,125,140,164
+test/server.test.ts
+  h_ab4fdc3d784201 40-52
+test/tool-contract.test.ts
+  h_ab4fdc3d784201 1-250
+test/tools/claude-coding.test.ts
+  h_ab4fdc3d784201 1-51
+test/tools/claude-exact-code.test.ts
+  h_ab4fdc3d784201 1-58
+test/tools/claude-mapping.test.ts
+  h_ab4fdc3d784201 1-43
+test/tools/claude-record-input.test.ts
+  h_ab4fdc3d784201 1-59
+test/tools/claude-verified-search.test.ts
+  h_ab4fdc3d784201 1-68
+test/tools/coding-hooks.test.ts
+  h_ab4fdc3d784201 1-181
+test/tools/concepts.test.ts
+  h_ab4fdc3d784201 70,88-89,93-117
+test/tools/explore.test.ts
+  h_ab4fdc3d784201 14
+test/tools/fhir.test.ts
+  h_ab4fdc3d784201 115,146-148,436-439
+test/tools/hierarchy-hooks.test.ts
+  h_ab4fdc3d784201 1-162
+test/tools/hierarchy.test.ts
+  h_ab4fdc3d784201 99,111,115,145,149,162,203,207,220
+test/tools/mapping-reply.test.ts
+  h_ab4fdc3d784201 1-172
+test/tools/mappings.test.ts
+  h_ab4fdc3d784201 4,91,253-380,393-395
+test/tools/prompt-guard.test.ts
+  h_ab4fdc3d784201 1-169
+test/tools/search.test.ts
+  h_ab4fdc3d784201 2,83,111-214
+test/tools/semantic-search.test.ts
+  h_ab4fdc3d784201 12
+test/tools/similar.test.ts
+  h_ab4fdc3d784201 12
+test/tools/verified-search-hooks.test.ts
+  h_ab4fdc3d784201 1-69
+test/tools/vocabularies.test.ts
+  h_ab4fdc3d784201 72
+test/transports/hosted-oauth.test.ts
+  h_ab4fdc3d784201 1-129
+test/transports/http-credentials.test.ts
+  h_ab4fdc3d784201 1-141
+test/transports/http-ingress.test.ts
+  h_ab4fdc3d784201 1-91
+test/transports/http-sessions.test.ts
+  h_ab4fdc3d784201 89-90,144,150,243,266-270,313,342,389,422-426,436,466,489,494,522,545,554,574,587,623,639,666
+test/transports/http.test.ts
+  h_ab4fdc3d784201 2,27-31,43-102,120,127-181,188,192,198-199,201,204,208,214-215,218,223-226,233-239,242-248,250-256,264,266,283,285,300,302,322,324
+tsconfig.json
+  h_ab4fdc3d784201 10,20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b96d8a1f3ff7750527acbaf6061dab19a7cfc641",
+  "prompts": {},
+  "humans": {
+    "h_ab4fdc3d784201": {
+      "author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
