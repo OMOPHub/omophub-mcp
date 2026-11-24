@@ -127,3 +127,27 @@ it('exchanges a signed token only in exchange mode and propagates a revoked gran
   upstream.mockResolvedValueOnce(Response.json({ error: 'invalid_grant' }, { status: 400 }));
   await expect(oauth.authorize(token, grant)).rejects.toMatchObject({ status: 401 });
 });
+
+it.each([
+  [403, 403],
+  [500, 503],
+])('handles private grant verifier status %i before creating a vocabulary client', async (status, expected) => {
+  const { oauth, sign, upstream } = await signedFixture(serviceEnv);
+  upstream.mockResolvedValueOnce(new Response('Grant check failed', { status }));
+  await expect(oauth.authorize(await sign())).rejects.toMatchObject({ status: expected });
+  expect(upstream).toHaveBeenCalledTimes(1);
+  expect(String(upstream.mock.calls[0]?.[0])).toBe('https://api.internal.test/internal/mcp/grant');
+});
+
+it('rejects an incomplete token exchange response before any vocabulary read', async () => {
+  const { oauth, sign, upstream } = await signedFixture({
+    OMOPHUB_OAUTH_API_RESOURCE: 'https://api.example.test/v1',
+    OMOPHUB_OAUTH_CLIENT_ID: 'test-mcp',
+    OMOPHUB_OAUTH_CLIENT_SECRET: 'fixture-secret',
+  });
+  upstream.mockResolvedValueOnce(
+    Response.json({ issued_token_type: accessTokenType, token_type: 'Bearer' }),
+  );
+  await expect(oauth.authorize(await sign())).rejects.toMatchObject({ status: 503 });
+  expect(upstream).toHaveBeenCalledTimes(1);
+});
