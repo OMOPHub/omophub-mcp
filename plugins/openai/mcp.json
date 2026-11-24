@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "omophub": {
+      "type": "streamable-http",
+      "url": "https://mcp.omophub.com/mcp",
+      "extensions": {
+        "com.openai": {
+          "auth": {
+            "type": "oauth",
+            "client": {
+              "mode": "cimd"
+            },
+            "baseScopes": [
+              "vocabulary:read"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

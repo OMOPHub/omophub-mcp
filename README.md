@@ -134,21 +134,25 @@ Add to `.vscode/mcp.json`:
 Run the MCP server as an HTTP service that clients connect to via URL:
 
 ```bash
-# Start HTTP server on port 3100
-npx -y @omophub/omophub-mcp --transport=http --port=3100 --api-key=oh_your_key_here
+# Start the local listener; each client supplies its own credential
+npx -y @omophub/omophub-mcp --transport=http --port=3100
 
 # MCP endpoint: http://localhost:3100/mcp
 # Health check:  http://localhost:3100/health
 ```
 
-Connect MCP clients to `/` or `/mcp`. Useful for centralized deployments where multiple AI agents share one server instance.
+Point the client at `http://127.0.0.1:3100/mcp` and set its `Authorization` header to `Bearer <your OMOPHub API key>` on every MCP request. The legacy `/` path also accepts individual API keys. Local HTTP listens on loopback by default.
+
+**Upgrading from 1.6.3.** Move the key from the HTTP server’s `--api-key` or `OMOPHUB_API_KEY` setting into each client’s authorization header. Use an individual key for each account so the API can apply its vocabulary permissions and tier quota. For local stdio, keep the key in the client’s MCP environment. If you previously exposed a keyed HTTP server on a shared network, restrict its listener and review the account’s usage.
 
 </details>
 
 <details>
 <summary><strong>Hosted (mcp.omophub.com)</strong></summary>
 
-Connect directly to the OMOPHub-hosted MCP server - no installation required. Each client authenticates with their own API key via the `Authorization` header:
+For an OAuth-capable client, add `https://mcp.omophub.com/mcp`, sign in to OMOPHub and approve vocabulary access. The API enforces your vocabulary permissions and bills successful reads against your tier. To disconnect one app, open **Settings → Connected Apps** in the OMOPHub dashboard.
+
+Clients that use individual API keys can send the key in the `Authorization` header:
 
 **Claude Code:**
 ```bash
@@ -182,7 +186,7 @@ claude mcp add omophub --transport http \
 }
 ```
 
-> **Note:** Claude Desktop's Custom Connectors UI only supports OAuth and cannot send custom headers. Use the [npx setup](#claude-desktop) instead.
+For a Claude custom connector, use the hosted OAuth URL above. The local Claude Desktop setup uses stdio and an API key.
 
 </details>
 
@@ -190,8 +194,8 @@ claude mcp add omophub --transport http \
 <summary><strong>Docker</strong></summary>
 
 ```bash
-# HTTP mode (default in Docker) - serves MCP on port 3100
-docker run -e OMOPHUB_API_KEY=oh_your_key_here -p 3100:3100 omophub/omophub-mcp
+# HTTP for clients on this machine; send the API key from the client
+docker run --rm -e MCP_HOST=0.0.0.0 -p 127.0.0.1:3100:3100 omophub/omophub-mcp:1.7.0
 
 # Stdio mode (for piping)
 docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transport=stdio
@@ -288,13 +292,16 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transpor
 
 | Variable | Required | Description |
 | :--- | :---: | :--- |
-| `OMOPHUB_API_KEY` | ✅ | Your OMOPHub API key |
+| `OMOPHUB_API_KEY` | stdio | Individual API key for local stdio. HTTP clients send their own credentials. |
 | `OMOPHUB_BASE_URL` | | Custom API base URL (default: `https://api.omophub.com/v1`) |
 | `OMOPHUB_LOG_LEVEL` | | `debug` · `info` · `warn` · `error` (default: `info`) |
 | `OMOPHUB_ANALYTICS_OPTOUT` | | Set to `true` to disable analytics headers |
 | `OMOPHUB_USER_AGENT_SUFFIX` | | Optional deployment identifier appended to `omophub-mcp/<version>` (default: none) |
 | `MCP_TRANSPORT` | | `stdio` (default) or `http` |
 | `MCP_PORT` | | HTTP server port (default: `3100`, only used with `http` transport) |
+| `MCP_HOST` | | HTTP bind address (default `127.0.0.1`). Set explicitly when clients connect through a container network. |
+| `MCP_ALLOWED_HOSTS` | | Additional accepted HTTP authorities, comma-separated, including any nondefault port. For a reverse proxy, allow its public authority and preserve the original Host header. |
+| `MCP_ALLOWED_ORIGINS` | | Additional trusted browser origins, comma-separated, including scheme and any nondefault port. Native clients may omit Origin. |
 | `HEALTH_PORT` | | Port for standalone health endpoint in stdio mode (default: disabled) |
 
 ### CLI Arguments
@@ -304,7 +311,7 @@ docker run -i -e OMOPHUB_API_KEY=oh_your_key_here omophub/omophub-mcp --transpor
 npx @omophub/omophub-mcp --api-key=oh_your_key --base-url=https://custom.api.com/v1
 
 # HTTP mode
-npx @omophub/omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
+npx @omophub/omophub-mcp --transport=http --port=3100
 
 # Stdio mode with standalone health endpoint
 npx @omophub/omophub-mcp --api-key=oh_your_key --health-port=8080
@@ -315,9 +322,9 @@ npx @omophub/omophub-mcp --api-key=oh_your_key --health-port=8080
 In **HTTP mode**, the health endpoint is available at `/health` on the same port as the MCP endpoint:
 
 ```bash
-npx @omophub/omophub-mcp --transport=http --port=3100 --api-key=oh_your_key
+npx @omophub/omophub-mcp --transport=http --port=3100
 curl http://localhost:3100/health
-# → {"status":"ok","version":"1.5.0","uptime_seconds":42}
+# → {"status":"ok","version":"1.7.0","uptime_seconds":42}
 ```
 
 In **stdio mode**, use `--health-port` for a standalone health endpoint:
@@ -353,7 +360,9 @@ OMOPHUB_API_KEY=oh_your_key npx tsx src/index.ts
 
 | Error | Solution |
 | :--- | :--- |
-| `API key required` | Set `OMOPHUB_API_KEY` in your environment or MCP config |
+| HTTP 401 | Configure the client’s Bearer API key or reconnect its hosted OAuth grant. |
+| HTTP 403 before MCP dispatch | Check the requested host and browser origin against the configured allowlists. |
+| stdio API key required | Set `OMOPHUB_API_KEY` in the MCP client’s environment. |
 | `Authentication failed` | API key may be invalid or expired - [generate a new one](https://dashboard.omophub.com/api-keys) |
 | `Rate limit exceeded` | Automatic retries are built in. For higher limits, [upgrade your plan](https://dashboard.omophub.com/billing) |
 | Tools not appearing | Restart your AI client, verify `npx @omophub/omophub-mcp` runs without errors, check config path |

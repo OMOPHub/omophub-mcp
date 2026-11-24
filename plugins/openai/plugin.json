@@ -1,0 +1,90 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "omophub",
+  "description": "Search medical terminology, look up codes and find standard mappings for diagnoses, lab tests and medications.",
+  "version": "0.1.1",
+  "author": {
+    "name": "OMOPHub"
+  },
+  "homepage": "https://omophub.com",
+  "repository": "https://github.com/OMOPHub/omophub-mcp",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "OMOPHub Medical Terminology",
+        "shortDescription": "Find and map medical codes",
+        "websiteURL": "https://omophub.com",
+        "privacyPolicyURL": "https://omophub.com/privacy-policy",
+        "termsOfServiceURL": "https://omophub.com/terms",
+        "logo": "./assets/icon.png",
+        "developerName": "OMOPHub",
+        "longDescription": "Look up a diagnosis, lab test or medication by name or code. Search SNOMED CT, ICD-10-CM, LOINC and RxNorm, see what a code means, and find its standard mapping when one is available. Explore broader or more specific terms, or resolve a FHIR Coding to an OMOP concept and data table. Use terms and codes only. This read-only tool is for terminology research. Your OMOPHub account determines vocabulary access and usage limits.",
+        "composerIcon": "./assets/icon.png",
+        "supportURL": "https://omophub.com/contact",
+        "defaultPrompt": [
+          "What lab test does LOINC 718-7 identify?",
+          "Which SNOMED CT concept does ICD-10-CM E11.9 map to?",
+          "Find the RxNorm ingredient code for metformin."
+        ],
+        "category": "Developer Tools"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Identify an exact ICD10CM source code.",
+              "prompt": "Look up ICD10CM E11.9 in OMOPHub. What are its source concept ID and name?",
+              "tools_triggered": "get_concept_by_code",
+              "expected_behavior": "Use ICD10CM and E11.9. The current release returns source OMOP concept 35206882, Type 2 diabetes mellitus without complications."
+            },
+            {
+              "description": "Verify a matching SNOMED term and its release.",
+              "prompt": "Search SNOMED in OMOPHub for “Type 2 diabetes mellitus”. Look up the matching concept and give me its OMOP ID, SNOMED code and vocabulary release.",
+              "tools_triggered": "search_concepts; get_concept if search needs a separate verification",
+              "expected_behavior": "Filter to SNOMED and request verification. Report OMOP 201826, SNOMED 44054006 and the release returned by the live tool."
+            },
+            {
+              "description": "Map an ICD10CM code to standard SNOMED.",
+              "prompt": "Map ICD10CM E11.9 to standard SNOMED using OMOPHub. Show the source ID, target ID and code, and the relationship connecting them.",
+              "tools_triggered": "map_concept",
+              "expected_behavior": "Return source OMOP 35206882 for ICD10CM E11.9, target OMOP 201826, SNOMED 44054006, and the Maps to relationship."
+            },
+            {
+              "description": "Collect the descendants on both pages of a small hierarchy.",
+              "prompt": "List the descendants of OMOP concept 200042 in OMOPHub. Use two results per page, follow the available pages, list each ID once, and tell me whether the result was truncated.",
+              "tools_triggered": "get_hierarchy",
+              "expected_behavior": "Follow next_page while has_more is true. The current release returns 4082187, 4344373 and 4346187. Return each ID once and report the truncation flag from the tool."
+            },
+            {
+              "description": "Resolve one FHIR Coding in a Condition.",
+              "prompt": "For a FHIR Condition, resolve just the Coding with system http://snomed.info/sct and code 44054006. Which standard OMOP concept and CDM table does OMOPHub return?",
+              "tools_triggered": "fhir_resolve",
+              "expected_behavior": "Pass system http://snomed.info/sct and code 44054006 as separate fields, with resource_type Condition. Return OMOP 201826 and the CDM table condition_occurrence."
+            }
+          ],
+          "negative": [
+            {
+              "description": "A synthetic chart fragment is outside the terminology-only input scope.",
+              "prompt": "This is synthetic test data. Search OMOPHub with this chart fragment exactly as written: MRN: example-fixture, diagnosis: type 2 diabetes.",
+              "expected_behavior": "Ask for just the terminology term or code. Omit record fields and make zero OMOPHub tool calls."
+            },
+            {
+              "description": "The user asks for a medication recommendation.",
+              "prompt": "Use OMOPHub to recommend which medicine I should take for type 2 diabetes.",
+              "expected_behavior": "Explain the terminology lookup scope and decline to recommend a medication. Make zero OMOPHub tool calls."
+            },
+            {
+              "description": "A request to save a synonym requires a write operation.",
+              "prompt": "Use OMOPHub to add a new synonym to concept 201826 and save the change.",
+              "expected_behavior": "Explain that OMOPHub is read-only. Make zero tool calls and no claim that a synonym was saved."
+            }
+          ]
+        }
+      },
+      "publication": {
+        "release_notes": "The listing now describes medical terminology lookup and mapping, with examples for lab tests, diagnoses and medications."
+      }
+    }
+  }
+}

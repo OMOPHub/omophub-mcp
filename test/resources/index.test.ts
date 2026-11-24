@@ -47,13 +47,13 @@ describe('registerResources', () => {
       expect(result.contents[0].mimeType).toBe('text/plain');
       expect(result.contents[0].text).toContain('OMOP Vocabulary Catalog');
       expect(result.contents[0].text).toContain('SNOMED');
-      expect(vocabularyCache.has('vocabularies:all')).toBe(true);
+      expect(vocabularyCache.has('resource:vocabularies:all')).toBe(true);
     });
 
     it('returns cached data without API call on cache hit', async () => {
       const server = createMockServer();
       const client = createMockClient();
-      vocabularyCache.set('vocabularies:all', unwrappedResponse);
+      vocabularyCache.set('resource:vocabularies:all', unwrappedResponse);
 
       registerResources(server as never, client as never);
       const handler = server.resources.get('vocabulary-list')!;
@@ -69,7 +69,7 @@ describe('registerResources', () => {
     it('formats vocabulary list with concept counts', async () => {
       const server = createMockServer();
       const client = createMockClient();
-      vocabularyCache.set('vocabularies:all', unwrappedResponse);
+      vocabularyCache.set('resource:vocabularies:all', unwrappedResponse);
 
       registerResources(server as never, client as never);
       const handler = server.resources.get('vocabulary-list')!;
@@ -108,7 +108,7 @@ describe('registerResources', () => {
     it('returns "not found" for unknown vocabulary', async () => {
       const server = createMockServer();
       const client = createMockClient();
-      vocabularyCache.set('vocabularies:all', unwrappedResponse);
+      vocabularyCache.set('resource:vocabularies:all', unwrappedResponse);
 
       registerResources(server as never, client as never);
       const handler = server.resources.get('vocabulary-details')!;
@@ -122,7 +122,7 @@ describe('registerResources', () => {
     it('matches vocabulary case-insensitively', async () => {
       const server = createMockServer();
       const client = createMockClient();
-      vocabularyCache.set('vocabularies:all', unwrappedResponse);
+      vocabularyCache.set('resource:vocabularies:all', unwrappedResponse);
 
       registerResources(server as never, client as never);
       const handler = server.resources.get('vocabulary-details')!;
@@ -137,7 +137,7 @@ describe('registerResources', () => {
     it('reuses cached vocabulary data', async () => {
       const server = createMockServer();
       const client = createMockClient();
-      vocabularyCache.set('vocabularies:all', unwrappedResponse);
+      vocabularyCache.set('resource:vocabularies:all', unwrappedResponse);
 
       registerResources(server as never, client as never);
       const handler = server.resources.get('vocabulary-details')!;
@@ -161,7 +161,7 @@ describe('registerResources', () => {
 
       const server = createMockServer();
       const client = createMockClient();
-      vocabularyCache.set('vocabularies:all', responseWithoutOptionals);
+      vocabularyCache.set('resource:vocabularies:all', responseWithoutOptionals);
 
       registerResources(server as never, client as never);
       const handler = server.resources.get('vocabulary-details')!;

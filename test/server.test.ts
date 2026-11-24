@@ -37,16 +37,29 @@ describe('createServer', () => {
     vi.clearAllMocks();
   });
 
+  it('disables result caches at every HTTP tool and resource entry point', () => {
+    const client = new OmopHubClient(undefined);
+    createServer(client, 'http');
+    for (const register of [
+      registerConceptTools,
+      registerHierarchyTools,
+      registerVocabularyTools,
+      registerResources,
+    ]) {
+      expect(register).toHaveBeenCalledWith(expect.anything(), client, null);
+    }
+  });
+
   it('returns an McpServer instance', () => {
     const client = new OmopHubClient('test-api-key');
-    const server = createServer(client);
+    const server = createServer(client, 'stdio');
     expect(server).toBeDefined();
     expect(server).toHaveProperty('connect');
   });
 
   it('calls all tool registration functions', () => {
     const client = new OmopHubClient('test-api-key');
-    createServer(client);
+    createServer(client, 'stdio');
 
     expect(registerSearchTools).toHaveBeenCalledOnce();
     expect(registerConceptTools).toHaveBeenCalledOnce();
@@ -57,7 +70,7 @@ describe('createServer', () => {
 
   it('calls registerResources and registerPrompts', () => {
     const client = new OmopHubClient('test-api-key');
-    createServer(client);
+    createServer(client, 'stdio');
 
     expect(registerResources).toHaveBeenCalledOnce();
     expect(registerPrompts).toHaveBeenCalledOnce();
@@ -65,7 +78,7 @@ describe('createServer', () => {
 
   it('passes client to registration functions', () => {
     const client = new OmopHubClient('test-api-key', 'https://custom.api.com/v1');
-    createServer(client);
+    createServer(client, 'stdio');
 
     expect(registerSearchTools).toHaveBeenCalledWith(expect.anything(), client);
   });

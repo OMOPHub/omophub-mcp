@@ -86,6 +86,8 @@ import {
 
 const settle = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 const enc = (s: string): Uint8Array => new TextEncoder().encode(s);
+const AUTHORIZATION = 'Bearer oh_transport_test';
+const JSON_HEADERS = { Authorization: AUTHORIZATION, 'Content-Type': 'application/json' };
 const INIT_PAYLOAD = JSON.stringify({
   jsonrpc: '2.0',
   id: 1,
@@ -139,13 +141,13 @@ async function startServer(): Promise<{ server: Server; url: string }> {
   const server = await startHttpTransport(createMockServerFactory(), createMockClient(), 0);
   const addr = server.address();
   if (!addr || typeof addr === 'string') throw new Error('Unexpected address');
-  return { server, url: `http://localhost:${String(addr.port)}` };
+  return { server, url: `http://127.0.0.1:${String(addr.port)}` };
 }
 
 async function initializeSession(url: string): Promise<void> {
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: JSON_HEADERS,
     body: JSON.stringify({
       jsonrpc: '2.0',
       id: 1,
@@ -238,7 +240,7 @@ describe('HTTP transport session lifecycle', () => {
     vi.spyOn(Date, 'now').mockReturnValue(fortyMinutes);
     await fetch(started.url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'mcp-session-id': sessionId as string },
+      headers: { ...JSON_HEADERS, 'mcp-session-id': sessionId as string },
       body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' }),
     });
     vi.restoreAllMocks();
@@ -261,7 +263,11 @@ describe('HTTP transport session lifecycle', () => {
     const controller = new AbortController();
     const streamDone = fetch(started.url, {
       method: 'GET',
-      headers: { 'mcp-session-id': sessionId as string, Accept: 'text/event-stream' },
+      headers: {
+        Authorization: AUTHORIZATION,
+        'mcp-session-id': sessionId as string,
+        Accept: 'text/event-stream',
+      },
       signal: controller.signal,
     }).catch(() => {
       /* aborted below */
@@ -304,7 +310,7 @@ describe('HTTP transport session lifecycle', () => {
     });
     const pending = fetch(started.url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'mcp-session-id': sessionId as string },
+      headers: { ...JSON_HEADERS, 'mcp-session-id': sessionId as string },
       body,
       duplex: 'half',
       signal: controller.signal,
@@ -333,7 +339,7 @@ describe('HTTP transport session lifecycle', () => {
     const controller = new AbortController();
     const pending = fetch(started.url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: JSON_HEADERS,
       body: JSON.stringify({
         jsonrpc: '2.0',
         id: 1,
@@ -380,7 +386,7 @@ describe('HTTP transport session lifecycle', () => {
       });
       const result = await fetch(started.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'mcp-session-id': sessionId as string },
+        headers: { ...JSON_HEADERS, 'mcp-session-id': sessionId as string },
         body,
         duplex: 'half',
       } as RequestInit & { duplex: 'half' }).catch((e: Error) => e);
@@ -413,7 +419,11 @@ describe('HTTP transport session lifecycle', () => {
       const controller = new AbortController();
       const stream = fetch(started.url, {
         method: 'GET',
-        headers: { 'mcp-session-id': sessionId as string, Accept: 'text/event-stream' },
+        headers: {
+          Authorization: AUTHORIZATION,
+          'mcp-session-id': sessionId as string,
+          Accept: 'text/event-stream',
+        },
         signal: controller.signal,
       }).catch(() => {
         /* aborted below */
@@ -423,7 +433,7 @@ describe('HTTP transport session lifecycle', () => {
       // Second initialize at cap=1, and the only session can't be evicted.
       const res = await fetch(started.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: JSON_HEADERS,
         body: INIT_PAYLOAD,
       });
       expect(res.status).toBe(503);
@@ -453,7 +463,7 @@ describe('HTTP transport session lifecycle', () => {
     });
     const result = await fetch(started.url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'mcp-session-id': sessionId as string },
+      headers: { ...JSON_HEADERS, 'mcp-session-id': sessionId as string },
       body: oversized,
     }).catch((e: Error) => e);
 
@@ -476,12 +486,12 @@ describe('HTTP transport session lifecycle', () => {
       const [a, b] = await Promise.all([
         fetch(started.url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: JSON_HEADERS,
           body: INIT_PAYLOAD,
         }),
         fetch(started.url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: JSON_HEADERS,
           body: INIT_PAYLOAD,
         }),
       ]);
@@ -509,7 +519,7 @@ describe('HTTP transport session lifecycle', () => {
       // A second init at cap=1 evicts the idle session and is admitted.
       const res = await fetch(started.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: JSON_HEADERS,
         body: INIT_PAYLOAD,
       });
       expect(res.status).toBe(200);
@@ -532,7 +542,7 @@ describe('HTTP transport session lifecycle', () => {
       // First init fails during connect → no session created, 500 returned.
       const res1 = await fetch(started.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: JSON_HEADERS,
         body: INIT_PAYLOAD,
       });
       expect(res1.status).toBe(500);
@@ -541,7 +551,7 @@ describe('HTTP transport session lifecycle', () => {
       // second init would be wrongly rejected with 503 at cap=1. It must succeed.
       const res2 = await fetch(started.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: JSON_HEADERS,
         body: INIT_PAYLOAD,
       });
       expect(res2.status).toBe(200);
@@ -561,7 +571,7 @@ describe('HTTP transport session lifecycle', () => {
       const c1 = new AbortController();
       const p1 = fetch(started.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: JSON_HEADERS,
         body: INIT_PAYLOAD,
         signal: c1.signal,
       }).catch(() => {});
@@ -574,7 +584,7 @@ describe('HTTP transport session lifecycle', () => {
       const c2 = new AbortController();
       const p2 = fetch(started.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: JSON_HEADERS,
         body: INIT_PAYLOAD,
         signal: c2.signal,
       }).catch(() => {});
@@ -610,7 +620,7 @@ describe('HTTP transport session lifecycle', () => {
     });
     const pending = fetch(started.url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'mcp-session-id': sessionId as string },
+      headers: { ...JSON_HEADERS, 'mcp-session-id': sessionId as string },
       body,
       duplex: 'half',
     } as RequestInit & { duplex: 'half' });
@@ -626,6 +636,7 @@ describe('HTTP transport session lifecycle', () => {
 
     const res = await pending;
     expect(res.status).toBe(404); // dispatched to the dead session would be 200
+    expect(await res.json()).toMatchObject({ error: { code: -32001 } });
   });
 
   it('survives a client aborting mid-body without an unhandled rejection', async () => {
@@ -652,7 +663,7 @@ describe('HTTP transport session lifecycle', () => {
 
       const pending = fetch(started.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: JSON_HEADERS,
         body,
         duplex: 'half',
         signal: controller.signal,

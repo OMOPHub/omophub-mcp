@@ -128,6 +128,45 @@ describe('formatters', () => {
       const parsed = JSON.parse(json);
       expect(parsed.mapped).toBe(true);
       expect(parsed.mappings).toHaveLength(2);
+      expect(parsed.mappings[0].standard_concept).toBeNull();
+    });
+
+    it('returns the target identifiers and standard status from the vocabulary API', () => {
+      const { text, json } = formatMappings(
+        {
+          success: true,
+          data: {
+            mappings: [
+              {
+                source_concept_id: 45576876,
+                target_concept_id: 201826,
+                target_concept_name: 'Type 2 diabetes mellitus',
+                target_vocabulary_id: 'SNOMED',
+                target_concept_code: '44054006',
+                target_domain_id: 'Condition',
+                target_standard_concept: 'S',
+                relationship_id: 'Maps to',
+              },
+            ],
+          },
+        },
+        45576876,
+      );
+      expect(text).toContain('Source OMOP concept ID: 45576876');
+      expect(text).toContain('Target OMOP concept ID: 201826');
+      expect(text).toContain('Target SNOMED code: 44054006');
+      expect(text).toContain('Relationship: Maps to');
+      expect(JSON.parse(json).mappings).toEqual([
+        {
+          concept_id: 201826,
+          concept_name: 'Type 2 diabetes mellitus',
+          vocabulary_id: 'SNOMED',
+          concept_code: '44054006',
+          domain_id: 'Condition',
+          standard_concept: 'S',
+          relationship_id: 'Maps to',
+        },
+      ]);
     });
 
     it('handles empty mappings with mapped=false', () => {
@@ -213,13 +252,13 @@ describe('formatters', () => {
       expect(parsed.error_code).toBe('AUTH_FAILED');
     });
 
-    it('returns ACCESS_DENIED with upgrade_url for 403', () => {
+    it('returns ACCESS_DENIED for 403', () => {
       const error = new OmopHubApiError(403, 'Forbidden', '/test');
       const { text, json } = formatErrorForMcp(error, 'test_tool');
       expect(text).toContain('Access denied');
       const parsed = JSON.parse(json);
       expect(parsed.error_code).toBe('ACCESS_DENIED');
-      expect(parsed.upgrade_url).toBeDefined();
+      expect(parsed.upgrade_url).toBeUndefined();
     });
 
     it('returns NOT_FOUND with actionable text and concept_id for 404', () => {
@@ -244,14 +283,14 @@ describe('formatters', () => {
       expect(parsed.concept_id).toBeUndefined();
     });
 
-    it('returns RATE_LIMIT_EXCEEDED with retry_after for 429', () => {
+    it('returns RATE_LIMIT_EXCEEDED without inventing a delay for 429', () => {
       const error = new OmopHubApiError(429, 'Rate limited', '/test');
       const { text, json } = formatErrorForMcp(error, 'test_tool');
       expect(text).toContain('Rate limit exceeded');
       const parsed = JSON.parse(json);
       expect(parsed.error_code).toBe('RATE_LIMIT_EXCEEDED');
-      expect(parsed.retry_after_seconds).toBe(3600);
-      expect(parsed.upgrade_url).toBeDefined();
+      expect(parsed.retry_after_seconds).toBeUndefined();
+      expect(parsed.upgrade_url).toBeUndefined();
     });
 
     it('returns SERVER_ERROR for 500/502/503', () => {

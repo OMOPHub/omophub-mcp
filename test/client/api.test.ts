@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OmopHubClient } from '../../src/client/api.js';
-import { OmopHubApiError } from '../../src/utils/errors.js';
+import { formatErrorForMcp, OmopHubApiError } from '../../src/utils/errors.js';
 
 describe('OmopHubClient', () => {
   const mockFetch = vi.fn();
@@ -313,5 +313,60 @@ describe('OmopHubClient', () => {
     const headers = options.headers as Record<string, string>;
     expect(headers['X-MCP-Client']).toBeUndefined();
     expect(headers['X-MCP-Tool']).toBeUndefined();
+  });
+});
+
+describe.each(['GET', 'POST'] as const)('%s quota handling', (method) => {
+  afterEach(() => vi.unstubAllGlobals());
+  const run = (client: OmopHubClient) =>
+    method === 'GET' ? client.request('/example') : client.post('/example', {});
+
+  it.each([
+    undefined,
+    { retryable: false, resets_at: '2027-01-01T00:00:00.000Z' },
+  ])('stops immediately on a monthly quota and preserves available reset information', async (details) => {
+    const usage = { current: 12, limit: 12 };
+    const fetch = vi.fn().mockResolvedValue(
+      Response.json(
+        {
+          error: { code: 'monthly_limit_exceeded', message: 'Quota reached', details },
+          usage,
+        },
+        { status: 429 },
+      ),
+    );
+    vi.stubGlobal('fetch', fetch);
+    const client = new OmopHubClient('test', 'https://example.test');
+    const error = await run(client).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(OmopHubApiError);
+    const result = JSON.parse(formatErrorForMcp(error, 'search_concepts').json);
+    expect(result).toEqual({
+      error_code: 'MONTHLY_LIMIT_EXCEEDED',
+      retryable: false,
+      usage,
+      ...(details && { resets_at: details.resets_at }),
+    });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a long throttle delay without waiting or resending', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json(
+          { error: { code: 'rate_limit_exceeded' } },
+          { status: 429, headers: { 'Retry-After': '120' } },
+        ),
+      );
+    vi.stubGlobal('fetch', fetch);
+    const error = await run(new OmopHubClient('test', 'https://example.test')).catch(
+      (e: unknown) => e,
+    );
+    expect(JSON.parse(formatErrorForMcp(error, 'search_concepts').json)).toEqual({
+      error_code: 'RATE_LIMIT_EXCEEDED',
+      retryable: true,
+      retry_after_seconds: 120,
+    });
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

@@ -86,7 +86,10 @@ export function formatConceptList(
   };
 }
 
-export function formatConcept(concept: Concept): { text: string; json: string } {
+export function formatConcept(
+  concept: Concept,
+  vocabRelease?: string,
+): { text: string; json: string } {
   const std =
     concept.standard_concept === 'S'
       ? 'Standard'
@@ -107,6 +110,7 @@ export function formatConcept(concept: Concept): { text: string; json: string } 
     `| Standard Status | ${std} |`,
   ];
 
+  if (vocabRelease) lines.push(`| Vocabulary release | ${vocabRelease} |`);
   if (concept.valid_start_date) lines.push(`| Valid From | ${concept.valid_start_date} |`);
   if (concept.valid_end_date) lines.push(`| Valid To | ${concept.valid_end_date} |`);
   if (concept.invalid_reason) lines.push(`| Invalid Reason | ${concept.invalid_reason} |`);
@@ -116,26 +120,22 @@ export function formatConcept(concept: Concept): { text: string; json: string } 
 
   return {
     text: lines.join('\n'),
-    json: JSON.stringify(concept),
+    json: JSON.stringify(vocabRelease ? { ...concept, vocab_release: vocabRelease } : concept),
   };
 }
 
 /** Normalize a mapping to flat target fields regardless of API shape */
-function normalizeMapping(m: Mapping): {
-  concept_id: number | undefined;
-  concept_name: string;
-  vocabulary_id: string;
-  concept_code: string;
-  relationship_id: string;
-  standard_concept: string | null | undefined;
-} {
+function normalizeMapping(m: Mapping) {
   return {
-    concept_id: m.concept_id ?? m.target_concept_id,
-    concept_name: m.concept_name ?? m.target_concept_name ?? 'Unknown',
-    vocabulary_id: m.vocabulary_id ?? '',
-    concept_code: m.concept_code ?? '',
-    relationship_id: m.relationship_id ?? 'Maps to',
-    standard_concept: m.standard_concept,
+    concept_id: m.target_concept_id ?? m.concept_id,
+    concept_name: m.target_concept_name ?? m.concept_name ?? 'Unknown',
+    vocabulary_id: (m.target_vocabulary_id ?? m.vocabulary_id) || undefined,
+    concept_code: (m.target_concept_code ?? m.concept_code) || undefined,
+    domain_id: m.target_domain_id ?? m.domain_id,
+    relationship_id: m.relationship_id,
+    // A null target flag explicitly identifies a non-standard concept.
+    standard_concept:
+      m.target_standard_concept === undefined ? m.standard_concept : m.target_standard_concept,
   };
 }
 
@@ -178,7 +178,7 @@ export function formatMappings(
   // MappingsResponse, so a server can report the true total without the block.
   const hasMore = pagination?.has_next ?? totalMappings > mappings.length;
 
-  const header = `Mappings for **${source?.concept_name || `Concept ${conceptId}`}** (${source?.vocabulary_id || 'unknown'} → targets):`;
+  const header = `Source OMOP concept ID: ${conceptId}${source?.concept_name ? ` (${source.concept_name})` : ''}`;
 
   // State the shortfall in the TEXT block, not just the JSON. This tool is read by
   // a model deciding whether it has finished; showing 100 rows under a bare
@@ -191,10 +191,14 @@ export function formatMappings(
   const normalized = mappings.map(normalizeMapping);
 
   const lines = normalized.map((m, i) => {
-    const idPart = m.concept_id ? ` (ID: ${m.concept_id})` : '';
-    const vocabPart = m.vocabulary_id ? ` ${m.vocabulary_id} |` : '';
-    const codePart = m.concept_code ? ` Code: ${m.concept_code} |` : '';
-    return `${i + 1}. **${m.concept_name}**${idPart}\n  ${vocabPart}${codePart} Relationship: ${m.relationship_id}`;
+    return [
+      `Target ${i + 1}: ${m.concept_name}`,
+      m.concept_id !== undefined && `Target OMOP concept ID: ${m.concept_id}`,
+      m.concept_code && `Target ${m.vocabulary_id || 'vocabulary'} code: ${m.concept_code}`,
+      m.relationship_id && `Relationship: ${m.relationship_id}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
   });
 
   return {
@@ -209,14 +213,7 @@ export function formatMappings(
       page_size: pagination?.page_size ?? mappings.length,
       total_pages: pagination?.total_pages ?? 1,
       has_more: hasMore,
-      mappings: normalized.map((m) => ({
-        concept_id: m.concept_id,
-        concept_name: m.concept_name,
-        vocabulary_id: m.vocabulary_id || undefined,
-        concept_code: m.concept_code || undefined,
-        relationship_id: m.relationship_id,
-        standard_concept: m.standard_concept,
-      })),
+      mappings: normalized,
     }),
   };
 }
@@ -274,6 +271,32 @@ export function formatHierarchy(
     jsonData.total_descendants = data.total_descendants ?? (data.descendants || []).length;
   }
 
+  const pagination = direction === 'both' ? undefined : response.meta?.pagination;
+  if (pagination) {
+    jsonData.pagination = pagination;
+    jsonData.has_more = pagination.has_next;
+    if (pagination.has_next) {
+      jsonData.next_page = pagination.page + 1;
+      sections.push(
+        `Call get_hierarchy again with page=${pagination.page + 1}, keeping the same seed, direction, filters and page size.`,
+      );
+    }
+    sections.push(
+      `Page ${pagination.page} of ${pagination.total_pages} within the returned closure.`,
+    );
+  }
+  if (data.truncated !== undefined) jsonData.truncated = data.truncated;
+  if (direction === 'both' || !pagination || data.truncated === undefined) {
+    sections.push(
+      'Coverage is unverified. Use a directional query with paging and truncation metadata for exhaustive traversal.',
+    );
+  } else if (data.truncated) {
+    sections.push(
+      'Truncated: true. The upstream row cap limits this closure. The final available page still covers only part of the hierarchy.',
+    );
+  } else {
+    sections.push('Truncated: false.');
+  }
   return {
     text: sections.join('\n'),
     json: JSON.stringify(jsonData),

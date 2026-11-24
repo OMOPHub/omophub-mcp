@@ -1,6 +1,6 @@
 {
   "name": "@omophub/omophub-mcp",
-  "version": "1.6.3",
+  "version": "1.7.0",
   "mcpName": "io.github.OMOPHub/omophub-mcp",
   "description": "MCP server for OHDSI OMOP standardized medical vocabularies - search, lookup, map, and navigate concepts via AI agents",
   "type": "module",
@@ -28,7 +28,8 @@
     "format": "biome format --write src/ test/",
     "format:check": "biome format src/ test/",
     "prepublishOnly": "npm run build",
-    "audit:dependencies": "npm audit --package-lock-only --include=dev --include=optional --audit-level=low"
+    "audit:dependencies": "npm audit --package-lock-only --include=dev --include=optional --audit-level=low",
+    "build:plugins": "python3 scripts/build-plugins.py"
   },
   "keywords": [
     "mcp",
@@ -60,6 +61,7 @@
   "homepage": "https://omophub.com",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.0",
+    "jose": "^6.2.3",
     "zod": "^4.6.6"
   },
   "overrides": {

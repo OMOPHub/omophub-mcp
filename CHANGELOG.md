@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-11-24
+
+### Security and upgrade
+
+- Self-hosted HTTP in 1.6.3 could perform vocabulary reads with the operator’s configured API key when a reachable client omitted its credentials. This could consume the operator’s quota and return vocabulary data available to that account. Thanks to kta1kri for reporting the issue.
+- Both HTTP MCP paths require the caller’s bearer credential. Configure each client with its own API key, or use hosted OAuth at `/mcp`. Local stdio continues to accept `OMOPHUB_API_KEY` or `--api-key`.
+- HTTP binds to loopback by default and validates the request host and browser origin. Docker and reverse-proxy users should follow the [HTTP setup and migration instructions](README.md#quick-start) when upgrading.
+
+### Added and fixed
+
+- Hosted OAuth associates terminology reads with the connected account and app grant. The private vocabulary API enforces access and usage limits. Disconnecting an app revokes its access.
+- Clients can reinitialize after an idle MCP session expires. The server returns the MCP session-not-found response so clients can reconnect.
+- Added verified terminology searches, paginated hierarchy and mapping results, FHIR Coding input handling, and review bundles for ChatGPT, Claude and Codex. The ChatGPT bundle retains its independent directory version, 0.1.1.
+
 ## [1.6.3] - 2026-09-07
 
 ### Added

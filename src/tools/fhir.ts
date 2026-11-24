@@ -3,6 +3,14 @@ import { z } from 'zod';
 import type { OmopHubClient } from '../client/api.js';
 import { resolveClient } from '../client/resolve.js';
 import { formatErrorForMcp } from '../utils/errors.js';
+import {
+  booleanArgument,
+  containsRecordFields,
+  formattedResult,
+  readAnnotations,
+  recordInputError,
+  terminologyRecord,
+} from './contract.js';
 
 interface FhirResolution {
   vocabulary_id: string | null;
@@ -35,6 +43,15 @@ interface FhirCodeableConceptResponse {
   unresolved: Array<Record<string, unknown>>;
 }
 
+// Some hosts send the literal string "null" for omitted Coding fields.
+const omittedCodingArgument = z.literal('null').transform(() => undefined);
+const codingText = z
+  .string()
+  .max(500)
+  .transform((value) => (value === 'null' ? undefined : value))
+  .optional();
+const codingFlag = booleanArgument.or(omittedCodingArgument).default(false);
+
 function formatResolution(res: FhirResolution): string {
   // concept_id 0 is the OMOP "no matching concept" sentinel — surface it as
   // unmapped rather than presenting it as a successful resolution.
@@ -43,6 +60,11 @@ function formatResolution(res: FhirResolution): string {
       ? 'Unmapped: no OMOP standard concept (concept_id 0) for this input'
       : `Resolved: ${res.standard_concept.concept_name} (ID: ${res.standard_concept.concept_id})`;
   const lines = [
+    ...(res.standard_concept.concept_id > 0 && res.target_table
+      ? [
+          `The standard OMOP concept is ${res.standard_concept.concept_id} and the CDM table is ${res.target_table}.`,
+        ]
+      : []),
     header,
     `Vocabulary: ${res.vocabulary_id ?? 'N/A'} | Type: ${res.mapping_type}`,
     `Target table: ${res.target_table ?? 'unknown'} | Alignment: ${res.domain_resource_alignment}`,
@@ -74,47 +96,45 @@ function formatResolution(res: FhirResolution): string {
 }
 
 export function registerFhirTools(server: McpServer, client: OmopHubClient): void {
-  server.tool(
+  server.registerTool(
     'fhir_resolve',
-    "Resolve a FHIR coded value (system URI + code) to its OMOP standard concept and CDM target table. Supports text-only input via semantic search fallback and optional Phoebe recommendations. Examples: system='http://snomed.info/sct' code='44054006' for Type 2 diabetes, or display='heart attack' for text-only resolution.",
     {
-      system: z
-        .string()
-        .optional()
-        .describe('FHIR code system URI (e.g. http://snomed.info/sct, http://loinc.org)'),
-      code: z.string().optional().describe('Code value from the FHIR Coding'),
-      display: z
-        .string()
-        .optional()
-        .describe('Display text for semantic search fallback when code is unavailable'),
-      vocabulary_id: z
-        .string()
-        .optional()
-        .describe('Direct OMOP vocabulary_id (e.g. SNOMED, ICD10CM), bypasses URI resolution'),
-      resource_type: z
-        .string()
-        .optional()
-        .describe(
+      title: 'Resolve a FHIR coding',
+      annotations: readAnnotations,
+      outputSchema: z.looseObject({ success: z.boolean(), data: terminologyRecord.optional() }),
+      description:
+        "Resolve one FHIR Coding with separate system and code fields to its OMOP standard concept and CDM target table. Supports text-only input via semantic search fallback and optional Phoebe recommendations. Examples: system='http://snomed.info/sct' code='44054006' for Type 2 diabetes, or display='heart attack' for text-only resolution.",
+      inputSchema: {
+        system: codingText.describe(
+          'FHIR code system URI (e.g. http://snomed.info/sct, http://loinc.org)',
+        ),
+        code: codingText.describe(
+          'Literal Coding.code string, preserving leading zeros and punctuation. Put the system URI in the separate system field.',
+        ),
+        display: codingText.describe(
+          'Display text for semantic search fallback when code is unavailable',
+        ),
+        vocabulary_id: codingText.describe(
+          'Direct OMOP vocabulary_id (e.g. SNOMED, ICD10CM), bypasses URI resolution',
+        ),
+        resource_type: codingText.describe(
           'FHIR resource type (Condition, Observation, MedicationRequest, Procedure, etc.)',
         ),
-      include_recommendations: z
-        .boolean()
-        .optional()
-        .default(false)
-        .describe('Include Phoebe-recommended related concepts'),
-      include_quality: z
-        .boolean()
-        .optional()
-        .default(false)
-        .describe('Include mapping quality signal (high/medium/low/manual_review)'),
-      on_unmapped: z
-        .enum(['error', 'sentinel'])
-        .optional()
-        .describe(
-          "Behavior when nothing resolves: 'error' (default, 404) or 'sentinel' (return a concept_id 0 record)",
+        include_recommendations: codingFlag.describe('Include Phoebe-recommended related concepts'),
+        include_quality: codingFlag.describe(
+          'Include mapping quality signal (high/medium/low/manual_review)',
         ),
+        on_unmapped: z
+          .enum(['error', 'sentinel'])
+          .or(omittedCodingArgument)
+          .optional()
+          .describe(
+            "Behavior when nothing resolves: 'error' (default, 404) or 'sentinel' (return a concept_id 0 record)",
+          ),
+      },
     },
     async (params, extra) => {
+      if (containsRecordFields(params)) return recordInputError();
       try {
         const rc = resolveClient(extra, client);
         const body: Record<string, unknown> = {};
@@ -133,6 +153,7 @@ export function registerFhirTools(server: McpServer, client: OmopHubClient): voi
         const text = res ? formatResolution(res) : 'Resolution failed — no data returned';
 
         return {
+          structuredContent: { ...response },
           content: [
             { type: 'text' as const, text },
             { type: 'text' as const, text: JSON.stringify(response, null, 2) },
@@ -140,51 +161,53 @@ export function registerFhirTools(server: McpServer, client: OmopHubClient): voi
         };
       } catch (error) {
         const { text, json } = formatErrorForMcp(error, 'fhir_resolve');
-        return {
-          content: [
-            { type: 'text' as const, text },
-            { type: 'text' as const, text: json },
-          ],
-          isError: true,
-        };
+        return formattedResult(text, json, true);
       }
     },
   );
 
-  server.tool(
+  server.registerTool(
     'fhir_resolve_codeable_concept',
-    'Resolve a FHIR CodeableConcept with multiple codings. Picks the best match per OHDSI vocabulary preference (SNOMED > RxNorm > LOINC > CVX > ICD-10). Falls back to the text field via semantic search if no coding resolves.',
     {
-      coding: z
-        .array(
-          z.object({
-            system: z.string().trim().min(1).describe('FHIR code system URI'),
-            code: z.string().trim().min(1).describe('Code value'),
-            display: z.string().optional().describe('Display text'),
-            user_selected: z
-              .boolean()
-              .optional()
-              .describe('FHIR Coding.userSelected — wins over vocabulary preference when set'),
-          }),
-        )
-        .min(1)
-        .max(20)
-        .describe('Array of FHIR Coding entries from the CodeableConcept'),
-      text: z
-        .string()
-        .optional()
-        .describe('CodeableConcept.text — semantic fallback if no coding resolves'),
-      resource_type: z.string().optional().describe('FHIR resource type'),
-      include_recommendations: z.boolean().optional().default(false),
-      include_quality: z.boolean().optional().default(false),
-      on_unmapped: z
-        .enum(['error', 'sentinel'])
-        .optional()
-        .describe(
-          "Behavior when nothing resolves: 'error' (default, 404) or 'sentinel' (concept_id 0 record)",
-        ),
+      title: 'Resolve a FHIR CodeableConcept',
+      annotations: readAnnotations,
+      outputSchema: z.looseObject({ success: z.boolean(), data: terminologyRecord.optional() }),
+      description:
+        'Resolve a FHIR CodeableConcept with multiple codings. Picks the best match per OHDSI vocabulary preference (SNOMED > RxNorm > LOINC > CVX > ICD-10). Falls back to the text field via semantic search if no coding resolves.',
+      inputSchema: {
+        coding: z
+          .array(
+            z.object({
+              system: z.string().max(500).trim().min(1).describe('FHIR code system URI'),
+              code: z.string().max(500).trim().min(1).describe('Code value'),
+              display: z.string().max(500).optional().describe('Display text'),
+              user_selected: z
+                .boolean()
+                .optional()
+                .describe('FHIR Coding.userSelected — wins over vocabulary preference when set'),
+            }),
+          )
+          .min(1)
+          .max(20)
+          .describe('Array of FHIR Coding entries from the CodeableConcept'),
+        text: z
+          .string()
+          .max(500)
+          .optional()
+          .describe('CodeableConcept.text — semantic fallback if no coding resolves'),
+        resource_type: z.string().max(500).optional().describe('FHIR resource type'),
+        include_recommendations: z.boolean().optional().default(false),
+        include_quality: z.boolean().optional().default(false),
+        on_unmapped: z
+          .enum(['error', 'sentinel'])
+          .optional()
+          .describe(
+            "Behavior when nothing resolves: 'error' (default, 404) or 'sentinel' (concept_id 0 record)",
+          ),
+      },
     },
     async (params, extra) => {
+      if (containsRecordFields(params)) return recordInputError();
       try {
         const rc = resolveClient(extra, client);
         const body: Record<string, unknown> = { coding: params.coding };
@@ -219,6 +242,7 @@ export function registerFhirTools(server: McpServer, client: OmopHubClient): voi
         }
 
         return {
+          structuredContent: { ...response },
           content: [
             { type: 'text' as const, text },
             { type: 'text' as const, text: JSON.stringify(response, null, 2) },
@@ -226,13 +250,7 @@ export function registerFhirTools(server: McpServer, client: OmopHubClient): voi
         };
       } catch (error) {
         const { text, json } = formatErrorForMcp(error, 'fhir_resolve_codeable_concept');
-        return {
-          content: [
-            { type: 'text' as const, text },
-            { type: 'text' as const, text: json },
-          ],
-          isError: true,
-        };
+        return formattedResult(text, json, true);
       }
     },
   );

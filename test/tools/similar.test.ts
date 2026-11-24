@@ -9,7 +9,7 @@ describe('find_similar_concepts', () => {
     const client = createMockClient();
     registerSimilarTools(server as never, client as never);
 
-    expect(server.tool).toHaveBeenCalledTimes(1);
+    expect(server.registerTool).toHaveBeenCalledTimes(1);
     expect(server.tools.has('find_similar_concepts')).toBe(true);
   });
 

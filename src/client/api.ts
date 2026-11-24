@@ -5,28 +5,24 @@ import type { ApiResponse } from './types.js';
 
 const MAX_RETRIES = 2;
 
-/** Parse Retry-After header (seconds or HTTP-date), returning wait time in ms. */
-function parseRetryAfter(header: string, fallbackMs: number): number {
-  const seconds = parseInt(header, 10);
-  if (!Number.isNaN(seconds) && seconds >= 0) return seconds * 1000;
+const MAX_RETRY_WAIT_MS = 5_000;
 
-  const date = Date.parse(header);
-  if (!Number.isNaN(date)) {
-    const delayMs = date - Date.now();
-    return delayMs > 0 ? delayMs : fallbackMs;
-  }
-
-  return fallbackMs;
+export function hostedGrantHeaders(serviceToken: string, grant: string) {
+  return { Authorization: `Bearer ${serviceToken}`, 'X-OMOPHub-App-Grant': grant };
 }
 
 export class OmopHubClient {
   readonly baseUrl: string;
-  private readonly apiKey: string;
+  readonly #apiKey: string;
   private readonly analyticsOptout: boolean;
   private readonly userAgent: string;
 
-  constructor(apiKey: string | undefined, baseUrl?: string) {
-    this.apiKey = apiKey ?? '';
+  constructor(
+    apiKey: string | undefined,
+    baseUrl?: string,
+    private readonly grant?: string,
+  ) {
+    this.#apiKey = apiKey ?? '';
     this.baseUrl = (
       baseUrl ||
       process.env.OMOPHUB_BASE_URL ||
@@ -56,78 +52,7 @@ export class OmopHubClient {
       }
     }
 
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${this.apiKey}`,
-      'User-Agent': this.userAgent,
-      Accept: 'application/json',
-    };
-
-    if (!this.analyticsOptout) {
-      headers['X-MCP-Client'] = 'true';
-      if (toolName) {
-        headers['X-MCP-Tool'] = toolName;
-      }
-    }
-
-    let lastError: Error | null = null;
-
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      const start = Date.now();
-
-      try {
-        const response = await fetch(url.toString(), {
-          headers,
-          signal: AbortSignal.timeout(30_000),
-        });
-        const duration = Date.now() - start;
-
-        logger.debug('API request', {
-          tool_name: toolName,
-          api_path: path,
-          duration_ms: duration,
-          status: response.status,
-        });
-
-        if (response.status === 429 && attempt < MAX_RETRIES) {
-          const retryAfter = response.headers.get('Retry-After');
-          const fallbackMs = 1000 * (attempt + 1);
-          const waitMs = retryAfter ? parseRetryAfter(retryAfter, fallbackMs) : fallbackMs;
-          logger.warn(`Rate limited, retrying in ${waitMs}ms`, {
-            tool_name: toolName,
-            api_path: path,
-          });
-          await new Promise((resolve) => setTimeout(resolve, waitMs));
-          continue;
-        }
-
-        if (!response.ok) {
-          const body = await response.text();
-          let message: string;
-          try {
-            const parsed = JSON.parse(body) as { error?: { message?: string }; message?: string };
-            message = parsed.error?.message || parsed.message || body;
-          } catch {
-            message = body || response.statusText;
-          }
-          throw new OmopHubApiError(response.status, message, path);
-        }
-
-        return (await response.json()) as ApiResponse<T>;
-      } catch (error) {
-        if (error instanceof OmopHubApiError) throw error;
-        lastError = error instanceof Error ? error : new Error(String(error));
-
-        if (attempt < MAX_RETRIES) {
-          logger.warn(`Request failed, retrying (attempt ${attempt + 1})`, {
-            tool_name: toolName,
-            api_path: path,
-          });
-          await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
-        }
-      }
-    }
-
-    throw lastError || new Error('Request failed after retries');
+    return this.send<T>(url.toString(), path, 'GET', toolName);
   }
 
   async post<T>(
@@ -135,77 +60,68 @@ export class OmopHubClient {
     body: Record<string, unknown>,
     toolName?: string,
   ): Promise<ApiResponse<T>> {
-    const url = `${this.baseUrl}${path}`;
+    return this.send<T>(`${this.baseUrl}${path}`, path, 'POST', toolName, JSON.stringify(body));
+  }
 
+  private async send<T>(
+    url: string,
+    path: string,
+    method: 'GET' | 'POST',
+    toolName?: string,
+    body?: string,
+  ): Promise<ApiResponse<T>> {
+    if (this.grant && new URL(url).origin !== new URL(this.baseUrl).origin)
+      throw new Error('The hosted service credential is scoped to the configured API origin');
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${this.apiKey}`,
+      ...(this.grant
+        ? hostedGrantHeaders(this.#apiKey, this.grant)
+        : { Authorization: `Bearer ${this.#apiKey}` }),
       'User-Agent': this.userAgent,
-      'Content-Type': 'application/json',
       Accept: 'application/json',
     };
-
+    if (method === 'POST') headers['Content-Type'] = 'application/json';
     if (!this.analyticsOptout) {
       headers['X-MCP-Client'] = 'true';
-      if (toolName) {
-        headers['X-MCP-Tool'] = toolName;
-      }
+      if (toolName) headers['X-MCP-Tool'] = toolName;
     }
 
-    const lastError: Error | null = null;
-
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    for (let attempt = 0; ; attempt++) {
       const start = Date.now();
-
       try {
         const response = await fetch(url, {
-          method: 'POST',
+          method,
           headers,
-          body: JSON.stringify(body),
+          body,
+          ...(this.grant && { redirect: 'error' as const }),
           signal: AbortSignal.timeout(30_000),
         });
-
-        logger.debug('API POST request', {
+        logger.debug('API request', {
           tool_name: toolName,
-          api_path: path,
+          method,
           duration_ms: Date.now() - start,
           status: response.status,
         });
+        if (response.ok) return (await response.json()) as ApiResponse<T>;
 
-        if (response.status === 429 && attempt < MAX_RETRIES) {
-          const retryAfter = response.headers.get('Retry-After');
-          const fallbackMs = 1000 * (attempt + 1);
-          const waitMs = retryAfter ? parseRetryAfter(retryAfter, fallbackMs) : fallbackMs;
-          logger.warn(`Rate limited, retrying in ${waitMs}ms`, {
-            tool_name: toolName,
-            api_path: path,
-          });
-          await new Promise((resolve) => setTimeout(resolve, waitMs));
-          continue;
-        }
-
-        if (!response.ok) {
-          const text = await response.text();
-          let message: string;
-          try {
-            const parsed = JSON.parse(text) as {
-              error?: { message?: string };
-              message?: string;
-            };
-            message = parsed.error?.message || parsed.message || text;
-          } catch {
-            message = text || response.statusText;
-          }
-          throw new OmopHubApiError(response.status, message, path);
-        }
-
-        return (await response.json()) as ApiResponse<T>;
+        const error = await OmopHubApiError.fromResponse(response, path);
+        if (
+          error.status !== 429 ||
+          error.info.code === 'monthly_limit_exceeded' ||
+          error.info.retryable === false ||
+          attempt >= MAX_RETRIES
+        )
+          throw error;
+        const waitMs =
+          error.info.retryAfterSeconds === undefined
+            ? 1000 * (attempt + 1)
+            : error.info.retryAfterSeconds * 1000;
+        if (waitMs > MAX_RETRY_WAIT_MS) throw error;
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
       } catch (error) {
-        if (error instanceof OmopHubApiError) throw error;
-        // Do not retry POST on network errors — could cause duplicate mutations
-        throw error instanceof Error ? error : new Error(String(error));
+        if (error instanceof OmopHubApiError || method === 'POST' || attempt >= MAX_RETRIES)
+          throw error;
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
       }
     }
-
-    throw lastError || new Error('POST request failed after retries');
   }
 }

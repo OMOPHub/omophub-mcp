@@ -6,6 +6,12 @@ import type { ApiResponse, Vocabulary } from '../client/types.js';
 import { formatVocabularyList } from '../formatters/index.js';
 import { vocabularyCache } from '../utils/cache.js';
 import { formatErrorForMcp } from '../utils/errors.js';
+import {
+  containsRecordFields,
+  formattedResult,
+  readAnnotations,
+  recordInputError,
+} from './contract.js';
 
 const PAGE_SIZE = 100;
 
@@ -30,26 +36,42 @@ async function fetchAllVocabularies(client: OmopHubClient): Promise<Vocabulary[]
   return all;
 }
 
-export function registerVocabularyTools(server: McpServer, client: OmopHubClient): void {
-  server.tool(
+export function registerVocabularyTools(
+  server: McpServer,
+  client: OmopHubClient,
+  cache: typeof vocabularyCache | null = vocabularyCache,
+): void {
+  server.registerTool(
     'list_vocabularies',
-    'List all available medical vocabularies in the OMOP standardized vocabulary system with concept counts and metadata. Use this to understand what terminology systems are available (SNOMED CT, ICD-10-CM, RxNorm, LOINC, etc.) and their scope.',
     {
-      search: z
-        .string()
-        .max(200)
-        .optional()
-        .describe('Optional search term to filter vocabularies by name'),
+      title: 'List available vocabularies',
+      annotations: readAnnotations,
+      outputSchema: z.object({
+        vocabularies: z.array(
+          z.looseObject({ vocabulary_id: z.string(), vocabulary_name: z.string() }),
+        ),
+        total: z.number(),
+      }),
+      description:
+        'List all available medical vocabularies in the OMOP standardized vocabulary system with concept counts and metadata. Use this to understand what terminology systems are available (SNOMED CT, ICD-10-CM, RxNorm, LOINC, etc.) and their scope.',
+      inputSchema: {
+        search: z
+          .string()
+          .max(200)
+          .optional()
+          .describe('Optional search term to filter vocabularies by name'),
+      },
     },
     async ({ search }, extra) => {
+      if (containsRecordFields(search)) return recordInputError();
       try {
         const rc = resolveClient(extra, client);
         const cacheKey = 'vocabularies:all';
-        let vocabs = vocabularyCache.get(cacheKey) as Vocabulary[] | undefined;
+        let vocabs = cache?.get(cacheKey) as Vocabulary[] | undefined;
 
         if (!vocabs) {
           vocabs = await fetchAllVocabularies(rc);
-          vocabularyCache.set(cacheKey, vocabs);
+          cache?.set(cacheKey, vocabs);
         }
 
         const response: ApiResponse<Vocabulary[]> = {
@@ -69,21 +91,10 @@ export function registerVocabularyTools(server: McpServer, client: OmopHubClient
 
         const { text, json } = formatVocabularyList(response, search);
 
-        return {
-          content: [
-            { type: 'text' as const, text },
-            { type: 'text' as const, text: json },
-          ],
-        };
+        return formattedResult(text, json);
       } catch (error) {
         const { text, json } = formatErrorForMcp(error, 'list_vocabularies');
-        return {
-          content: [
-            { type: 'text' as const, text },
-            { type: 'text' as const, text: json },
-          ],
-          isError: true,
-        };
+        return formattedResult(text, json, true);
       }
     },
   );

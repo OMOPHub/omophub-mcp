@@ -7,6 +7,7 @@
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
+    "allowJs": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -16,6 +17,6 @@
     "sourceMap": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.mjs"],
   "exclude": ["node_modules", "dist", "test"]
 }

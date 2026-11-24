@@ -4,6 +4,13 @@ import type { OmopHubClient } from '../client/api.js';
 import { resolveClient } from '../client/resolve.js';
 import type { Concept, PaginationMeta, RawHierarchyResponse } from '../client/types.js';
 import { formatErrorForMcp } from '../utils/errors.js';
+import {
+  conceptOutput,
+  containsRecordFields,
+  formattedResult,
+  readAnnotations,
+  recordInputError,
+} from './contract.js';
 
 interface RelationshipItem {
   relationship_id: string;
@@ -24,43 +31,49 @@ interface RelationshipsData {
 }
 
 export function registerExploreTools(server: McpServer, client: OmopHubClient): void {
-  server.tool(
+  server.registerTool(
     'explore_concept',
-    'Get a comprehensive view of a medical concept in one call: detailed info, ancestors/descendants hierarchy, and cross-vocabulary mappings. Use this instead of calling get_concept + get_hierarchy + map_concept separately. Ideal for understanding what a concept is, where it sits in the classification tree, and how it maps to other coding systems.',
     {
-      concept_id: z.number().describe('The OMOP concept_id to explore'),
-      include_hierarchy: z
-        .boolean()
-        .default(true)
-        .describe('Include ancestors and descendants. Default true.'),
-      hierarchy_levels: z
-        .number()
-        .min(1)
-        .max(5)
-        .default(2)
-        .describe('How many hierarchy levels to fetch (1-5, default 2)'),
-      include_mappings: z
-        .boolean()
-        .default(true)
-        .describe('Include cross-vocabulary mappings. Default true.'),
-      target_vocabularies: z
-        .string()
-        .max(200)
-        .optional()
-        .describe(
-          "Comma-separated vocabulary IDs to filter mappings. Examples: 'ICD10CM', 'SNOMED'.",
-        ),
-      // Was hardcoded at 100 with no caller control. 200 is the API's effective
-      // ceiling for GET requests (paginationLimitsMiddleware clamps page_size to
-      // CACHE_LIMITS.MAX_PAGE_SIZE), so asking for more would silently return 200.
-      mappings_page_size: z
-        .number()
-        .min(1)
-        .max(200)
-        .default(100)
-        .describe(
-          'Maximum mappings to fetch (1-200, default 100). This is an overview tool — for a complete code list use map_concept and page through it.',
-        ),
+      title: 'Explore a concept',
+      annotations: readAnnotations,
+      outputSchema: z.looseObject({ concept: conceptOutput }),
+      description:
+        'Get a comprehensive view of a medical concept in one call: detailed info, ancestors/descendants hierarchy, and cross-vocabulary mappings. Use this instead of calling get_concept + get_hierarchy + map_concept separately. Ideal for understanding what a concept is, where it sits in the classification tree, and how it maps to other coding systems.',
+      inputSchema: {
+        concept_id: z.number().describe('The OMOP concept_id to explore'),
+        include_hierarchy: z
+          .boolean()
+          .default(true)
+          .describe('Include ancestors and descendants. Default true.'),
+        hierarchy_levels: z
+          .number()
+          .min(1)
+          .max(5)
+          .default(2)
+          .describe('How many hierarchy levels to fetch (1-5, default 2)'),
+        include_mappings: z
+          .boolean()
+          .default(true)
+          .describe('Include cross-vocabulary mappings. Default true.'),
+        target_vocabularies: z
+          .string()
+          .max(200)
+          .optional()
+          .describe(
+            "Comma-separated vocabulary IDs to filter mappings. Examples: 'ICD10CM', 'SNOMED'.",
+          ),
+        // Was hardcoded at 100 with no caller control. 200 is the API's effective
+        // ceiling for GET requests (paginationLimitsMiddleware clamps page_size to
+        // CACHE_LIMITS.MAX_PAGE_SIZE), so asking for more would silently return 200.
+        mappings_page_size: z
+          .number()
+          .min(1)
+          .max(200)
+          .default(100)
+          .describe(
+            'Maximum mappings to fetch (1-200, default 100). This is an overview tool — for a complete code list use map_concept and page through it.',
+          ),
+      },
     },
     async (
       {
@@ -73,6 +86,7 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
       },
       extra,
     ) => {
+      if (containsRecordFields(target_vocabularies)) return recordInputError();
       try {
         const rc = resolveClient(extra, client);
         // Build parallel requests
@@ -163,13 +177,7 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
           // If the request was rejected, propagate the original error
           if (conceptResult.status === 'rejected') {
             const { text, json } = formatErrorForMcp(conceptResult.reason, 'explore_concept');
-            return {
-              content: [
-                { type: 'text' as const, text },
-                { type: 'text' as const, text: json },
-              ],
-              isError: true,
-            };
+            return formattedResult(text, json, true);
           }
           return {
             content: [{ type: 'text' as const, text: `Concept ${concept_id} not found.` }],
@@ -319,6 +327,7 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
         };
 
         return {
+          structuredContent: jsonData,
           content: [
             { type: 'text' as const, text },
             { type: 'text' as const, text: JSON.stringify(jsonData) },
@@ -326,13 +335,7 @@ export function registerExploreTools(server: McpServer, client: OmopHubClient): 
         };
       } catch (error) {
         const { text, json } = formatErrorForMcp(error, 'explore_concept');
-        return {
-          content: [
-            { type: 'text' as const, text },
-            { type: 'text' as const, text: json },
-          ],
-          isError: true,
-        };
+        return formattedResult(text, json, true);
       }
     },
   );

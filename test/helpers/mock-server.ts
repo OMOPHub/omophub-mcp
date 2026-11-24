@@ -9,7 +9,7 @@ export function createMockServer() {
   const prompts = new Map<string, HandlerFn>();
 
   return {
-    tool: vi.fn((name: string, _desc: string, _schema: unknown, handler: HandlerFn) => {
+    registerTool: vi.fn((name: string, _config: { inputSchema: unknown }, handler: HandlerFn) => {
       tools.set(name, handler);
     }),
     resource: vi.fn((name: string, _uriOrTemplate: unknown, handler: HandlerFn) => {

@@ -6,7 +6,7 @@ import type { Vocabulary } from '../client/types.js';
 import { vocabularyCache } from '../utils/cache.js';
 
 const PAGE_SIZE = 100;
-const CACHE_KEY = 'vocabularies:all';
+const CACHE_KEY = 'resource:vocabularies:all';
 
 async function fetchAllVocabularies(
   client: OmopHubClient,
@@ -33,22 +33,27 @@ async function fetchAllVocabularies(
 }
 
 async function getCachedVocabularies(
+  cache: typeof vocabularyCache | null,
   client: OmopHubClient,
   toolName: string,
 ): Promise<Vocabulary[]> {
-  const cached = vocabularyCache.get(CACHE_KEY) as { data: Vocabulary[] } | undefined;
+  const cached = cache?.get(CACHE_KEY) as { data: Vocabulary[] } | undefined;
   if (cached) return cached.data;
 
   const vocabs = await fetchAllVocabularies(client, toolName);
-  vocabularyCache.set(CACHE_KEY, { data: vocabs });
+  cache?.set(CACHE_KEY, { data: vocabs });
   return vocabs;
 }
 
-export function registerResources(server: McpServer, client: OmopHubClient): void {
+export function registerResources(
+  server: McpServer,
+  client: OmopHubClient,
+  cache: typeof vocabularyCache | null = vocabularyCache,
+): void {
   // Static resource: vocabulary catalog
   server.resource('vocabulary-list', 'omophub://vocabularies', async (uri, extra) => {
     const rc = resolveClient(extra, client);
-    const vocabs = await getCachedVocabularies(rc, 'resource:vocabulary-list');
+    const vocabs = await getCachedVocabularies(cache, rc, 'resource:vocabulary-list');
     const text = vocabs
       .map(
         (v) =>
@@ -75,7 +80,7 @@ export function registerResources(server: McpServer, client: OmopHubClient): voi
   server.resource('vocabulary-details', vocabularyTemplate, async (uri, variables, extra) => {
     const rc = resolveClient(extra, client);
     const vocabularyId = String(variables.vocabulary_id);
-    const vocabs = await getCachedVocabularies(rc, 'resource:vocabulary-details');
+    const vocabs = await getCachedVocabularies(cache, rc, 'resource:vocabulary-details');
 
     const vocab = vocabs.find((v) => v.vocabulary_id.toLowerCase() === vocabularyId.toLowerCase());
 

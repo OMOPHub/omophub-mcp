@@ -112,7 +112,7 @@ describe('FHIR tools', () => {
     const client = createMockClient();
     registerFhirTools(server as never, client as never);
 
-    expect(server.tool).toHaveBeenCalledTimes(2);
+    expect(server.registerTool).toHaveBeenCalledTimes(2);
     expect(server.tools.has('fhir_resolve')).toBe(true);
     expect(server.tools.has('fhir_resolve_codeable_concept')).toBe(true);
   });
@@ -142,6 +142,9 @@ describe('FHIR tools', () => {
           resource_type: 'Condition',
         }),
         'fhir_resolve',
+      );
+      expect(result.content[0].text.split('\n')[0]).toBe(
+        'The standard OMOP concept is 201826 and the CDM table is condition_occurrence.',
       );
       expect(result.content).toHaveLength(2);
       expect(result.content[0].text).toContain('Type 2 diabetes mellitus');
@@ -430,8 +433,10 @@ describe('FHIR tools', () => {
       // The MCP SDK validates tool input against this Zod shape before the
       // handler runs. The mock discards the shape, so rebuild it from the
       // recorded server.tool(name, desc, shape, handler) call to test it.
-      const call = server.tool.mock.calls.find((c) => c[0] === 'fhir_resolve_codeable_concept')!;
-      const schema = z.object(call[2] as z.ZodRawShape);
+      const call = server.registerTool.mock.calls.find(
+        (c) => c[0] === 'fhir_resolve_codeable_concept',
+      )!;
+      const schema = z.object(call[1].inputSchema as z.ZodRawShape);
 
       // Empty or whitespace-only system/code must fail validation.
       expect(schema.safeParse({ coding: [{ system: '', code: '44054006' }] }).success).toBe(false);
