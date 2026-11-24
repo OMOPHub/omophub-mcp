@@ -1,0 +1,82 @@
+server.json
+  s_c7e9bd656f030b::t_717053d11cbf07 9,14
+test/transports/http-sessions.test.ts
+  s_c7e9bd656f030b::t_61182e88474200 89-90,144,150,243,313,342,389,436,466,489,494,522,545,554,574,587,623,666
+  s_c7e9bd656f030b::t_4a2e69c0f6f701 266-270,422-426
+src/client/resolve.ts
+  s_c7e9bd656f030b::t_2c652e2c46c853 3,6,14,17-18
+src/transports/http.ts
+  s_c7e9bd656f030b::t_2c652e2c46c853 1,17,180-198,204,206,208-210,215-216,223-224,227,230,232-233,297-298,303-312,335,337,416-417,421-422,426,428,431,481
+  s_c7e9bd656f030b::t_4bb23505f2548b 211-214,217-222,299-302,485-490
+  s_c7e9bd656f030b::t_c8d095d319785b 14
+  s_a7afb2b350ae4d::t_0e8e49061abc88 225-226,228
+  s_c7e9bd656f030b::t_02a2861f45b5b4 11,247-248,273,565-573
+CHANGELOG.md
+  s_c7e9bd656f030b::t_717053d11cbf07 5-18
+package.json
+  s_c7e9bd656f030b::t_717053d11cbf07 3
+src/index.ts
+  s_c7e9bd656f030b::t_2c652e2c46c853 103
+plugins/openai/README.md
+  s_c7e9bd656f030b::t_717053d11cbf07 1-13
+plugins/README.md
+  s_c7e9bd656f030b::t_717053d11cbf07 3
+README.md
+  s_c7e9bd656f030b::t_717053d11cbf07 137-138,144-146,153-155,189,197-198,295,302-304,314,325,327,363-365
+test/client/resolve.test.ts
+  s_c7e9bd656f030b::t_4bb23505f2548b 6-7,11,14,16,20-27,30-34,37-46,49,51,58,66
+.dockerignore
+  s_c7e9bd656f030b::t_85a1dc077cf04f 11-12
+scripts/build-plugins.py
+  s_c7e9bd656f030b::t_27e8f3648d2771 44
+  s_c7e9bd656f030b::t_717053d11cbf07 17-21
+test/transports/http-ingress.test.ts
+  s_c7e9bd656f030b::t_d8d09f36eb3a05 45
+  s_c7e9bd656f030b::t_02a2861f45b5b4 1-44,46-91
+plugins/openai/plugin.json
+  s_c7e9bd656f030b::t_717053d11cbf07 4-5,15-16,22,26-86
+src/transports/http-ingress.ts
+  s_c7e9bd656f030b::t_02a2861f45b5b4 1-82
+plugins/claude/README.md
+  s_c7e9bd656f030b::t_27e8f3648d2771 1-21
+.env.example
+  s_c7e9bd656f030b::t_717053d11cbf07 1,19-26,30-34
+test/transports/http.test.ts
+  s_c7e9bd656f030b::t_61182e88474200 100-102,120,188,214,242,244,264,266,283,285,300,302,322,324
+  s_c7e9bd656f030b::t_4a2e69c0f6f701 192,198-199,201,204,208,215,223-226
+test/transports/http-credentials.test.ts
+  s_c7e9bd656f030b::t_4bb23505f2548b 1-23,25-28,30-32,38-89,95-141
+  s_c7e9bd656f030b::t_24af5ffdc2660f 24,29,33-37,90-94
+test/index.test.ts
+  s_c7e9bd656f030b::t_4a2e69c0f6f701 370
+  s_a7afb2b350ae4d::t_c6c51803d31c92 4-5,33,364,379-385
+  s_a7afb2b350ae4d::t_3385750ddaa03e 386-388
+package-lock.json
+  s_a7afb2b350ae4d::t_1a0bb68af9e816 3,9
+test/transports/hosted-oauth.test.ts
+  s_a7afb2b350ae4d::t_719fc90430607e 1-129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b44dc4afa45a8ac4e8ef26c5a64dc0003e241bf9",
+  "prompts": {},
+  "sessions": {
+    "s_a7afb2b350ae4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "unknown"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    },
+    "s_c7e9bd656f030b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f403-9f2e-7f12-9b06-d829ddb3acb8",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "alex-omophub <alex@omophub.com>"
+    }
+  }
+}
